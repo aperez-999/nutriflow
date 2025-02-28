@@ -18,7 +18,7 @@ app.use(express.urlencoded({ extended: false }));
 
 // Serve static files from the frontend build directory
 const __dirname = path.resolve();
-app.use(express.static(path.join(__dirname, 'frontend', 'dist')));
+app.use(express.static(path.join(__dirname, '../frontend', 'dist')));
 
 // Routes
 app.use('/api/diets', dietRoutes);
