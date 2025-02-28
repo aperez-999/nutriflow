@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Set base URL for all API calls
-axios.defaults.baseURL = 'http://localhost:3000';
+axios.defaults.baseURL = 'https://nutriflow-backend.onrender.com';
 axios.defaults.withCredentials = true;
 
 // Get token function (if you have it)

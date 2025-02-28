@@ -127,7 +127,7 @@ function Home() {
               <FeatureCard
                 title="Track Your Diet"
                 description="Log your daily meals and monitor your nutritional intake with ease."
-                imageSrc="public/images/trackingdiet-bg.jpeg"
+                imageSrc="/images/trackingdiet-bg.jpeg"
                 cardBg={cardBg}
                 textColor={textColor}
                 headingColor={headingColor}
@@ -137,7 +137,7 @@ function Home() {
               <FeatureCard
                 title="Monitor Workouts"
                 description="Keep track of your exercises and calories burned during workouts."
-                imageSrc="public/images/monitor-bg.webp"
+                imageSrc="/images/monitor-bg.webp"
                 cardBg={cardBg}
                 textColor={textColor}
                 headingColor={headingColor}
@@ -147,7 +147,7 @@ function Home() {
               <FeatureCard
                 title="View Progress"
                 description="Visualize your progress with detailed charts and statistics."
-                imageSrc="public/images/charts-bg.jpg"
+                imageSrc="/images/charts-bg.jpg"
                 cardBg={cardBg}
                 textColor={textColor}
                 headingColor={headingColor}
