@@ -121,15 +121,17 @@ function Navbar() {
                 >
                   Fitness Hub
                 </Button>
-                <Button
-                  as={motion.button}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  colorScheme="red"
-                  onClick={handleLogout}
-                >
-                  Logout
-                </Button>
+                {user && (
+                  <Button
+                    as={motion.button}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    colorScheme="red"
+                    onClick={handleLogout}
+                  >
+                    Logout
+                  </Button>
+                )}
               </HStack>
             </Box>
           )}
