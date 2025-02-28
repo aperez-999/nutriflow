@@ -77,7 +77,7 @@ function Navbar() {
       >
         <Flex alignItems="center" maxW="container.xl" mx="auto">
           <Image
-            src="public/images/nutriflowlogo.webp"
+            src="/images/nutriflowlogo.webp"
             alt="NutriFlow Logo"
             height="32px"
             mr={2}
