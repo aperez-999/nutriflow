@@ -4,6 +4,8 @@ import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 
 export const register = async (req, res) => {
+  console.log("🔹 Incoming Register Request:", req.body);
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
@@ -26,6 +28,7 @@ export const register = async (req, res) => {
 
     res.status(201).json({ result: newUser, token });
   } catch (error) {
+    console.error('Register error:', error);
     res.status(500).json({ message: 'Something went wrong' });
   }
 };
