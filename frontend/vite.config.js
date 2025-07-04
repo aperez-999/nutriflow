@@ -8,5 +8,9 @@ export default defineConfig({
   },
   define: {
     'process.env': {}
+  },
+  build: {
+    outDir: '../frontend/dist',
+    emptyOutDir: true
   }
 });
