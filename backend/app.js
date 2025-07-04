@@ -16,9 +16,9 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Serve static files from the frontend build directory
+// Serve static files from the frontend build directory (root-level dist/)
 const __dirname = path.resolve();
-app.use(express.static(path.join(__dirname, '../frontend', 'dist')));
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // API Routes
 app.use('/api/diets', dietRoutes);
@@ -26,9 +26,9 @@ app.use('/api/workouts', workoutRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes);
 
-// Serve the frontend index.html for all other routes
+// Serve frontend index.html for any non-API route
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend', 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
 // Error handler middleware
