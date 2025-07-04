@@ -20,20 +20,21 @@ app.use(express.urlencoded({ extended: false }));
 const __dirname = path.resolve();
 app.use(express.static(path.join(__dirname, '../frontend', 'dist')));
 
-// Routes
+// API Routes
 app.use('/api/diets', dietRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes);
 
-// Serve the frontend build
+// Serve the frontend index.html for all other routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'frontend', 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend', 'dist', 'index.html'));
 });
 
-// Error handler
+// Error handler middleware
 app.use(errorHandler);
 
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
