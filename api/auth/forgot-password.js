@@ -46,14 +46,14 @@ export default async function handler(req, res) {
       subject: 'NutriFlow Password Reset',
       html: `
         <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-          <img src="https://your-vercel-app.vercel.app/images/nutriflowlogo.webp" 
+          <img src="https://nutriflowdev.vercel.app/images/nutriflowlogo.webp" 
                alt="NutriFlow" 
                style="max-width: 200px; margin-bottom: 20px;"
           />
           <h1 style="color: #319795;">Password Reset Request</h1>
           <p>You requested a password reset for your NutriFlow account.</p>
           <p>Click the link below to reset your password:</p>
-          <a href="https://your-vercel-app.vercel.app/reset-password/${resetToken}" 
+          <a href="https://nutriflowdev.vercel.app/reset-password/${resetToken}" 
              style="display: inline-block; 
                     background-color: #319795; 
                     color: white; 
