@@ -1,10 +1,11 @@
 import axios from 'axios';
 
 // Set base URL for all API calls
-axios.defaults.baseURL = 'https://nutriflow.onrender.com';
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || 
+  (import.meta.env.PROD ? 'https://your-vercel-app.vercel.app' : 'http://localhost:3000');
 axios.defaults.withCredentials = true;
 
-// Get token function (if you have it)
+// Get token function
 const getToken = () => {
     return localStorage.getItem('token');
 };
