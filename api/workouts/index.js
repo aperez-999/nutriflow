@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       // Create new workout
-      const { date, type, duration, caloriesBurned, notes } = req.body;
+      const { date, type, workoutName, duration, caloriesBurned, intensity, equipment, notes } = req.body;
 
       if (!date || !type || !duration) {
         return res.status(400).json({ 
@@ -37,8 +37,11 @@ export default async function handler(req, res) {
         user: req.user._id,
         date,
         type,
+        workoutName: workoutName || '',
         duration,
         caloriesBurned: caloriesBurned || 0,
+        intensity: intensity || '',
+        equipment: equipment || '',
         notes: notes || ''
       });
 

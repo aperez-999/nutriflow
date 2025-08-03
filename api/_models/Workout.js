@@ -15,6 +15,10 @@ const workoutSchema = new mongoose.Schema({
     required: true,
     enum: ['Cardio', 'Strength', 'Flexibility', 'Sports', 'Other']
   },
+  workoutName: {
+    type: String,
+    required: false
+  },
   duration: {
     type: Number,
     required: true
@@ -22,6 +26,13 @@ const workoutSchema = new mongoose.Schema({
   caloriesBurned: {
     type: Number,
     default: 0
+  },
+  intensity: {
+    type: String,
+    enum: ['Low', 'Medium', 'High']
+  },
+  equipment: {
+    type: String
   },
   notes: {
     type: String

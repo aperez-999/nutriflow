@@ -1,0 +1,214 @@
+# ===================================
+# NutriFlow - Comprehensive .gitignore
+# ===================================
+
+# Dependencies
+node_modules/
+*/node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment Variables (Critical Security)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+.env.staging
+backend/.env
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# Build Outputs
+dist/
+dist-ssr/
+build/
+.next/
+out/
+frontend/dist/
+frontend/build/
+backend/dist/
+backend/build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Runtime Data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage & Testing
+coverage/
+*.lcov
+.nyc_output/
+junit.xml
+test-results/
+
+# Cache Directories
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.npm/
+.yarn/
+.pnpm/
+
+# TypeScript
+*.tsbuildinfo
+
+# Vite Specific
+*.local
+vite.config.js.timestamp-*
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+
+# Temporary Files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+
+# Editor & IDE Files
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*~
+
+# OS Generated Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+*.lnk
+desktop.ini
+
+# Package Manager Lock Files (Optional - Choose based on your preference)
+# Uncomment the ones you want to ignore:
+# yarn.lock
+# pnpm-lock.yaml
+# Keep package-lock.json by default
+
+# Deployment & Hosting
+.netlify/
+.vercel/
+.firebase/
+.surge/
+
+# Docker (if you add Docker later)
+.dockerignore
+docker-compose.override.yml
+
+# Backup & Archive Files
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.rar
+*.7z
+
+# Security & Sensitive Files
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+config/secrets.json
+secrets/
+
+# Development Tools
+.grunt/
+bower_components/
+jspm_packages/
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Storybook
+.out/
+.storybook-out/
+storybook-static/
+
+# Optional REPL History
+.node_repl_history
+
+# Yarn Integrity File
+.yarn-integrity
+
+# Output of 'npm pack'
+*.tgz
+
+# ESLint & Prettier Cache
+.eslintcache
+.prettiercache
+
+# Stylelint Cache
+.stylelintcache
+
+# Microbundle Cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Next.js
+.next/
+out/
+
+# Nuxt.js
+.nuxt/
+dist/
+
+# Gatsby
+.cache/
+public/
+
+# Serverless Framework
+.serverless/
+
+# FuseBox Cache
+.fusebox/
+
+# DynamoDB Local
+.dynamodb/
+
+# TernJS Port File
+.tern-port
+
+# Stores VSCode Versions Used for Testing VSCode Extensions
+.vscode-test/
+
+# Temporary Folders
+tmp/
+temp/ 

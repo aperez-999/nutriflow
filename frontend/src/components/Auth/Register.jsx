@@ -16,6 +16,7 @@ import {
   IconButton,
   Link as ChakraLink,
   Icon,
+  useToast,
 } from '@chakra-ui/react';
 import { ViewIcon, ViewOffIcon } from '@chakra-ui/icons';
 import { FaUser, FaEnvelope, FaLock } from 'react-icons/fa';
@@ -36,11 +37,17 @@ function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const toast = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match');
+      toast({
+        title: 'Passwords do not match',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
       return;
     }
     setIsLoading(true);
@@ -50,9 +57,22 @@ function Register() {
         email: formData.email,
         password: formData.password
       });
+      toast({
+        title: 'Account created successfully',
+        description: 'You can now login with your new account',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
       navigate('/login');
     } catch (error) {
-      alert(error.message);
+      toast({
+        title: 'Error creating account',
+        description: error.response?.data?.message || error.message || 'Something went wrong',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
     } finally {
       setIsLoading(false);
     }

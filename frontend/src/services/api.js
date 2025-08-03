@@ -158,3 +158,13 @@ export const resetPassword = async (token, password) => {
     throw error.response?.data || { message: 'Failed to reset password' };
   }
 };
+
+// Food search functions
+export const searchFoods = async (query) => {
+  try {
+    const response = await axios.get(`/api/food/search?query=${encodeURIComponent(query)}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to search foods' };
+  }
+};

@@ -25,7 +25,7 @@ export default async function handler(req, res) {
 
     if (req.method === 'POST') {
       // Create new diet
-      const { date, mealType, foodName, calories, protein, carbs, fats } = req.body;
+      const { date, mealType, foodName, calories, protein, carbs, fats, notes } = req.body;
 
       if (!date || !mealType || !foodName || !calories) {
         return res.status(400).json({ 
@@ -41,7 +41,8 @@ export default async function handler(req, res) {
         calories,
         protein: protein || 0,
         carbs: carbs || 0,
-        fats: fats || 0
+        fats: fats || 0,
+        notes: notes || ''
       });
 
       return res.status(201).json(diet);

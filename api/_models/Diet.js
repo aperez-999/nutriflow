@@ -34,6 +34,9 @@ const dietSchema = new mongoose.Schema({
     fats: {
         type: Number,
         default: 0
+    },
+    notes: {
+        type: String
     }
 }, {
     timestamps: true
