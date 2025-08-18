@@ -14,20 +14,35 @@ import { CloseIcon } from '@chakra-ui/icons';
 import { searchFoods } from '../../services/api';
 
 const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = "Search for food..." }) => {
+  // State
   const [searchQuery, setSearchQuery] = useState(value || '');
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [selectedFood, setSelectedFood] = useState(null);
+  
+  // Refs
   const searchTimeoutRef = useRef(null);
   const resultsRef = useRef(null);
 
-  // Color mode values
+  // Color mode values - all defined at the top
   const bgColor = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const hoverBg = useColorModeValue('gray.50', 'gray.600');
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.300');
+  
+  // Selected state colors
+  const selectedBg = useColorModeValue('green.50', 'green.900');
+  const selectedBorder = useColorModeValue('green.300', 'green.500');
+  const selectedFocusBorder = useColorModeValue('green.400', 'green.400');
+  const selectedHoverBorder = useColorModeValue('green.300', 'green.400');
+  const selectedTextColor = useColorModeValue('green.700', 'green.200');
+  const selectedBoxBorder = useColorModeValue('green.200', 'green.600');
+  
+  // Regular state colors
+  const regularFocusBorder = useColorModeValue('blue.400', 'blue.300');
+  const regularHoverBorder = useColorModeValue('gray.300', 'gray.500');
 
   // Debounced search function
   const performSearch = async (query) => {
@@ -127,18 +142,18 @@ const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = "Search 
           value={searchQuery}
           onChange={handleInputChange}
           placeholder={placeholder}
-          bg={selectedFood ? useColorModeValue('green.50', 'green.900') : useColorModeValue('white', 'gray.700')}
-          borderColor={selectedFood ? useColorModeValue('green.300', 'green.500') : borderColor}
+          bg={selectedFood ? selectedBg : bgColor}
+          borderColor={selectedFood ? selectedBorder : borderColor}
           color={textColor}
           _placeholder={{ color: subTextColor }}
           _focus={{
-            borderColor: selectedFood ? useColorModeValue('green.400', 'green.400') : useColorModeValue('blue.400', 'blue.300'),
+            borderColor: selectedFood ? selectedFocusBorder : regularFocusBorder,
             boxShadow: selectedFood ? 
-              useColorModeValue('0 0 0 1px green.400', '0 0 0 1px green.400') : 
-              useColorModeValue('0 0 0 1px blue.400', '0 0 0 1px blue.300')
+              `0 0 0 1px ${selectedFocusBorder}` : 
+              `0 0 0 1px ${regularFocusBorder}`
           }}
           _hover={{
-            borderColor: selectedFood ? useColorModeValue('green.300', 'green.400') : useColorModeValue('gray.300', 'gray.500')
+            borderColor: selectedFood ? selectedHoverBorder : regularHoverBorder
           }}
         />
         {selectedFood && (
@@ -159,13 +174,13 @@ const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = "Search 
         <Box 
           mt={2} 
           p={3} 
-          bg={useColorModeValue('green.50', 'green.900')} 
+          bg={selectedBg}
           borderRadius="lg" 
           borderWidth="1px" 
-          borderColor={useColorModeValue('green.200', 'green.600')}
+          borderColor={selectedBoxBorder}
           boxShadow="sm"
         >
-          <Text fontSize="sm" color={useColorModeValue('green.700', 'green.200')} fontWeight="semibold">
+          <Text fontSize="sm" color={selectedTextColor} fontWeight="semibold">
             ✓ Selected: {selectedFood.description}
           </Text>
           <Flex wrap="wrap" gap={2} mt={1}>

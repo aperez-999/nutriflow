@@ -1,8 +1,22 @@
 import axios from 'axios';
 
 // Set base URL for all API calls
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 
-  (import.meta.env.PROD ? 'https://nutriflowdev.vercel.app' : 'http://localhost:3000');
+// Prefer explicit VITE_API_URL, else localhost:3000 in dev, else current origin in prod
+const inferBaseUrl = () => {
+  const envUrl = import.meta.env.VITE_API_URL;
+  // If a localhost URL is mistakenly present in production, ignore it
+  if (envUrl) {
+    const isLocal = /localhost|127\.0\.0\.1/i.test(envUrl);
+    if (!import.meta.env.PROD || !isLocal) {
+      return envUrl;
+    }
+  }
+  if (!import.meta.env.PROD) return 'http://localhost:3000';
+  if (typeof window !== 'undefined' && window.location?.origin) return window.location.origin;
+  return '';
+};
+const base = inferBaseUrl().replace(/\/?api\/?$/, '');
+axios.defaults.baseURL = base;
 axios.defaults.withCredentials = true;
 
 // Get token function
@@ -159,6 +173,43 @@ export const resetPassword = async (token, password) => {
   }
 };
 
+// AI Fitness Chat & History
+export const aiChat = async (message, context, history = []) => {
+  try {
+    const response = await axios.post('/api/ai/chat', { message, context, history });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'AI chat failed' };
+  }
+};
+
+export const saveChatHistory = async (messages) => {
+  try {
+    const response = await axios.post('/api/chat/history', { messages });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to save history' };
+  }
+};
+
+export const loadChatHistory = async (limit = 40) => {
+  try {
+    const response = await axios.get(`/api/chat/history?limit=${limit}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to load history' };
+  }
+};
+
+export const clearChatHistory = async () => {
+  try {
+    const response = await axios.delete('/api/chat/history');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to clear history' };
+  }
+};
+
 // Food search functions
 export const searchFoods = async (query) => {
   try {
@@ -166,5 +217,24 @@ export const searchFoods = async (query) => {
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: 'Failed to search foods' };
+  }
+};
+
+export const searchExercises = async (query) => {
+  try {
+    const response = await axios.get(`/api/exercise/search?query=${encodeURIComponent(query)}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to search exercises' };
+  }
+};
+
+// AI Configuration check
+export const checkAIConfig = async () => {
+  try {
+    const response = await axios.get('/api/health');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to check AI configuration' };
   }
 };

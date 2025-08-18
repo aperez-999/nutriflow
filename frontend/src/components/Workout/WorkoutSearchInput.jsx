@@ -20,71 +20,38 @@ import {
   FiTarget,
   FiHeart
 } from 'react-icons/fi';
+import { searchExercises } from '../../services/api';
 
 const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = "Search for workout..." }) => {
+  // State
   const [searchQuery, setSearchQuery] = useState(value || '');
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
+  
+  // Refs
   const searchTimeoutRef = useRef(null);
   const resultsRef = useRef(null);
 
-  // Color mode values
+  // Color mode values - all defined at the top
   const bgColor = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const hoverBg = useColorModeValue('gray.50', 'gray.600');
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.300');
-
-  // Predefined workout database with estimated calories per minute
-  const workoutDatabase = [
-    // Cardio Workouts
-    { id: 1, name: 'Running (6 mph)', type: 'Cardio', caloriesPerMinute: 10, intensity: 'High', equipment: 'None' },
-    { id: 2, name: 'Cycling (moderate)', type: 'Cardio', caloriesPerMinute: 8, intensity: 'Medium', equipment: 'Bike' },
-    { id: 3, name: 'Swimming (freestyle)', type: 'Cardio', caloriesPerMinute: 11, intensity: 'High', equipment: 'Pool' },
-    { id: 4, name: 'Walking (brisk)', type: 'Cardio', caloriesPerMinute: 4, intensity: 'Low', equipment: 'None' },
-    { id: 5, name: 'Elliptical Machine', type: 'Cardio', caloriesPerMinute: 9, intensity: 'Medium', equipment: 'Elliptical' },
-    { id: 6, name: 'Rowing Machine', type: 'Cardio', caloriesPerMinute: 12, intensity: 'High', equipment: 'Rowing Machine' },
-    { id: 7, name: 'Jump Rope', type: 'Cardio', caloriesPerMinute: 13, intensity: 'High', equipment: 'Jump Rope' },
-    { id: 8, name: 'Stair Climbing', type: 'Cardio', caloriesPerMinute: 9, intensity: 'Medium', equipment: 'Stairs' },
-    
-    // Strength Training
-    { id: 9, name: 'Weight Training (general)', type: 'Strength', caloriesPerMinute: 6, intensity: 'Medium', equipment: 'Weights' },
-    { id: 10, name: 'Push-ups', type: 'Strength', caloriesPerMinute: 7, intensity: 'Medium', equipment: 'None' },
-    { id: 11, name: 'Pull-ups', type: 'Strength', caloriesPerMinute: 8, intensity: 'High', equipment: 'Pull-up Bar' },
-    { id: 12, name: 'Squats', type: 'Strength', caloriesPerMinute: 6, intensity: 'Medium', equipment: 'None' },
-    { id: 13, name: 'Deadlifts', type: 'Strength', caloriesPerMinute: 7, intensity: 'High', equipment: 'Barbell' },
-    { id: 14, name: 'Bench Press', type: 'Strength', caloriesPerMinute: 6, intensity: 'Medium', equipment: 'Barbell/Bench' },
-    { id: 15, name: 'Planks', type: 'Strength', caloriesPerMinute: 3, intensity: 'Low', equipment: 'None' },
-    
-    // Flexibility & Recovery
-    { id: 16, name: 'Yoga (Hatha)', type: 'Flexibility', caloriesPerMinute: 3, intensity: 'Low', equipment: 'Yoga Mat' },
-    { id: 17, name: 'Yoga (Vinyasa)', type: 'Flexibility', caloriesPerMinute: 5, intensity: 'Medium', equipment: 'Yoga Mat' },
-    { id: 18, name: 'Pilates', type: 'Flexibility', caloriesPerMinute: 4, intensity: 'Low', equipment: 'Mat' },
-    { id: 19, name: 'Stretching', type: 'Flexibility', caloriesPerMinute: 2, intensity: 'Low', equipment: 'None' },
-    { id: 20, name: 'Tai Chi', type: 'Flexibility', caloriesPerMinute: 3, intensity: 'Low', equipment: 'None' },
-    
-    // Sports
-    { id: 21, name: 'Basketball', type: 'Sports', caloriesPerMinute: 8, intensity: 'High', equipment: 'Basketball' },
-    { id: 22, name: 'Tennis', type: 'Sports', caloriesPerMinute: 7, intensity: 'Medium', equipment: 'Racket' },
-    { id: 23, name: 'Soccer', type: 'Sports', caloriesPerMinute: 9, intensity: 'High', equipment: 'Soccer Ball' },
-    { id: 24, name: 'Volleyball', type: 'Sports', caloriesPerMinute: 6, intensity: 'Medium', equipment: 'Volleyball' },
-    { id: 25, name: 'Golf', type: 'Sports', caloriesPerMinute: 4, intensity: 'Low', equipment: 'Golf Clubs' },
-    { id: 26, name: 'Rock Climbing', type: 'Sports', caloriesPerMinute: 11, intensity: 'High', equipment: 'Climbing Gear' },
-    
-    // HIIT & Circuit Training
-    { id: 27, name: 'HIIT Training', type: 'Cardio', caloriesPerMinute: 15, intensity: 'High', equipment: 'Varies' },
-    { id: 28, name: 'Circuit Training', type: 'Strength', caloriesPerMinute: 10, intensity: 'High', equipment: 'Varies' },
-    { id: 29, name: 'Burpees', type: 'Cardio', caloriesPerMinute: 12, intensity: 'High', equipment: 'None' },
-    { id: 30, name: 'Mountain Climbers', type: 'Cardio', caloriesPerMinute: 10, intensity: 'High', equipment: 'None' },
-    
-    // Dance & Fun Activities
-    { id: 31, name: 'Zumba', type: 'Cardio', caloriesPerMinute: 7, intensity: 'Medium', equipment: 'None' },
-    { id: 32, name: 'Dance (general)', type: 'Cardio', caloriesPerMinute: 6, intensity: 'Medium', equipment: 'None' },
-    { id: 33, name: 'Martial Arts', type: 'Sports', caloriesPerMinute: 8, intensity: 'High', equipment: 'None' },
-    { id: 34, name: 'Boxing', type: 'Sports', caloriesPerMinute: 12, intensity: 'High', equipment: 'Gloves' },
-  ];
+  
+  // Selected state colors
+  const selectedBg = useColorModeValue('blue.50', 'blue.900');
+  const selectedBorder = useColorModeValue('blue.300', 'blue.500');
+  const selectedFocusBorder = useColorModeValue('blue.400', 'blue.400');
+  const selectedHoverBorder = useColorModeValue('blue.300', 'blue.400');
+  const selectedTextColor = useColorModeValue('blue.700', 'blue.200');
+  const selectedBoxBorder = useColorModeValue('blue.200', 'blue.600');
+  
+  // Regular state colors
+  const regularFocusBorder = useColorModeValue('blue.400', 'blue.300');
+  const regularHoverBorder = useColorModeValue('gray.300', 'gray.500');
 
   // Search function
   const performSearch = async (query) => {
@@ -95,19 +62,16 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = "S
     }
 
     setIsLoading(true);
-    
-    // Simulate API delay for better UX
-    setTimeout(() => {
-      const filteredWorkouts = workoutDatabase.filter(workout =>
-        workout.name.toLowerCase().includes(query.toLowerCase()) ||
-        workout.type.toLowerCase().includes(query.toLowerCase()) ||
-        workout.equipment.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 8); // Limit to 8 results
-
-      setSearchResults(filteredWorkouts);
+    try {
+      const response = await searchExercises(query);
+      setSearchResults(response.workouts || []);
       setShowResults(true);
+    } catch (error) {
+      console.error('Exercise search error:', error);
+      setSearchResults([]);
+    } finally {
       setIsLoading(false);
-    }, 100);
+    }
   };
 
   // Handle input change with real-time search
@@ -208,18 +172,18 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = "S
           value={searchQuery}
           onChange={handleInputChange}
           placeholder={placeholder}
-          bg={selectedWorkout ? useColorModeValue('blue.50', 'blue.900') : useColorModeValue('white', 'gray.700')}
-          borderColor={selectedWorkout ? useColorModeValue('blue.300', 'blue.500') : borderColor}
+          bg={selectedWorkout ? selectedBg : bgColor}
+          borderColor={selectedWorkout ? selectedBorder : borderColor}
           color={textColor}
           _placeholder={{ color: subTextColor }}
           _focus={{
-            borderColor: selectedWorkout ? useColorModeValue('blue.400', 'blue.400') : useColorModeValue('blue.400', 'blue.300'),
+            borderColor: selectedWorkout ? selectedFocusBorder : regularFocusBorder,
             boxShadow: selectedWorkout ? 
-              useColorModeValue('0 0 0 1px blue.400', '0 0 0 1px blue.400') : 
-              useColorModeValue('0 0 0 1px blue.400', '0 0 0 1px blue.300')
+              `0 0 0 1px ${selectedFocusBorder}` : 
+              `0 0 0 1px ${regularFocusBorder}`
           }}
           _hover={{
-            borderColor: selectedWorkout ? useColorModeValue('blue.300', 'blue.400') : useColorModeValue('gray.300', 'gray.500')
+            borderColor: selectedWorkout ? selectedHoverBorder : regularHoverBorder
           }}
         />
         {selectedWorkout && (
@@ -240,13 +204,13 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = "S
         <Box 
           mt={2} 
           p={3} 
-          bg={useColorModeValue('blue.50', 'blue.900')} 
+          bg={selectedBg}
           borderRadius="lg" 
           borderWidth="1px" 
-          borderColor={useColorModeValue('blue.200', 'blue.600')}
+          borderColor={selectedBoxBorder}
           boxShadow="sm"
         >
-          <Text fontSize="sm" color={useColorModeValue('blue.700', 'blue.200')} fontWeight="semibold">
+          <Text fontSize="sm" color={selectedTextColor} fontWeight="semibold">
             ✓ Selected: {selectedWorkout.name}
           </Text>
           <Flex wrap="wrap" gap={2} mt={1}>

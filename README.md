@@ -4,18 +4,27 @@ A comprehensive fitness and nutrition tracking application built with React, Nod
 
 ## Features
 
+### **AI-Powered Features**
+- Personalized workout recommendations based on fitness level and goals
+- AI Fitness Coach for real-time guidance and form tips
+- Smart workout plan generation
+- Progress analysis and adaptive recommendations
+- Natural language interaction for fitness queries
+
 ### **Nutrition Tracking**
 - Log daily meals with detailed nutritional information
-- Search and add foods with automatic nutrition data
+- Search and add foods using USDA Food Database API
 - Track calories, protein, carbs, and fats
 - Daily nutrition summaries and progress visualization
 - Meal type categorization (Breakfast, Lunch, Dinner, Snack)
 
 ### **Workout Management**
 - Record different types of workouts (Cardio, Strength, Flexibility, Sports)
-- Track workout duration and calories burned
+- Search and add exercises using API Ninjas Exercise Database
+- Track workout duration, intensity, and calories burned
 - Weekly workout goal tracking
 - Progress visualization
+- Equipment recommendations and exercise instructions
 
 ### **Dashboard & Analytics**
 - Real-time progress tracking
@@ -35,6 +44,10 @@ A comprehensive fitness and nutrition tracking application built with React, Nod
 - **Backend**: Node.js with Express.js
 - **Database**: MongoDB Atlas
 - **Authentication**: JWT tokens
+- **External APIs**: 
+  - USDA Food Database (nutrition data)
+  - API Ninjas Exercise Database (exercise data)
+  - Groq/Ollama (AI features)
 - **Deployment**: Vercel (Frontend) + Render/Heroku (Backend)
 
 ## 📁 Project Structure
@@ -46,6 +59,8 @@ nutriflow-app/
 │   │   ├── components/      # Reusable UI components
 │   │   │   ├── Auth/       # Authentication components
 │   │   │   ├── Dashboard/  # Dashboard sections
+│   │   │   │   ├── DietSection/    # Diet tracking components
+│   │   │   │   └── WorkoutSection/ # Workout tracking components
 │   │   │   ├── Diet/       # Diet-related components
 │   │   │   └── Workout/    # Workout-related components
 │   │   ├── pages/          # Page components
@@ -64,6 +79,7 @@ nutriflow-app/
     ├── diets/           # Diet management endpoints
     ├── workouts/        # Workout management endpoints
     ├── food/           # Food search endpoints
+    ├── exercise/       # Exercise search endpoints
     └── contact/        # Contact form endpoint
 ```
 
@@ -91,6 +107,10 @@ nutriflow-app/
 - Node.js (v16 or higher)
 - npm or yarn
 - MongoDB Atlas account
+- API keys for:
+  - USDA Food Database
+  - API Ninjas Exercise Database
+  - Groq (production) or Ollama (development)
 
 ### Installation
 
@@ -122,6 +142,19 @@ JWT_SECRET=your_jwt_secret_key
 EMAIL_USERNAME=your_gmail_username
 EMAIL_PASSWORD=your_gmail_app_password
 NODE_ENV=development
+
+# API Keys
+USDA_API_KEY=your_usda_api_key
+NINJA_API_KEY=your_api_ninjas_key
+
+# AI Configuration
+# Production
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=llama3-8b-8192
+
+# Local Development
+OLLAMA_URL=http://localhost:11434
+OLLAMA_MODEL=llama3:8b-instruct
 ```
 
 Create `.env.local` in the frontend directory:
@@ -130,12 +163,34 @@ Create `.env.local` in the frontend directory:
 VITE_API_URL=http://localhost:3000
 ```
 
+### API Setup
+
+1. **USDA Food Database API**
+   - Sign up at [USDA Food Data Central](https://fdc.nal.usda.gov/api-key-signup.html)
+   - Get your API key
+   - Add to `.env` as `USDA_API_KEY`
+
+2. **API Ninjas Exercise Database**
+   - Sign up at [API Ninjas](https://api-ninjas.com/)
+   - Get your API key
+   - Add to `.env` as `NINJA_API_KEY`
+
+### AI Development Setup
+
+For local development, you'll need:
+1. [Ollama](https://ollama.ai/) installed locally
+2. Llama model pulled: `ollama pull llama3:8b-instruct`
+
+For production:
+1. Groq API key from [Groq Cloud](https://groq.com)
+2. Set GROQ_API_KEY in your production environment
+
 4. **Start Development Servers**
 
 ```bash
 # Start backend server (from backend directory)
 cd backend
-npm start
+npm run dev
 
 # Start frontend dev server (from frontend directory)
 cd frontend
@@ -167,7 +222,10 @@ The application will be available at:
 - `DELETE /api/workouts/:id` - Delete workout record
 
 ### Food Search
-- `GET /api/food/search?query=apple` - Search for food items
+- `GET /api/food/search?query=apple` - Search USDA food database
+
+### Exercise Search
+- `GET /api/exercise/search?query=squat` - Search exercise database
 
 ### Contact
 - `POST /api/contact` - Submit contact form

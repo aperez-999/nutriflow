@@ -1,18 +1,15 @@
-import { handleCors } from '../_lib/middleware.js';
+import fetch from 'node-fetch';
 
-export default async function handler(req, res) {
-  // Handle CORS
-  handleCors(req, res, () => {});
-  
-  if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
-
+export const searchFood = async (req, res) => {
   try {
     const { query } = req.query;
     
     if (!query || query.trim().length < 2) {
       return res.status(400).json({ message: 'Search query must be at least 2 characters' });
+    }
+
+    if (!process.env.USDA_API_KEY) {
+      throw new Error('USDA_API_KEY is not configured');
     }
 
     // USDA FoodData Central API endpoint
@@ -23,14 +20,11 @@ export default async function handler(req, res) {
       dataType: ['Foundation', 'SR Legacy'], // Most reliable data types
       pageSize: 10, // Limit results
       sortBy: 'dataType.keyword',
-      sortOrder: 'asc'
+      sortOrder: 'asc',
+      api_key: process.env.USDA_API_KEY
     });
 
-    if (!process.env.USDA_API_KEY) {
-      throw new Error('USDA_API_KEY is not configured');
-    }
-
-    const response = await fetch(`${usdaApiUrl}?${searchParams}&api_key=${process.env.USDA_API_KEY}`, {
+    const response = await fetch(`${usdaApiUrl}?${searchParams}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -50,7 +44,7 @@ export default async function handler(req, res) {
       const nutrients = food.foodNutrients || [];
       
       // Find specific nutrients by their nutrient IDs
-      const getnutrient = (nutrientId) => {
+      const getNutrient = (nutrientId) => {
         const nutrient = nutrients.find(n => n.nutrientId === nutrientId);
         return nutrient ? Math.round(nutrient.value * 100) / 100 : 0;
       };
@@ -61,13 +55,13 @@ export default async function handler(req, res) {
         brandOwner: food.brandOwner || null,
         ingredients: food.ingredients || null,
         nutrition: {
-          calories: getnutrient(1008), // Energy (kcal)
-          protein: getnutrient(1003),  // Protein
-          carbs: getnutrient(1005),    // Carbohydrates
-          fats: getnutrient(1004),     // Total lipid (fat)
-          fiber: getnutrient(1079),    // Fiber
-          sugar: getnutrient(2000),    // Sugars
-          sodium: getnutrient(1093),   // Sodium
+          calories: getNutrient(1008), // Energy (kcal)
+          protein: getNutrient(1003),  // Protein
+          carbs: getNutrient(1005),    // Carbohydrates
+          fats: getNutrient(1004),     // Total lipid (fat)
+          fiber: getNutrient(1079),    // Fiber
+          sugar: getNutrient(2000),    // Sugars
+          sodium: getNutrient(1093),   // Sodium
         },
         servingSize: food.servingSize || 100,
         servingSizeUnit: food.servingSizeUnit || 'g'
@@ -89,4 +83,4 @@ export default async function handler(req, res) {
       error: error.message 
     });
   }
-}
+};

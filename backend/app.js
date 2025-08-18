@@ -7,111 +7,154 @@ import dietRoutes from './routes/dietRoutes.js';
 import workoutRoutes from './routes/workoutRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
+import chatRoutes from './routes/chatRoutes.js';
+import foodRoutes from './routes/foodRoutes.js';
+import exerciseRoutes from './routes/exerciseRoutes.js';
 
 const app = express();
+const __dirname = path.resolve();
 
-// Connect to database
+let _fetch = globalThis.fetch;
+async function fetchCompat(...args) {
+  if (!_fetch) {
+    const mod = await import('node-fetch');
+    _fetch = mod.default;
+  }
+  return _fetch(...args);
+}
+
 connectDB();
 
-// CORS configuration for local development
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: process.env.NODE_ENV === 'production' ? process.env.FRONTEND_URL : 'http://localhost:5173',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-
-// Serve static files from the frontend build directory (root-level dist/)
-const __dirname = path.resolve();
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// API Routes
 app.use('/api/diets', dietRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/food', foodRoutes);
+app.use('/api/exercise', exerciseRoutes);
 
-// Food search route (temporary for local development)
-app.get('/api/food/search', async (req, res) => {
+import { categorizeMessage, suggestionsByCategory, getDefaultWorkoutPlan, generateFallbackResponse } from './utils/aiUtils.js';
+
+app.post('/api/ai/chat', async (req, res) => {
   try {
-    const { query } = req.query;
-    
-    if (!query || query.trim().length < 2) {
-      return res.status(400).json({ message: 'Search query must be at least 2 characters' });
+    const { message, context, history = [] } = req.body || {};
+    if (!message?.trim()) {
+      return res.status(400).json({ message: 'Message is required' });
     }
 
-    // USDA FoodData Central API endpoint
-    const usdaApiUrl = `https://api.nal.usda.gov/fdc/v1/foods/search`;
-    
-    const searchParams = new URLSearchParams({
-      api_key: process.env.USDA_API_KEY,
-      query: query.trim(),
-      dataType: ['Foundation', 'SR Legacy'],
-      pageSize: 10,
-      sortBy: 'dataType.keyword',
-      sortOrder: 'asc'
-    });
+    const provider = process.env.NODE_ENV === 'production' ? 'groq' : 'ollama';
+    const messages = [
+      { role: 'system', content: 'You are an AI Fitness Coach. Provide personalized, actionable fitness advice. Focus on form, safety, and progressive improvement.' },
+      { role: 'system', content: `Context Summary:\n- Recent workouts: ${context?.recentWorkouts?.length || 0}\n- Recent diets: ${context?.recentDiets?.length || 0}\n- User name: ${context?.userName || 'User'}` },
+      ...history.map(m => ({ role: m.type === 'user' ? 'user' : 'assistant', content: m.content })),
+      { role: 'user', content: message }
+    ];
 
-    const response = await fetch(`${usdaApiUrl}?${searchParams}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
+    const isPlanRequest = /\[\[RETURN_JSON_WORKOUT_PLAN\]\]/i.test(message);
+    if (isPlanRequest) {
+      messages.splice(2, 0, { 
+        role: 'system', 
+        content: 'Return ONLY a valid JSON array of workout objects with fields: title, duration, intensity, focusAreas, exercises (with name, sets, reps, interval), videoId, description, calories, difficulty.' 
+      });
+    }
+
+    try {
+      let response, data;
+      const type = categorizeMessage(message);
+
+      if (provider === 'groq') {
+        if (!process.env.GROQ_API_KEY) throw new Error('Missing GROQ_API_KEY');
+        response = await fetchCompat('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+          },
+          body: JSON.stringify({
+            model: process.env.GROQ_MODEL || 'llama3-8b-8192',
+            messages,
+            temperature: 0.7
+          })
+        });
+        
+        if (!response.ok) throw new Error(`Groq error ${response.status}`);
+        data = await response.json();
+        let content = data?.choices?.[0]?.message?.content?.trim() || '';
+        
+        if (isPlanRequest && (!content.includes('[') || /^\s*\[\s*\]\s*$/.test(content))) {
+          content = JSON.stringify(getDefaultWorkoutPlan());
+        }
+        
+        return res.status(200).json({
+          content,
+          suggestions: suggestionsByCategory[type],
+          source: 'groq'
+        });
       }
-    });
 
-    if (!response.ok) {
-      throw new Error(`USDA API error: ${response.status}`);
+      if (provider === 'ollama') {
+        const base = process.env.OLLAMA_URL || 'http://localhost:11434';
+        response = await fetchCompat(`${base.replace(/\/$/, '')}/api/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: process.env.OLLAMA_MODEL || 'llama3:latest',
+            messages,
+            stream: false
+          })
+        });
+        
+        if (!response.ok) throw new Error(`Ollama error ${response.status}`);
+        data = await response.json();
+        const content = data?.message?.content?.trim();
+        
+        return res.status(200).json({
+          content,
+          suggestions: suggestionsByCategory[type],
+          source: 'ollama'
+        });
+      }
+
+      const fallback = generateFallbackResponse(message, context);
+      return res.status(200).json({ ...fallback, source: 'fallback' });
+    } catch (err) {
+      console.error('AI provider error:', err);
+      const fallback = generateFallbackResponse(message, context);
+      return res.status(200).json({ ...fallback, source: 'fallback' });
     }
-
-    const data = await response.json();
-    
-    // Transform USDA data to our format
-    const transformedFoods = data.foods?.map(food => {
-      const nutrients = food.foodNutrients || [];
-      
-      const getNutrient = (nutrientId) => {
-        const nutrient = nutrients.find(n => n.nutrientId === nutrientId);
-        return nutrient ? Math.round(nutrient.value * 100) / 100 : 0;
-      };
-
-      return {
-        fdcId: food.fdcId,
-        description: food.description,
-        brandOwner: food.brandOwner || null,
-        nutrition: {
-          calories: getNutrient(1008),
-          protein: getNutrient(1003),
-          carbs: getNutrient(1005),
-          fats: getNutrient(1004),
-        },
-        servingSize: 100,
-        servingSizeUnit: 'g'
-      };
-    }) || [];
-
-    const validFoods = transformedFoods.filter(food => food.nutrition.calories > 0);
-
-    res.status(200).json({
-      foods: validFoods.slice(0, 8),
-      totalResults: data.totalHits || 0
-    });
-
   } catch (error) {
-    console.error('Food search error:', error);
-    res.status(500).json({ 
-      message: 'Error searching foods',
-      error: error.message 
-    });
+    console.error('AI chat error:', error);
+    return res.status(500).json({ message: 'Error generating AI response' });
   }
 });
 
-// Serve frontend index.html for any non-API route
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+// Health check and not-found helpers
+app.get('/api/health', (req, res) => {
+  const provider = process.env.NODE_ENV === 'production' ? 'groq' : 'ollama';
+  const model = provider === 'groq' ? 
+    process.env.GROQ_MODEL || 'llama3-8b-8192' : 
+    process.env.OLLAMA_MODEL || 'llama3:latest';
+  
+  res.json({ 
+    ok: true, 
+    provider,
+    model,
+    env: process.env.NODE_ENV || 'development',
+    baseUrl: provider === 'groq' ? 
+      'https://api.groq.com/openai/v1/chat/completions' : 
+      `${process.env.OLLAMA_URL || 'http://localhost:11434'}/api/chat`
+  });
 });
 
 // Error handler middleware
