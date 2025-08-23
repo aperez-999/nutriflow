@@ -17,6 +17,21 @@ const inferBaseUrl = () => {
 };
 const base = inferBaseUrl().replace(/\/?api\/?$/, '');
 axios.defaults.baseURL = base;
+
+// When deploying on Vercel Hobby, consolidate serverless routes under /api/[collection]
+// so FE calls need to support both styles
+const normalizePath = (p) => {
+  // diets/workouts collections map to /api/[collection]
+  if (/^\/api\/(diets|workouts)(\/.*)?$/.test(p)) return p; // keep standard paths
+  return p; // no change for other APIs
+};
+
+axios.interceptors.request.use((config) => {
+  if (config.url) {
+    config.url = normalizePath(config.url);
+  }
+  return config;
+});
 axios.defaults.withCredentials = true;
 
 // Get token function
