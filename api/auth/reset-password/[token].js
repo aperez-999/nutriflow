@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import User from '../../_models/User.js';
 import connectDB from '../../_lib/db.js';
 import { handleCors } from '../../_lib/middleware.js';
@@ -6,6 +6,7 @@ import { handleCors } from '../../_lib/middleware.js';
 export default async function handler(req, res) {
   // Handle CORS
   handleCors(req, res, () => {});
+  if (req.method === 'OPTIONS') return res.status(200).end();
   
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });

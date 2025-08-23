@@ -26,26 +26,74 @@ export const parseAIRecommendations = (content) => {
       // Remove trailing commas before ] or }
       .replace(/,\s*([}\]])/g, '$1')
       // Fix common invalid JSON from models: reps: 8-12 should be a string
-      .replace(/("reps"\s*:\s*)(\d+)\s*-\s*(\d+)/g, '$1"$2-$3"')
+      .replace(/(\"reps\"\s*:\s*)(\d+)\s*-\s*(\d+)/g, '$1\"$2-$3\"')
       // Handle en-dash ranges
-      .replace(/("reps"\s*:\s*)(\d+)\s*[-\u2013\u2014]\s*(\d+)/g, '$1"$2-$3"')
+      .replace(/(\"reps\"\s*:\s*)(\d+)\s*[-\u2013\u2014]\s*(\d+)/g, '$1\"$2-$3\"')
+      // Quote any bare reps value (e.g., 30-60 seconds)
+      .replace(/(\"reps\"\s*:\s*)(?!\")(.*?)(?=,|[}\]])/g, (m, p1, p2) => p1 + '\"' + String(p2).trim().replace(/\"/g, '\\\"') + '\"')
+      // Quote calories ranges like 250-300
+      .replace(/(\"calories\"\s*:\s*)(\d+)\s*[-\u2013\u2014]\s*(\d+)/g, '$1\"$2-$3\"')
+      // Quote difficulty fractions like 6/10
+      .replace(/(\"difficulty\"\s*:\s*)(\d+)\s*\/\s*(\d+)/g, '$1\"$2/$3\"')
       // Ensure N/A is quoted
-      .replace(/("difficulty"\s*:\s*)(N\/A)/gi, '$1"N/A"');
+      .replace(/(\"difficulty\"\s*:\s*)(N\/A)/gi, '$1\"N/A\"');
 
     const parsed = JSON.parse(jsonText);
     if (!Array.isArray(parsed) || parsed.length === 0) return false;
 
-    return parsed.map(workout => ({
-      title: workout.title || 'Custom Workout',
-      duration: Number.isFinite(Number(workout.duration)) ? Number(workout.duration) : 45,
-      intensity: workout.intensity || 'Medium',
-      focusAreas: Array.isArray(workout.focusAreas) ? workout.focusAreas : ['General Fitness'],
-      exercises: Array.isArray(workout.exercises) ? workout.exercises : [],
-      videoId: workout.videoId || null,
-      description: workout.description || 'AI-generated workout plan',
-      calories: (typeof workout.calories === 'string' || typeof workout.calories === 'number') ? String(workout.calories) : '300-400',
-      difficulty: workout.difficulty || 'Intermediate'
-    }));
+    const normalizeIntensity = (val) => {
+      const s = String(val || '').toLowerCase();
+      if (s.startsWith('high')) return 'High';
+      if (s.startsWith('medium') || s.startsWith('moderate')) return 'Medium';
+      if (s.startsWith('low') || s === 'n/a') return 'Low';
+      return 'Medium';
+    };
+
+    const extractYouTubeId = (v) => {
+      if (!v) return null;
+      const str = String(v);
+      const m = str.match(/(?:v=|be\/|embed\/)([A-Za-z0-9_-]{6,})/);
+      return m ? m[1] : str;
+    };
+
+    return parsed.map((w, idx) => {
+      const title = (typeof w.title === 'string' && w.title.trim())
+        ? w.title.trim()
+        : (typeof w.name === 'string' && w.name.trim())
+          ? w.name.trim()
+          : (typeof w.day === 'string' && w.day.trim())
+            ? w.day.trim()
+            : `Workout ${idx + 1}`;
+
+      const focusAreas = Array.isArray(w.focusAreas)
+        ? w.focusAreas.filter(Boolean).map(String)
+        : (typeof w.focusAreas === 'string' && w.focusAreas.trim())
+          ? w.focusAreas.split(/,|\//).map(s => s.trim()).filter(Boolean)
+          : ['General Fitness'];
+
+      const exercises = Array.isArray(w.exercises) ? w.exercises.map(ex => ({
+        name: String(ex?.name || 'Exercise'),
+        sets: ex?.sets ?? undefined,
+        reps: ex?.reps != null ? String(ex.reps) : undefined,
+        interval: ex?.interval != null ? String(ex.interval) : undefined,
+        equipment: ex?.equipment || undefined,
+        difficulty: ex?.difficulty || undefined,
+      })) : [];
+
+      return {
+        title,
+        duration: Number.isFinite(Number(w.duration)) ? Number(w.duration) : 45,
+        intensity: normalizeIntensity(w.intensity),
+        focusAreas,
+        exercises,
+        videoId: extractYouTubeId(w.videoId),
+        description: (typeof w.description === 'string' && w.description.trim())
+          ? w.description.trim()
+          : (focusAreas.length ? `Focus: ${focusAreas.join(', ')}` : 'AI-generated workout plan'),
+        calories: (typeof w.calories === 'string' || typeof w.calories === 'number') ? String(w.calories) : '300-400',
+        difficulty: typeof w.difficulty === 'string' ? w.difficulty : 'Intermediate',
+      };
+    });
   } catch (error) {
     console.log('Could not parse AI recommendations:', error);
     return false;

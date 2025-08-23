@@ -41,4 +41,4 @@ const workoutSchema = new mongoose.Schema({
   timestamps: true
 });
 
-export default mongoose.model('Workout', workoutSchema);
+export default mongoose.models.Workout || mongoose.model('Workout', workoutSchema);
