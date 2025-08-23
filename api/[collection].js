@@ -1,29 +1,29 @@
-import connectDB from '../_lib/db.js';
-import { handleCors, protect } from '../_lib/middleware.js';
-import Diet from '../_models/Diet.js';
-import Workout from '../_models/Workout.js';
+import connectDB from './_lib/db.js';
+import { handleCors, protect } from './_lib/middleware.js';
+import Diet from './_models/Diet.js';
+import Workout from './_models/Workout.js';
 
-const collections = {
-  diets: Diet,
-  workouts: Workout,
-};
+const collections = { diets: Diet, workouts: Workout };
 
 export default async function handler(req, res) {
-  console.log('[API] collection index hit', { method: req.method, url: req.url });
+  console.log('[API] collection root hit', { method: req.method, url: req.url });
   handleCors(req, res, () => {});
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
     await connectDB();
 
-    await new Promise((resolve, reject) => {
-      protect(req, res, (error) => {
-        if (error) reject(error);
-        else resolve();
-      });
-    });
+    // Run auth; if it sends a 401, just return
+    await protect(req, res, () => {});
+    if (!req.user) return; // protect already responded
 
-    const collection = req.query.collection;
+    // Determine collection from dynamic param or path
+    let collection = req.query.collection;
+    if (!collection) {
+      const path = (req.url || '').split('?')[0];
+      const parts = path.split('/').filter(Boolean);
+      collection = parts.length ? parts[parts.length - 1] : null; // e.g., '/api/diets' => 'diets'
+    }
     if (!collection || !collections[collection]) {
       return res.status(404).json({ message: 'Not found' });
     }
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
       const body = req.body || {};
       if (collection === 'diets') {
         const { date, mealType, foodName, calories, protein, carbs, fats, notes } = body;
-        if (!date || !mealType || !foodName || !calories) {
+        if (!date || !mealType || !foodName || calories == null) {
           return res.status(400).json({ message: 'Please provide date, meal type, food name and calories' });
         }
         const doc = await Model.create({
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
 
       if (collection === 'workouts') {
         const { date, type, workoutName, duration, caloriesBurned, intensity, equipment, notes } = body;
-        if (!date || !type || !duration) {
+        if (!date || !type || duration == null) {
           return res.status(400).json({ message: 'Please provide date, type and duration' });
         }
         const doc = await Model.create({
@@ -81,7 +81,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ message: `Method ${method} not allowed` });
   } catch (error) {
-    console.error('Collection index error:', error);
+    console.error('Collection root error:', error);
     if (error.message === 'Not authorized' || error.message === 'Not authorized, no token') {
       return res.status(401).json({ message: error.message });
     }
