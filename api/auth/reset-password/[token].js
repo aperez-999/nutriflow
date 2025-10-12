@@ -25,7 +25,7 @@ export default async function handler(req, res) {
   }
   
   const method = String(req.method || '').toUpperCase();
-  if (method !== 'POST' && method !== 'PUT') {
+  if (!['POST', 'PUT', 'PATCH'].includes(method)) {
     return res.status(405).json({ message: `Method ${method} not allowed` });
   }
 
