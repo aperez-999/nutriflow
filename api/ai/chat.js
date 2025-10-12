@@ -3,6 +3,7 @@ import { handleCors } from '../_lib/middleware.js';
 export default async function handler(req, res) {
   // Handle CORS
   handleCors(req, res, () => {});
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
@@ -90,7 +91,19 @@ Behavior:
 
     try {
       // Resolve provider key from multiple possible env names
-      const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_KEY || process.env.GROQ || process.env.NEXT_PUBLIC_GROQ_API_KEY;
+      const keyCandidates = [
+        ['GROQ_API_KEY', process.env.GROQ_API_KEY],
+        ['GROQ_KEY', process.env.GROQ_KEY],
+        ['GROQ', process.env.GROQ],
+        ['GROQ_API', process.env.GROQ_API],
+        ['GROQ_API_TOKEN', process.env.GROQ_API_TOKEN],
+        ['GROQAPIKEY', process.env.GROQAPIKEY],
+        ['NEXT_PUBLIC_GROQ_API_KEY', process.env.NEXT_PUBLIC_GROQ_API_KEY],
+      ];
+      const found = keyCandidates.find(([, v]) => !!v);
+      const groqKey = found ? found[1] : null;
+      const groqKeyName = found ? found[0] : null;
+      console.log('[AI] provider key detected:', groqKeyName || 'none', { isPlanRequest });
 
       // If no provider key in prod, synthesize a structured response for plan requests
       if (!groqKey) {
@@ -116,7 +129,7 @@ Behavior:
           'Authorization': `Bearer ${groqKey}` 
         },
         body: JSON.stringify({ 
-          model: process.env.GROQ_MODEL || 'llama3-8b-8192', 
+          model: process.env.GROQ_MODEL || 'llama-3.1-8b-instant', 
           messages, 
           temperature: 0.7 
         }),
