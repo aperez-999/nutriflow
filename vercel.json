@@ -6,19 +6,19 @@
   "rewrites": [
     {
       "source": "/api/diets",
-      "destination": "/api/[collection]"
+      "destination": "/api/[collection]?collection=diets"
     },
     {
       "source": "/api/workouts",
-      "destination": "/api/[collection]"
+      "destination": "/api/[collection]?collection=workouts"
     },
     {
       "source": "/api/diets/:id",
-      "destination": "/api/[collection]/:id"
+      "destination": "/api/[collection]/[...id]?collection=diets&id=:id"
     },
     {
       "source": "/api/workouts/:id",
-      "destination": "/api/[collection]/:id"
+      "destination": "/api/[collection]/[...id]?collection=workouts&id=:id"
     },
     {
       "source": "/api/(.*)",

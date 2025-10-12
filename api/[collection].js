@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     if (!collection) {
       const path = (req.url || '').split('?')[0];
       const parts = path.split('/').filter(Boolean);
-      collection = parts.length ? parts[parts.length - 1] : null; // e.g., '/api/diets' => 'diets'
+      collection = parts.length ? parts[parts.length - 1] : null;
     }
     if (!collection || !collections[collection]) {
       return res.status(404).json({ message: 'Not found' });
