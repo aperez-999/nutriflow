@@ -89,13 +89,31 @@ Behavior:
     });
 
     try {
+      // Resolve provider key from multiple possible env names
+      const groqKey = process.env.GROQ_API_KEY || process.env.GROQ_KEY || process.env.GROQ || process.env.NEXT_PUBLIC_GROQ_API_KEY;
+
+      // If no provider key in prod, synthesize a structured response for plan requests
+      if (!groqKey) {
+        if (isPlanRequest) {
+          const fallbackPlan = [
+            { title: 'Full Body Strength', duration: 45, intensity: 'Medium', focusAreas: ['Full Body'], exercises: [{ name: 'Squat', sets: 3, reps: 10, interval: null }, { name: 'Push-up', sets: 3, reps: 12, interval: null }, { name: 'Bent-over Row', sets: 3, reps: 10, interval: null }], videoId: null, description: 'Balanced strength session', calories: '250-350', difficulty: 'Beginner/Intermediate' },
+            { title: 'Cardio Intervals', duration: 30, intensity: 'High', focusAreas: ['Cardio'], exercises: [{ name: 'Run/Bike', sets: 1, reps: null, interval: 20 }, { name: 'Walk/Easy Spin', sets: 1, reps: null, interval: 40 }], videoId: null, description: 'Interval cardio for conditioning', calories: '200-300', difficulty: 'Beginner/Intermediate' },
+            { title: 'Mobility & Core', duration: 20, intensity: 'Low', focusAreas: ['Mobility', 'Core'], exercises: [{ name: 'Plank', sets: 3, reps: 30, interval: null }, { name: 'Hip Hinge Mobility', sets: 2, reps: 10, interval: null }, { name: 'Thoracic Opener', sets: 2, reps: 8, interval: null }], videoId: null, description: 'Recovery-focused mobility and core', calories: '80-150', difficulty: 'Beginner' }
+          ];
+          const content = JSON.stringify(fallbackPlan);
+          return res.status(200).json({ content, suggestions: suggestionsMap[type], source: 'fallback-plan' });
+        }
+        // Non-plan requests: return a helpful fallback
+        const fb = fallbackResponse();
+        return res.status(200).json(fb);
+      }
+
       // Groq API call
-      if (!process.env.GROQ_API_KEY) throw new Error('Missing GROQ_API_KEY');
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${process.env.GROQ_API_KEY}` 
+          'Authorization': `Bearer ${groqKey}` 
         },
         body: JSON.stringify({ 
           model: process.env.GROQ_MODEL || 'llama3-8b-8192', 
