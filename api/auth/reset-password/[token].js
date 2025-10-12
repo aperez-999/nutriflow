@@ -7,6 +7,22 @@ export default async function handler(req, res) {
   // Handle CORS
   handleCors(req, res, () => {});
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // Temp diagnostics for Vercel logs
+  try {
+    const pathOnly = (req.url || '').split('?')[0];
+    const pathToken = pathOnly.split('/').filter(Boolean).pop();
+    console.log('[Auth] reset-password hit', {
+      method: req.method,
+      url: req.url,
+      hasBody: !!req.body,
+      bodyKeys: req.body ? Object.keys(req.body) : [],
+      query: req.query,
+      pathTokenSample: pathToken ? pathToken.slice(0, 8) + '...' : null,
+    });
+  } catch (e) {
+    console.log('[Auth] reset-password log error', e?.message);
+  }
   
   const method = String(req.method || '').toUpperCase();
   if (method !== 'POST' && method !== 'PUT') {
@@ -16,8 +32,16 @@ export default async function handler(req, res) {
   try {
     await connectDB();
 
-    const { password } = req.body;
-    const { token } = req.query;
+    const { password } = req.body || {};
+    let { token } = req.query || {};
+    if (!token) {
+      try {
+        const path = (req.url || '').split('?')[0];
+        token = decodeURIComponent(path.split('/').filter(Boolean).pop() || '');
+      } catch (_) {
+        token = undefined;
+      }
+    }
 
     // Validate input
     if (!password || password.length < 6) {
