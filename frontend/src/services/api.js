@@ -162,9 +162,13 @@ export const deleteDiet = async (id) => {
 axios.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response?.status === 401) {
+        const status = error.response?.status;
+        const url = error.config?.url || '';
+        // Do not redirect on 401 for login attempts; let the caller handle the error
+        if (status === 401 && !url.includes('/api/auth/login')) {
             localStorage.removeItem('user');
             window.location.href = '/login';
+            return Promise.reject(error);
         }
         return Promise.reject(error);
     }
@@ -181,7 +185,8 @@ export const forgotPassword = async (email) => {
 
 export const resetPassword = async (token, password) => {
   try {
-    const response = await axios.post(`/api/auth/reset-password/${token}`, { password });
+    // Use PUT to avoid any serverless provider restrictions on POST to dynamic routes
+    const response = await axios.put(`/api/auth/reset-password/${token}`, { password });
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: 'Failed to reset password' };

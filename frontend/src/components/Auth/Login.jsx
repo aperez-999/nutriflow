@@ -55,7 +55,7 @@ function Login() {
     } catch (error) {
       toast({
         title: 'Error logging in',
-        description: error.response?.data?.message || 'Something went wrong',
+        description: error?.message || error.response?.data?.message || 'Invalid email or password, please try again.',
         status: 'error',
         duration: 3000,
         isClosable: true

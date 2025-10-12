@@ -53,7 +53,27 @@ export const parseAIRecommendations = (content) => {
       if (!v) return null;
       const str = String(v);
       const m = str.match(/(?:v=|be\/|embed\/)([A-Za-z0-9_-]{6,})/);
-      return m ? m[1] : str;
+      // If it looks like a bare ID already (common YouTube ID length 11), accept it
+      if (!m && /^[A-Za-z0-9_-]{8,15}$/.test(str)) return str;
+      return m ? m[1] : null;
+    };
+
+    const guessVideoUrl = (title, focusAreas) => {
+      const text = `${title} ${(focusAreas || []).join(' ')}`.toLowerCase();
+      const vids = {
+        upper: 'https://www.youtube.com/watch?v=U0bhE67HuDY', // Upper Body Workout - Athlean-X
+        lower: 'https://www.youtube.com/watch?v=H6mRkx1x77k', // Lower Body Workout - Jeff Nippard
+        cardio: 'https://www.youtube.com/watch?v=ml6cT4AZdqI', // 20 min Cardio HIIT - MadFit
+        core: 'https://www.youtube.com/watch?v=AnYl6Nk9GOA', // 10 min Abs Workout - FitnessBlender
+        mobility: 'https://www.youtube.com/watch?v=jj2AAH6jbHk', // Mobility Routine
+        full: 'https://www.youtube.com/watch?v=nxisr1AalNc', // Full Body Workout - Jeff Nippard 
+      };
+      if (/(upper|chest|shoulder|tricep|bicep|arms)/.test(text)) return vids.upper;
+      if (/(lower|legs|glute|quad|hamstring|calf)/.test(text)) return vids.lower;
+      if (/(cardio|hiit|interval|run|bike)/.test(text)) return vids.cardio;
+      if (/(core|abs|plank|oblique)/.test(text)) return vids.core;
+      if (/(mobility|stretch|flexibility)/.test(text)) return vids.mobility;
+      return vids.full;
     };
 
     return parsed.map((w, idx) => {
@@ -86,7 +106,7 @@ export const parseAIRecommendations = (content) => {
         intensity: normalizeIntensity(w.intensity),
         focusAreas,
         exercises,
-        videoId: extractYouTubeId(w.videoId),
+        videoId: extractYouTubeId(w.videoId) || guessVideoUrl(title, focusAreas),
         description: (typeof w.description === 'string' && w.description.trim())
           ? w.description.trim()
           : (focusAreas.length ? `Focus: ${focusAreas.join(', ')}` : 'AI-generated workout plan'),

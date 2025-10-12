@@ -126,7 +126,13 @@ const WorkoutCard = ({ workout, onViewDetails, index }) => {
                   colorScheme="red"
                   variant="outline"
                   leftIcon={<FaPlay />}
-                  onClick={() => window.open(`https://www.youtube.com/watch?v=${workout.videoId}`, '_blank')}
+                  onClick={() => {
+                    const v = String(workout.videoId);
+                    const url = /^https?:\/\//i.test(v)
+                      ? v
+                      : `https://www.youtube.com/watch?v=${v}`;
+                    window.open(url, '_blank');
+                  }}
                   flex={1}
                 >
                   Watch Demo
