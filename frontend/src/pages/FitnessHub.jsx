@@ -8,37 +8,15 @@ import {
   VStack,
   Card,
   CardBody,
-  CardHeader,
-  Image,
-  Badge,
   Button,
   useColorModeValue,
-  Tabs,
-  TabList,
-  TabPanels,
-  Tab,
-  TabPanel,
-  Accordion,
-  AccordionItem,
-  AccordionButton,
-  AccordionPanel,
-  AccordionIcon,
   Icon,
   HStack,
-  Divider,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  ModalCloseButton,
+  Spinner,
+  Skeleton,
   useDisclosure,
-  List,
-  ListItem,
-  ListIcon,
 } from '@chakra-ui/react';
-import { FaDumbbell, FaRunning, FaHeartbeat, FaFireAlt, FaPlay, FaCheckCircle, FaYoutube, FaStopwatch, FaFire } from 'react-icons/fa';
+import { FaDumbbell, FaRunning, FaHeartbeat, FaFireAlt, FaCheckCircle } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import AIFitnessChat from '../components/FitnessHub/AIFitnessChat/index.jsx';
 import WorkoutCard from '../components/FitnessHub/WorkoutCard';
@@ -54,6 +32,7 @@ function FitnessHub() {
   const [userDiets, setUserDiets] = useState([]);
   const [aiWorkouts, setAiWorkouts] = useState([]);
   const [aiGeneratedAt, setAiGeneratedAt] = useState(null);
+  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const recSectionRef = useRef(null);
   const [activeWorkout, setActiveWorkout] = useState(null);
   
@@ -81,21 +60,24 @@ function FitnessHub() {
       }
     })();
 
-    // Listen for AI recommendations updates from chat
-    const handler = (e) => {
+    const onUpdated = (e) => {
       const workouts = Array.isArray(e.detail) ? e.detail : [];
       setAiWorkouts(workouts);
-      setAiGeneratedAt(new Date());
-      // Smooth scroll to recommendations section
-      if (recSectionRef.current) {
+      setAiGeneratedAt(workouts.length > 0 ? new Date() : null);
+      setRecommendationsLoading(false);
+      if (recSectionRef.current && workouts.length > 0) {
         recSectionRef.current.scrollIntoView({ behavior: 'smooth' });
       }
     };
-    window.addEventListener('ai-recommendations-updated', handler);
+    const onLoading = () => setRecommendationsLoading(true);
+
+    window.addEventListener('ai-recommendations-updated', onUpdated);
+    window.addEventListener('ai-recommendations-loading', onLoading);
 
     return () => {
       isMounted = false;
-      window.removeEventListener('ai-recommendations-updated', handler);
+      window.removeEventListener('ai-recommendations-updated', onUpdated);
+      window.removeEventListener('ai-recommendations-loading', onLoading);
     };
   }, []);
 
@@ -132,40 +114,69 @@ function FitnessHub() {
           {/* AI Fitness Chat */}
           <AIFitnessChat userWorkouts={userWorkouts} userDiets={userDiets} />
 
-          {/* AI Recommendations */}
-          <Card id="ai-recommendations-section" ref={recSectionRef} bg={cardBg} border="1px" borderColor={borderColor} borderRadius="xl" boxShadow="lg">
-            <CardBody>
-              <VStack align="stretch" spacing={4}>
-                <HStack justify="space-between">
-                  <Heading size="lg" color={headingColor}>AI Recommendations</Heading>
-                  <Button colorScheme="teal" onClick={() => window.dispatchEvent(new CustomEvent('nf-ai-recommendations'))}>
-                    Get AI Recommendations
-                  </Button>
-                </HStack>
-                <Text color={textColor}>Personalized plans and workouts based on your recent activity.</Text>
-                {aiWorkouts.length > 0 && (
-                  <VStack align="stretch" spacing={4} mt={2}>
-                    <Text color={textColor} fontSize="sm">
-                      Generated {aiGeneratedAt ? aiGeneratedAt.toLocaleString() : ''}
+          {/* AI Recommendations — clear separation from chat */}
+          <Box ref={recSectionRef} id="ai-recommendations-section" pt={4} borderTopWidth="1px" borderColor={borderColor}>
+            <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="xl" boxShadow="lg">
+              <CardBody>
+                <VStack align="stretch" spacing={6}>
+                  <HStack justify="space-between" flexWrap="wrap" gap={2}>
+                    <Heading size="lg" color={headingColor}>AI Recommendations</Heading>
+                    <Button
+                      colorScheme="teal"
+                      onClick={() => window.dispatchEvent(new CustomEvent('nf-ai-recommendations'))}
+                      isDisabled={recommendationsLoading}
+                      _hover={{ opacity: 0.9 }}
+                      transition="opacity 0.2s"
+                    >
+                      Get AI Recommendations
+                    </Button>
+                  </HStack>
+                  <Text color={textColor} fontSize="sm">
+                    Personalized plans and workouts based on your recent activity.
+                  </Text>
+
+                  {recommendationsLoading && (
+                    <VStack spacing={4} py={8} w="100%">
+                      <Spinner size="lg" colorScheme="teal" thickness="3px" />
+                      <Text color={textColor} fontSize="sm">AI Coach is generating your plan...</Text>
+                      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4} w="100%">
+                        {[1, 2, 3].map((i) => (
+                          <Skeleton key={i} height="200px" borderRadius="lg" />
+                        ))}
+                      </SimpleGrid>
+                    </VStack>
+                  )}
+
+                  {!recommendationsLoading && aiWorkouts.length > 0 && (
+                    <VStack align="stretch" spacing={4}>
+                      <Text color={textColor} fontSize="sm">
+                        Generated {aiGeneratedAt ? aiGeneratedAt.toLocaleString() : ''}
+                      </Text>
+                      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4}>
+                        {aiWorkouts.map((workout, index) => (
+                          <WorkoutCard
+                            key={`ai-card-${index}`}
+                            workout={workout}
+                            index={index}
+                            onViewDetails={(w) => {
+                              setActiveWorkout(w);
+                              onOpen();
+                            }}
+                          />
+                        ))}
+                      </SimpleGrid>
+                    </VStack>
+                  )}
+
+                  {!recommendationsLoading && aiWorkouts.length === 0 && (
+                    <Text color={textColor} fontSize="sm" fontStyle="italic">
+                      Click &quot;Get AI Recommendations&quot; or ask the coach for a workout plan to see suggestions here.
                     </Text>
-                    <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4}>
-                      {aiWorkouts.map((workout, index) => (
-                        <WorkoutCard
-                          key={`ai-card-${index}`}
-                          workout={workout}
-                          index={index}
-                          onViewDetails={(workout) => {
-                            setActiveWorkout(workout);
-                            onOpen();
-                          }}
-                        />
-                      ))}
-                    </SimpleGrid>
-                  </VStack>
-                )}
-              </VStack>
-            </CardBody>
-          </Card>
+                  )}
+                </VStack>
+              </CardBody>
+            </Card>
+          </Box>
 
           {/* Details Modal */}
           <ExerciseDetailsModal

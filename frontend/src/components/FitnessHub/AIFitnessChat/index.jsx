@@ -11,7 +11,7 @@ import {
 import { AuthContext } from '../../../context/AuthContext';
 import { aiChat, saveChatHistory, loadChatHistory, clearChatHistory } from '../../../services/api';
 import { ChatHeader, ChatInput, ChatMessage } from './components';
-import { WELCOME_MESSAGE, CLEAR_MESSAGE } from './constants';
+import { WELCOME_MESSAGE, CLEAR_MESSAGE, TYPING_INDICATOR_TEXT } from './constants';
 import {
   parseAIRecommendations,
   createUserMessage,
@@ -24,7 +24,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [autoScroll, setAutoScroll] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(true);
   const [isAtBottom, setIsAtBottom] = useState(true);
   
   const messagesEndRef = useRef(null);
@@ -42,11 +42,12 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   };
 
+  // Auto-scroll only when user is near bottom (so we don’t interrupt reading history).
   useEffect(() => {
-    if (autoScroll) {
+    if (autoScroll && isAtBottom) {
       scrollToBottom();
     }
-  }, [messages, autoScroll]);
+  }, [messages, isLoading, autoScroll, isAtBottom]);
 
   const handleScroll = () => {
     const el = messagesContainerRef.current;
@@ -114,25 +115,29 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
 
   const generateAIResponse = async (userMessage) => {
     setIsLoading(true);
-    
+    const isPlanRequest = /\[\[RETURN_JSON_WORKOUT_PLAN\]\]/i.test(userMessage);
+    if (isPlanRequest) {
+      window.dispatchEvent(new CustomEvent('ai-recommendations-loading'));
+    }
     try {
       const userContext = {
         recentWorkouts: userWorkouts.slice(-5),
         recentDiets: userDiets.slice(-5),
         userName: user?.result?.username || user?.username || 'there',
+        ...((user?.user?._id || user?._id) && { userId: user?.user?._id || user._id }),
       };
       
       const history = messages.map(m => ({ type: m.type, content: m.content }));
       const data = await aiChat(userMessage, userContext, history);
       
-      const isRecommendationRequest = /\[\[RETURN_JSON_WORKOUT_PLAN\]\]/i.test(userMessage);
-      if (isRecommendationRequest) {
+      if (isPlanRequest) {
         const workouts = parseAIRecommendations(data.content);
         if (workouts) {
           window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: workouts }));
           setMessages(prev => [...prev, createSuccessMessage()]);
           return { content: data.content, suggestions: data.suggestions, parsedRecommendations: true };
         }
+        window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: [] }));
       }
       
       return { content: data.content, suggestions: data.suggestions, parsedRecommendations: false };
@@ -157,6 +162,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
       }
     } catch (error) {
       console.error('Error generating AI response:', error);
+      window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: [] }));
       setMessages(prev => [...prev, createErrorMessage()]);
     }
   };
@@ -205,7 +211,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
                 <Box bg={aiBubbleColor} px={4} py={3} borderRadius="lg" borderBottomLeftRadius="sm">
                   <HStack spacing={2}>
                     <Spinner size="sm" />
-                    <Box fontSize="sm" color={textColor}>AI is thinking...</Box>
+                    <Box fontSize="sm" color={textColor}>{TYPING_INDICATOR_TEXT}</Box>
                   </HStack>
                 </Box>
               </HStack>

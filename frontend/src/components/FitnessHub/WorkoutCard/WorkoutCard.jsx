@@ -16,9 +16,10 @@ import { motion } from 'framer-motion';
 
 const MotionBox = motion(Box);
 
-const WorkoutCard = ({ workout, onViewDetails, index }) => {
+const WorkoutCard = React.memo(function WorkoutCard({ workout, onViewDetails, index }) {
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const hoverBorderColor = useColorModeValue('teal.300', 'teal.500');
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.400');
 
@@ -26,15 +27,17 @@ const WorkoutCard = ({ workout, onViewDetails, index }) => {
     <MotionBox
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
+      transition={{ duration: 0.5, delay: (index || 0) * 0.1 }}
     >
-      <Card 
-        bg={cardBg} 
-        border="1px" 
-        borderColor={borderColor} 
-        borderRadius="lg" 
-        boxShadow="md" 
+      <Card
+        bg={cardBg}
+        border="1px"
+        borderColor={borderColor}
+        borderRadius="lg"
+        boxShadow="md"
         h="100%"
+        _hover={{ boxShadow: 'lg', borderColor: hoverBorderColor }}
+        transition="box-shadow 0.2s, border-color 0.2s"
       >
         <CardBody>
           <VStack spacing={3} align="start" h="100%">
@@ -154,6 +157,6 @@ const WorkoutCard = ({ workout, onViewDetails, index }) => {
       </Card>
     </MotionBox>
   );
-};
+});
 
 export default WorkoutCard;

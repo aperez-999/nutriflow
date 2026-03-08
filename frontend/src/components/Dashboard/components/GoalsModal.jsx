@@ -10,6 +10,7 @@ import {
   FormLabel,
   Input,
   Button,
+  HStack,
   useColorModeValue,
 } from '@chakra-ui/react';
 
@@ -46,7 +47,7 @@ const GoalsModal = ({
             />
           </FormControl>
 
-          <FormControl mt={4}>
+          <FormControl mt={5}>
             <FormLabel color={textColor}>Daily Protein Goal (g)</FormLabel>
             <Input
               type="number"
@@ -55,7 +56,7 @@ const GoalsModal = ({
             />
           </FormControl>
 
-          <FormControl mt={4}>
+          <FormControl mt={5}>
             <FormLabel color={textColor}>Weekly Workout Goal</FormLabel>
             <Input
               type="number"
@@ -64,10 +65,12 @@ const GoalsModal = ({
             />
           </FormControl>
 
-          <Button colorScheme="teal" mr={3} mt={6} onClick={onSave}>
-            Save Goals
-          </Button>
-          <Button onClick={onClose} mt={6}>Cancel</Button>
+          <HStack mt={6} spacing={3}>
+            <Button colorScheme="teal" onClick={onSave} _hover={{ opacity: 0.9 }}>
+              Save Goals
+            </Button>
+            <Button variant="ghost" onClick={onClose}>Cancel</Button>
+          </HStack>
         </ModalBody>
       </ModalContent>
     </Modal>

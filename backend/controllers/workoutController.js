@@ -96,16 +96,16 @@ export const searchWorkouts = async (req, res) => {
     
     // Transform API Ninjas data to our format
     const transformedWorkouts = exercises.map((exercise, index) => ({
-      id: `${exercise.name.toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`,
-      name: exercise.name,
+      id: `${(exercise.name || 'exercise').toLowerCase().replace(/[^a-z0-9]/g, '-')}-${index}`,
+      name: exercise.name || 'Unknown',
       type: mapExerciseType(exercise.type, exercise.muscle),
       equipment: exercise.equipment || 'None',
-      bodyPart: exercise.muscle,
-      target: exercise.muscle,
+      bodyPart: exercise.muscle || '',
+      target: exercise.muscle || '',
       // Estimate calories based on exercise type and difficulty
       caloriesPerMinute: calculateEstimatedCalories(exercise),
       intensity: calculateIntensity(exercise),
-      instructions: exercise.instructions.split('. ').filter(Boolean)
+      instructions: (exercise.instructions || '').split('. ').filter(Boolean)
     }));
 
     // Sort by relevance and limit results
@@ -142,11 +142,12 @@ function mapExerciseType(type, muscle) {
   if (type === 'stretching' || type === 'plyometrics') return 'Flexibility';
   
   // If type is not definitive, check the muscle group
+  const muscleLower = (muscle || '').toLowerCase();
   const cardioMuscles = ['cardiovascular system'];
   const flexibilityMuscles = ['abdominals', 'lower back'];
   
-  if (cardioMuscles.includes(muscle.toLowerCase())) return 'Cardio';
-  if (flexibilityMuscles.includes(muscle.toLowerCase())) return 'Flexibility';
+  if (cardioMuscles.includes(muscleLower)) return 'Cardio';
+  if (flexibilityMuscles.includes(muscleLower)) return 'Flexibility';
   
   // Default to strength training
   return 'Strength';
@@ -194,8 +195,8 @@ function calculateEstimatedCalories(exercise) {
   };
 
   let base = baseCalories[exercise.type] || 8;
-  const muscleMultiplier = muscleIntensity[exercise.muscle.toLowerCase()] || 1;
-  const equipMultiplier = equipmentIntensity[exercise.equipment.toLowerCase()] || 1;
+  const muscleMultiplier = muscleIntensity[(exercise.muscle || '').toLowerCase()] || 1;
+  const equipMultiplier = equipmentIntensity[(exercise.equipment || '').toLowerCase()] || 1;
 
   return Math.round(base * muscleMultiplier * equipMultiplier);
 }
@@ -205,8 +206,8 @@ function calculateIntensity(exercise) {
   const highIntensityKeywords = ['explosive', 'jump', 'sprint', 'power', 'burpee', 'clean', 'snatch'];
   const lowIntensityKeywords = ['stretch', 'mobility', 'walk', 'foam', 'roll'];
   
-  const name = exercise.name.toLowerCase();
-  const type = exercise.type.toLowerCase();
+  const name = (exercise.name || '').toLowerCase();
+  const type = (exercise.type || '').toLowerCase();
   const equipment = (exercise.equipment || '').toLowerCase();
   const difficulty = (exercise.difficulty || '').toLowerCase();
 

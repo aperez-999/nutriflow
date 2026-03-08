@@ -1,9 +1,18 @@
-export const DEFAULT_SUGGESTIONS = [
-  'Recommend a workout for today',
-  'Help me with my form',
-  'Analyze my progress',
-  'Create a weekly plan',
+/** Primary quick actions — prominent, trigger future agents (workout plan, meal plan, progress). */
+export const PRIMARY_SUGGESTIONS = [
+  'Generate Workout Plan',
+  'Create Meal Plan',
+  'Analyze My Progress',
 ];
+
+/** Secondary quick actions — general advice. */
+export const SECONDARY_SUGGESTIONS = [
+  'Nutrition Advice',
+  'Form Tips',
+];
+
+/** Default set for welcome/clear: primary + secondary. */
+export const DEFAULT_SUGGESTIONS = [...PRIMARY_SUGGESTIONS, ...SECONDARY_SUGGESTIONS];
 
 export const WELCOME_MESSAGE = {
   id: 'welcome-1',
@@ -20,3 +29,6 @@ export const CLEAR_MESSAGE = {
   timestamp: new Date(),
   suggestions: DEFAULT_SUGGESTIONS,
 };
+
+/** Shown while the AI is generating a response. */
+export const TYPING_INDICATOR_TEXT = 'AI Coach is thinking...';

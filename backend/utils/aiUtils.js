@@ -15,6 +15,13 @@ export const suggestionsByCategory = {
   default: ['Workout plan', 'Nutrition advice', 'Form tips', 'Progress tracking'],
 };
 
+/** Suggestions that trigger future agents (workout plan, meal plan, progress analysis). */
+export const COACHING_ACTION_SUGGESTIONS = [
+  'Generate workout plan',
+  'Create meal plan',
+  'Analyze my progress',
+];
+
 export const getDefaultWorkoutPlan = () => [
   {
     title: 'Full Body Strength',

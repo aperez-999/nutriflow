@@ -3,13 +3,16 @@ import { Box, Flex } from '@chakra-ui/react'
 import Navbar from './components/Navbar'
 import AppRoutes from './routes'
 import Footer from './components/Footer'
+import ErrorBoundary from './components/ErrorBoundary'
 
 function App() {
   return (
     <Flex flexDirection="column" minH="100vh">
       <Navbar />
       <Box flex="1">
-        <AppRoutes />
+        <ErrorBoundary>
+          <AppRoutes />
+        </ErrorBoundary>
       </Box>
       <Footer />
     </Flex>

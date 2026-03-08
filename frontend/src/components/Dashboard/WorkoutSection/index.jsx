@@ -113,12 +113,12 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
             
             {workouts.length === 0 ? (
               <VStack spacing={4} py={8}>
-                <Box as={FiActivity} size="48px" color={subTextColor} />
-                <Text fontSize="lg" color={subTextColor} textAlign="center">
-                  No workout records found
+                <Box as={FiActivity} boxSize="48px" color={subTextColor} />
+                <Text fontSize="lg" color={textColor} textAlign="center" fontWeight="medium">
+                  No workout records yet
                 </Text>
-                <Text fontSize="sm" color={subTextColor} textAlign="center">
-                  Start by adding your first workout above!
+                <Text fontSize="sm" color={subTextColor} textAlign="center" maxW="280px">
+                  Add your first workout above to track progress and hit your weekly goal.
                 </Text>
               </VStack>
             ) : (

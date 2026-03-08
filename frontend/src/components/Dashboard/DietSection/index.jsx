@@ -113,12 +113,12 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
             
             {diets.length === 0 ? (
               <VStack spacing={4} py={8}>
-                <Box as={FiCoffee} size="48px" color={subTextColor} />
-                <Text fontSize="lg" color={subTextColor} textAlign="center">
-                  No diet records found
+                <Box as={FiCoffee} boxSize="48px" color={subTextColor} />
+                <Text fontSize="lg" color={textColor} textAlign="center" fontWeight="medium">
+                  No diet records yet
                 </Text>
-                <Text fontSize="sm" color={subTextColor} textAlign="center">
-                  Start by adding your first meal above!
+                <Text fontSize="sm" color={subTextColor} textAlign="center" maxW="280px">
+                  Log your first meal above to see daily totals and track your nutrition over time.
                 </Text>
               </VStack>
             ) : (

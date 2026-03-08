@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import {
   Container,
   VStack,
   SimpleGrid,
   useToast,
   useDisclosure,
-  useColorModeValue,
+  Spinner,
+  Center,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
@@ -30,9 +31,9 @@ function Dashboard() {
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
 
-  // State
   const [diets, setDiets] = useState([]);
   const [workouts, setWorkouts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [goals, setGoals] = useState({
     dailyCalories: 2000,
     dailyProtein: 150,
@@ -40,9 +41,9 @@ function Dashboard() {
   });
   const [editingGoals, setEditingGoals] = useState({ ...goals });
 
-  // Fetch data
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         const [dietData, workoutData] = await Promise.all([
           getDiets(),
@@ -54,76 +55,76 @@ function Dashboard() {
         handleApiError(error, toast, 'fetching data');
         setDiets([]);
         setWorkouts([]);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
   }, []);
 
-  // CRUD operations for Diet
-  const handleAddDiet = async (dietData) => {
+  const handleAddDiet = useCallback(async (dietData) => {
     try {
       const transformedData = transformDietData(dietData);
       const newDiet = await addDiet(transformedData);
-      setDiets([...diets, newDiet]);
+      setDiets((prev) => [...prev, newDiet]);
       handleApiSuccess(toast, 'Diet added successfully');
     } catch (error) {
       handleApiError(error, toast, 'adding diet');
     }
-  };
+  }, [toast]);
 
-  const handleUpdateDiet = async (id, dietData) => {
+  const handleUpdateDiet = useCallback(async (id, dietData) => {
     try {
       const transformedData = transformDietData(dietData);
       const updatedDiet = await updateDiet(id, transformedData);
-      setDiets(diets.map(diet => diet._id === id ? updatedDiet : diet));
+      setDiets((prev) => prev.map((diet) => (diet._id === id ? updatedDiet : diet)));
       handleApiSuccess(toast, 'Diet updated successfully');
     } catch (error) {
       handleApiError(error, toast, 'updating diet');
     }
-  };
+  }, [toast]);
 
-  const handleDeleteDiet = async (id) => {
+  const handleDeleteDiet = useCallback(async (id) => {
     try {
       await deleteDiet(id);
-      setDiets(diets.filter(diet => diet._id !== id));
+      setDiets((prev) => prev.filter((diet) => diet._id !== id));
       handleApiSuccess(toast, 'Diet record deleted');
     } catch (error) {
       handleApiError(error, toast, 'deleting diet record');
     }
-  };
+  }, [toast]);
 
-  // CRUD operations for Workout
-  const handleAddWorkout = async (workoutData) => {
+  const handleAddWorkout = useCallback(async (workoutData) => {
     try {
       const transformedData = transformWorkoutData(workoutData);
       const newWorkout = await addWorkout(transformedData);
-      setWorkouts([...workouts, newWorkout]);
+      setWorkouts((prev) => [...prev, newWorkout]);
       handleApiSuccess(toast, 'Workout added successfully');
     } catch (error) {
       handleApiError(error, toast, 'adding workout');
     }
-  };
+  }, [toast]);
 
-  const handleUpdateWorkout = async (id, workoutData) => {
+  const handleUpdateWorkout = useCallback(async (id, workoutData) => {
     try {
       const transformedData = transformWorkoutData(workoutData);
       const updatedWorkout = await updateWorkout(id, transformedData);
-      setWorkouts(workouts.map(workout => workout._id === id ? updatedWorkout : workout));
+      setWorkouts((prev) => prev.map((w) => (w._id === id ? updatedWorkout : w)));
       handleApiSuccess(toast, 'Workout updated successfully');
     } catch (error) {
       handleApiError(error, toast, 'updating workout');
     }
-  };
+  }, [toast]);
 
-  const handleDeleteWorkout = async (id) => {
+  const handleDeleteWorkout = useCallback(async (id) => {
     try {
       await deleteWorkout(id);
-      setWorkouts(workouts.filter(workout => workout._id !== id));
+      setWorkouts((prev) => prev.filter((w) => w._id !== id));
       handleApiSuccess(toast, 'Workout deleted');
     } catch (error) {
       handleApiError(error, toast, 'deleting workout');
     }
-  };
+  }, [toast]);
 
   // Goals handling
   const handleSaveGoals = () => {
@@ -137,6 +138,14 @@ function Dashboard() {
   const weeklyWorkoutCount = calculateWeeklyWorkouts(workouts);
   const calorieProgress = calculateProgress(dailyCalories, goals.dailyCalories);
   const workoutProgress = calculateProgress(weeklyWorkoutCount, goals.weeklyWorkouts);
+
+  if (isLoading) {
+    return (
+      <Center minH="40vh">
+        <Spinner size="xl" colorScheme="teal" thickness="3px" />
+      </Center>
+    );
+  }
 
   return (
     <Container maxW="container.xl" py={8}>
