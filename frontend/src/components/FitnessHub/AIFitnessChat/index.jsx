@@ -10,7 +10,7 @@ import {
 } from '@chakra-ui/react';
 import { AuthContext } from '../../../context/AuthContext';
 import { aiChat, saveChatHistory, loadChatHistory, clearChatHistory } from '../../../services/api';
-import { ChatHeader, ChatInput, ChatMessage } from './components';
+import { ChatHeader, ChatInput, ChatMessage, TypingDots } from './components';
 import { WELCOME_MESSAGE, CLEAR_MESSAGE, TYPING_INDICATOR_TEXT } from './constants';
 import {
   parseAIRecommendations,
@@ -37,6 +37,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
   const bgColor = useColorModeValue('white', 'gray.800');
   const aiBubbleColor = useColorModeValue('gray.100', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'white');
+  const cardBorderColor = useColorModeValue('gray.200', 'gray.600');
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -82,12 +83,9 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
             type: m.role === 'user' ? 'user' : 'ai',
             content: m.content,
             timestamp: new Date(m.createdAt || Date.now()),
+            suggestions: m.suggestions,
           }));
-          
-          setMessages(prev => {
-            const base = prev.length && prev[0]?.id?.startsWith('welcome') ? [prev[0]] : [];
-            return [...base, ...hydrated];
-          });
+          setMessages(hydrated);
         } else {
           setMessages([WELCOME_MESSAGE]);
         }
@@ -181,7 +179,19 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
   }));
 
   return (
-    <Card bg={bgColor} height="600px" display="flex" flexDirection="column">
+    <Card
+      bg={bgColor}
+      height="600px"
+      display="flex"
+      flexDirection="column"
+      variant="flat"
+      borderWidth="1px"
+      borderColor={cardBorderColor}
+      borderRadius="xl"
+      boxShadow="md"
+      _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
+      transition="all 0.2s ease"
+    >
       <CardBody p={0} display="flex" flexDirection="column" height="100%">
         <ChatHeader
           onClear={clearChat}
@@ -189,15 +199,15 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
           onAutoScrollChange={setAutoScroll}
         />
 
-        <Box 
-          flex="1" 
-          overflowY="auto" 
-          p={4} 
-          position="relative" 
-          ref={messagesContainerRef} 
+        <Box
+          flex="1"
+          overflowY="auto"
+          p={5}
+          position="relative"
+          ref={messagesContainerRef}
           onScroll={handleScroll}
         >
-          <VStack spacing={4} align="stretch">
+          <VStack spacing={6} align="stretch">
             {messages.map((message) => (
               <ChatMessage
                 key={message.id}
@@ -209,9 +219,12 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
             {isLoading && (
               <HStack spacing={3} alignSelf="flex-start">
                 <Box bg={aiBubbleColor} px={4} py={3} borderRadius="lg" borderBottomLeftRadius="sm">
-                  <HStack spacing={2}>
+                  <HStack spacing={2} align="center">
                     <Spinner size="sm" />
-                    <Box fontSize="sm" color={textColor}>{TYPING_INDICATOR_TEXT}</Box>
+                    <Box as="span" fontSize="sm" color={textColor} display="inline-flex" alignItems="center">
+                      {TYPING_INDICATOR_TEXT}
+                      <TypingDots />
+                    </Box>
                   </HStack>
                 </Box>
               </HStack>

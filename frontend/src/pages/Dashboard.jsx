@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import {
+  Box,
   Container,
   VStack,
   SimpleGrid,
@@ -7,21 +8,38 @@ import {
   useDisclosure,
   Spinner,
   Center,
+  Heading,
+  Text,
+  useColorModeValue,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../context/AuthContext';
 import { getDiets, addDiet, getWorkouts, addWorkout, deleteDiet, deleteWorkout, updateDiet, updateWorkout } from '../services/api';
 import DietSection from '../components/Dashboard/DietSection/index';
 import WorkoutSection from '../components/Dashboard/WorkoutSection/index';
-import { GoalsSection, GoalsModal } from '../components/Dashboard/components';
+import {
+  GoalsSection,
+  GoalsModal,
+  QuickStatsStrip,
+  TodayAISummary,
+  WeeklyCaloriesChart,
+  WeeklySummaryCard,
+  RecentActivityCard,
+  QuickActionsCard,
+  RecommendedActionsCard,
+} from '../components/Dashboard/components';
 import {
   calculateDailyCalories,
   calculateWeeklyWorkouts,
   calculateProgress,
+  getWeeklyCaloriesAverage,
+  getWeeklyCaloriesByDay,
+  getRecentActivity,
+  getLoggingStreak,
   handleApiError,
   handleApiSuccess,
   transformDietData,
-  transformWorkoutData
+  transformWorkoutData,
 } from '../components/Dashboard/utils/dashboardUtils';
 
 const MotionBox = motion.div;
@@ -30,6 +48,8 @@ function Dashboard() {
   const { user } = useContext(AuthContext);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const headingColor = useColorModeValue('gray.800', 'white');
+  const subColor = useColorModeValue('gray.600', 'gray.400');
 
   const [diets, setDiets] = useState([]);
   const [workouts, setWorkouts] = useState([]);
@@ -138,6 +158,12 @@ function Dashboard() {
   const weeklyWorkoutCount = calculateWeeklyWorkouts(workouts);
   const calorieProgress = calculateProgress(dailyCalories, goals.dailyCalories);
   const workoutProgress = calculateProgress(weeklyWorkoutCount, goals.weeklyWorkouts);
+  const avgCaloriesThisWeek = getWeeklyCaloriesAverage(diets);
+  const recentActivity = getRecentActivity(diets, workouts, 6);
+  const loggingStreak = getLoggingStreak(diets, workouts);
+
+  const scrollToDiet = () => document.getElementById('diet-section')?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToWorkout = () => document.getElementById('workout-section')?.scrollIntoView({ behavior: 'smooth' });
 
   if (isLoading) {
     return (
@@ -148,8 +174,36 @@ function Dashboard() {
   }
 
   return (
-    <Container maxW="container.xl" py={8}>
+    <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
       <VStack spacing={8} align="stretch">
+        {/* Page header */}
+        <VStack spacing={1} align="stretch" w="100%">
+          <Heading as="h1" size="lg" fontWeight="700" color={headingColor}>
+            Dashboard
+          </Heading>
+          <Text fontSize="sm" color={subColor}>
+            Track your nutrition and workouts, and hit your goals.
+          </Text>
+        </VStack>
+
+        {/* Today's AI Summary */}
+        <TodayAISummary
+          dailyCalories={dailyCalories}
+          dailyCalorieGoal={goals.dailyCalories}
+          weeklyWorkouts={weeklyWorkoutCount}
+          weeklyWorkoutGoal={goals.weeklyWorkouts}
+        />
+
+        {/* At-a-glance stats */}
+        <QuickStatsStrip
+          dailyCalories={dailyCalories}
+          dailyCalorieGoal={goals.dailyCalories}
+          weeklyWorkouts={weeklyWorkoutCount}
+          weeklyWorkoutGoal={goals.weeklyWorkouts}
+        />
+
+        <WeeklyCaloriesChart data={getWeeklyCaloriesByDay(diets)} />
+
         <GoalsSection
           goals={goals}
           calorieProgress={calorieProgress}
@@ -159,8 +213,31 @@ function Dashboard() {
           onEditGoals={onOpen}
         />
 
+        {/* Widget row: equal-height cards, stretch on desktop */}
+        <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} spacing={6} alignItems="stretch">
+          <Box height="100%" minW={0}>
+            <WeeklySummaryCard
+              weeklyWorkouts={weeklyWorkoutCount}
+              weeklyWorkoutGoal={goals.weeklyWorkouts}
+              avgCaloriesThisWeek={avgCaloriesThisWeek}
+              loggingStreak={loggingStreak}
+            />
+          </Box>
+          <Box height="100%" minW={0}>
+            <RecommendedActionsCard onScrollToDiet={scrollToDiet} onScrollToWorkout={scrollToWorkout} />
+          </Box>
+          <Box height="100%" minW={0}>
+            <QuickActionsCard onScrollToDiet={scrollToDiet} onScrollToWorkout={scrollToWorkout} />
+          </Box>
+          <Box height="100%" minW={0}>
+            <RecentActivityCard items={recentActivity} />
+          </Box>
+        </SimpleGrid>
+
+        {/* Diet and Workout sections */}
         <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8}>
           <MotionBox
+            id="diet-section"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
@@ -173,6 +250,7 @@ function Dashboard() {
             />
           </MotionBox>
           <MotionBox
+            id="workout-section"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}

@@ -4,6 +4,7 @@ import Navbar from './components/Navbar'
 import AppRoutes from './routes'
 import Footer from './components/Footer'
 import ErrorBoundary from './components/ErrorBoundary'
+import FloatingAICoachButton from './components/Global/FloatingAICoachButton'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         </ErrorBoundary>
       </Box>
       <Footer />
+      <FloatingAICoachButton />
     </Flex>
   )
 }

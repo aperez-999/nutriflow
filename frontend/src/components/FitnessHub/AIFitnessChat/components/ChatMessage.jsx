@@ -6,7 +6,6 @@ import {
   Text,
   Avatar,
   Flex,
-  Badge,
   Button,
   useColorModeValue,
 } from '@chakra-ui/react';
@@ -31,7 +30,6 @@ const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick
   const aiBubbleColor = useColorModeValue('gray.100', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.400');
-  const secondaryHoverBg = useColorModeValue('gray.100', 'gray.600');
 
   const { primary, secondary } = useMemo(
     () => splitSuggestions(message.suggestions),
@@ -108,21 +106,17 @@ const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick
                   <Flex wrap="wrap" gap={2} align="center">
                     <Text fontSize="xs" color={subTextColor} mr={1}>More:</Text>
                     {secondary.map((suggestion, index) => (
-                      <Badge
+                      <Button
                         key={`secondary-${message.id}-${index}`}
-                        colorScheme="gray"
+                        size="sm"
+                        colorScheme="teal"
                         variant="outline"
-                        cursor="pointer"
-                        px={2}
-                        py={1}
-                        borderRadius="md"
-                        fontSize="xs"
                         onClick={() => onSuggestionClick(suggestion)}
-                        _hover={{ bg: secondaryHoverBg }}
-                        transition="background 0.2s"
+                        _hover={{ opacity: 0.9 }}
+                        transition="opacity 0.2s"
                       >
                         {suggestion}
-                      </Badge>
+                      </Button>
                     ))}
                   </Flex>
                 )}

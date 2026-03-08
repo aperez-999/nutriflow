@@ -7,6 +7,17 @@ const config = {
 
 const theme = extendTheme({
   config,
+  // Semantic tokens for consistent, professional layout (dashboard, FitnessHub, future screens).
+  space: {
+    section: '8',
+    card: '6',
+    block: '4',
+  },
+  radii: {
+    card: 'xl',
+    panel: 'lg',
+    input: 'md',
+  },
   styles: {
     global: (props) => ({
       body: {
@@ -71,12 +82,23 @@ const theme = extendTheme({
           bg: props.colorMode === 'dark' ? 'gray.700' : 'white',
           color: props.colorMode === 'dark' ? 'white' : 'gray.800',
           transition: 'all 0.2s ease-in-out',
+          borderRadius: 'xl',
           _hover: {
-            transform: 'translateY(-4px)',
-            boxShadow: 'xl',
+            transform: 'translateY(-2px)',
+            boxShadow: 'lg',
           },
         },
       }),
+      variants: {
+        flat: (props) => ({
+          container: {
+            _hover: { transform: 'none', boxShadow: 'md' },
+          },
+        }),
+      },
+      defaultProps: {
+        variant: null,
+      },
     },
   },
   colors: {

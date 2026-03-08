@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Box,
   Card,
   CardBody,
   VStack,
@@ -12,6 +13,7 @@ import {
   Tooltip,
 } from '@chakra-ui/react';
 import { DeleteIcon, EditIcon } from '@chakra-ui/icons';
+import { FiFileText } from 'react-icons/fi';
 
 const DietCard = ({ diet, onEdit, onDelete }) => {
   const textColor = useColorModeValue('gray.800', 'white');
@@ -102,9 +104,10 @@ const DietCard = ({ diet, onEdit, onDelete }) => {
           
           {/* Notes Section */}
           {diet.notes && (
-            <Text fontSize="xs" color={subTextColor} noOfLines={2}>
-              📝 {diet.notes}
-            </Text>
+            <HStack spacing={1} align="flex-start">
+              <Box as={FiFileText} boxSize={3} color={subTextColor} mt="2px" flexShrink={0} />
+              <Text fontSize="xs" color={subTextColor} noOfLines={2}>{diet.notes}</Text>
+            </HStack>
           )}
           
           {/* Actions Section */}

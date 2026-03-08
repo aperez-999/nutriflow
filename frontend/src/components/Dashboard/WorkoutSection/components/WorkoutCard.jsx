@@ -13,7 +13,7 @@ import {
   Box,
 } from '@chakra-ui/react';
 import { DeleteIcon, EditIcon } from '@chakra-ui/icons';
-import { FiHeart, FiActivity, FiTarget, FiTrendingUp } from 'react-icons/fi';
+import { FiHeart, FiActivity, FiTarget, FiTrendingUp, FiFileText } from 'react-icons/fi';
 import { getWorkoutTypeColor, calculateCaloriesPerMinute } from '../utils/workoutUtils';
 
 const WorkoutCard = ({ workout, onEdit, onDelete }) => {
@@ -96,9 +96,7 @@ const WorkoutCard = ({ workout, onEdit, onDelete }) => {
               <Text fontSize="xs" color={subTextColor}>Cal</Text>
             </VStack>
             <VStack spacing={1}>
-              <Text fontSize="md" fontWeight="bold" color="green.400">
-                {workout.type === 'Cardio' ? '❤️' : workout.type === 'Strength' ? '💪' : workout.type === 'Flexibility' ? '🧘' : '⚽'}
-              </Text>
+              <Box as={TypeIcon} color="green.400" boxSize={4} />
               <Text fontSize="xs" color={subTextColor}>Type</Text>
             </VStack>
             <VStack spacing={1}>
@@ -111,9 +109,10 @@ const WorkoutCard = ({ workout, onEdit, onDelete }) => {
           
           {/* Notes Section */}
           {workout.notes && (
-            <Text fontSize="xs" color={subTextColor} noOfLines={2}>
-              📝 {workout.notes}
-            </Text>
+            <HStack spacing={1} align="flex-start">
+              <Box as={FiFileText} boxSize={3} color={subTextColor} mt="2px" flexShrink={0} />
+              <Text fontSize="xs" color={subTextColor} noOfLines={2}>{workout.notes}</Text>
+            </HStack>
           )}
           
           {/* Actions Section */}
