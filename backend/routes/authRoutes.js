@@ -122,11 +122,9 @@ router.post('/forgot-password',
   }
 );
 
-// New reset password route
-router.post('/reset-password/:token',
-  [
-    check('password', 'Password must be 6 or more characters').isLength({ min: 6 }),
-  ],
+// Reset password handler (shared for POST and PUT; frontend uses PUT)
+const resetPasswordHandler = [
+  check('password', 'Password must be 6 or more characters').isLength({ min: 6 }),
   async (req, res) => {
     try {
       const { password } = req.body;
@@ -141,7 +139,6 @@ router.post('/reset-password/:token',
         return res.status(400).json({ message: 'Invalid or expired reset token' });
       }
 
-      // Update password
       user.password = await bcrypt.hash(password, 10);
       user.resetPasswordToken = undefined;
       user.resetPasswordExpires = undefined;
@@ -153,6 +150,9 @@ router.post('/reset-password/:token',
       res.status(500).json({ message: 'Error resetting password' });
     }
   }
-);
+];
+
+router.post('/reset-password/:token', resetPasswordHandler);
+router.put('/reset-password/:token', resetPasswordHandler);
 
 export default router;

@@ -19,8 +19,9 @@ import {
   createErrorMessage,
   createSuccessMessage,
 } from './utils';
+import { handleApiError } from '../../../utils/apiErrorHandler';
 
-const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) => {
+const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, ref) => {
   const [messages, setMessages] = useState([WELCOME_MESSAGE]);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -89,7 +90,8 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
         } else {
           setMessages([WELCOME_MESSAGE]);
         }
-      } catch {
+      } catch (err) {
+        handleApiError(err, 'loading chat history', toast);
         setMessages([WELCOME_MESSAGE]);
       } finally {
         suppressSaveRef.current = false;
@@ -108,7 +110,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
     if (onlyWelcome) return;
     
     const toSave = nonEmpty.map(m => ({ type: m.type, content: m.content }));
-    saveChatHistory(toSave).catch(() => {});
+    saveChatHistory(toSave).catch((err) => handleApiError(err, 'saving chat history', toast));
   }, [messages]);
 
   const generateAIResponse = async (userMessage) => {
@@ -167,10 +169,12 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [] }, ref) =>
 
   const clearChat = async () => {
     setMessages([CLEAR_MESSAGE]);
-    try { 
-      await clearChatHistory(); 
+    try {
+      await clearChatHistory();
       window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: [] }));
-    } catch {}
+    } catch (err) {
+      handleApiError(err, 'clearing chat history', toast);
+    }
   };
 
   useImperativeHandle(ref, () => ({
