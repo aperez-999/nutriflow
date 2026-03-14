@@ -375,6 +375,103 @@ Existing `Dashboard`, `FitnessHub`, and `AIFitnessChat` stay; new features can b
 
 ---
 
+## AI Multi-Agent System (NutriFlow v2)
+
+The AI layer under `backend/ai/` has been extended into a **multi-agent system** that keeps the existing chat behavior while preparing NutriFlow for richer workflows.
+
+### Overview
+
+```text
+User Message
+      ↓
+Intent Detection (orchestrator)
+      ↓
+AI Orchestrator (`backend/ai/orchestrator/orchestrate.js`)
+      ↓
+Agent Registry (`backend/ai/agents/index.js`)
+      ↓
+Selected Agent (HeadCoach / WorkoutPlanner / MealPlanner)
+      ↓
+VerifierAgent (lightweight validation for plans)
+      ↓
+Structured Response (content + optional plan object)
+      ↓
+Frontend Rendering (current UI reads content; plans can be consumed next)
+```
+
+### Agents and responsibilities
+
+- **HeadCoachAgent** (`backend/ai/agents/HeadCoachAgent.js`)
+  - Default conversational agent.
+  - Handles:
+    - General fitness/nutrition Q&A.
+    - Motivation and coaching.
+    - Progress-oriented questions (\"analyze my progress\").
+  - Uses:
+    - `get_user_stats(userId)` to build a context summary.
+    - `COACH_SYSTEM_PROMPT` and `buildContextSummary` in `prompts/coachPrompt.js`.
+    - Shared `aiProvider.generateChatCompletion` to talk to Groq/Ollama.
+  - Backward compatibility:
+    - Continues to handle the `[[RETURN_JSON_WORKOUT_PLAN]]` token so the existing frontend JSON workout-plan parsing remains intact.
+
+- **WorkoutPlannerAgent** (`backend/ai/agents/WorkoutPlannerAgent.js`)
+  - Generates **structured workout plans**.
+  - Uses `get_user_stats(userId)` when available to see recent workouts/diets.
+  - Calls `aiProvider.generateChatCompletion` with a focused planning prompt.
+  - Lightly parses the result into:
+    - `{ type: 'workout_plan', plan: [{ day, exercises[] }], rawContent, source }`.
+
+- **MealPlannerAgent** (`backend/ai/agents/MealPlannerAgent.js`)
+  - Generates **meal plans**.
+  - Uses `get_user_stats(userId)` when available to see recent diet/workout history.
+  - Calls `aiProvider.generateChatCompletion` with a meal-planning prompt.
+  - Parses output into:
+    - `{ type: 'meal_plan', calories?, meals: [{ meal, food }], rawContent, source }`.
+
+- **VerifierAgent** (`backend/ai/agents/VerifierAgent.js`)
+  - Validates and normalizes AI plan outputs.
+  - Currently rule-based (no extra LLM call):
+    - For `workout_plan`: trims strings, caps length of the plan and exercise lists.
+    - For `meal_plan`: clamps calories into a reasonable range (800–4000), trims meal entries.
+  - Can be extended later to enforce stricter domain rules or call an LLM for semantic checks.
+
+### Orchestrator and agent registry
+
+- **Orchestrator** (`backend/ai/orchestrator/orchestrate.js`)
+  - Detects intent from the user message:
+    - `coach` — general coaching and default.
+    - `workout_plan` — messages containing \"workout plan\".
+    - `meal_plan` — messages containing \"meal plan\".
+    - `analyze_progress` — messages mentioning \"analyze my progress\".
+  - Important: messages containing `[[RETURN_JSON_WORKOUT_PLAN]]` are always routed to **HeadCoachAgent** to preserve current frontend behavior.
+  - Looks up the agent in the registry and executes it.
+  - Normalizes responses for the API:
+    - If the agent returns `{ content, suggestions, source }`, this is passed through directly.
+    - If the agent only returns a structured object, it is JSON-stringified into `content` to keep the API contract `{ content, suggestions, source }`.
+
+- **Agent Registry** (`backend/ai/agents/index.js`)
+  - `AGENTS = { coach, workout_plan, meal_plan }`.
+  - Allows the orchestrator to remain small and declarative: intent → agent key → runner function.
+
+### AI provider configuration
+
+- **File**: `backend/ai/config/aiProvider.js`
+- Responsibilities:
+  - Select provider:
+    - `Groq` when `NODE_ENV=production`.
+    - `Ollama` otherwise.
+  - Manage:
+    - `GROQ_MODEL`, `OLLAMA_MODEL`.
+    - Temperature.
+    - HTTP calls via `fetchCompat`.
+  - Exposes:
+    - `selectProvider()` → `'groq' | 'ollama'`.
+    - `generateChatCompletion(messages, options)` → `{ content, provider }`.
+
+All agents now call `generateChatCompletion` instead of duplicating HTTP and model-selection logic, which keeps AI configuration centralized and easier to evolve.
+
+---
+
 ## TASK 6 — Upgrade Plan (phased)
 
 ### Phase 1 — AI Foundation

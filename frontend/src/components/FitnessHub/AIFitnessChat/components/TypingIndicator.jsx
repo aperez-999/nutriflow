@@ -17,10 +17,11 @@ const dotVariants = {
 
 /**
  * Animated dots for typing indicator (Framer Motion).
+ * Aligns with parent text when used in a flex row with spinner + message.
  */
 export default function TypingDots() {
   return (
-    <Box as="span" display="inline-flex" gap="2px" ml="2px" alignItems="center">
+    <Box as="span" display="inline-flex" gap="2px" ml="2px" alignItems="center" alignSelf="center">
       {[0, 1, 2].map((i) => (
         <Box
           as={motion.span}

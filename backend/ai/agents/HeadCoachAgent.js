@@ -13,7 +13,7 @@
 
 import { get_user_stats } from '../tools/get_user_stats.js';
 import { COACH_SYSTEM_PROMPT, buildContextSummary } from '../prompts/coachPrompt.js';
-import { fetchCompat } from '../utils/fetchCompat.js';
+import { generateChatCompletion, selectProvider } from '../config/aiProvider.js';
 import {
   categorizeMessage,
   suggestionsByCategory,
@@ -72,71 +72,28 @@ export async function runHeadCoachAgent({ message, context = {}, history = [] })
   const type = categorizeMessage(message);
   const categorySuggestions = suggestionsByCategory[type] || suggestionsByCategory.default;
   const suggestions = [...categorySuggestions, ...COACHING_ACTION_SUGGESTIONS];
-  const provider = process.env.NODE_ENV === 'production' ? 'groq' : 'ollama';
+  const provider = selectProvider();
 
   try {
-    if (provider === 'groq') {
-      if (!process.env.GROQ_API_KEY) throw new Error('Missing GROQ_API_KEY');
-      const response = await fetchCompat('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: process.env.GROQ_MODEL || 'llama3-8b-8192',
-          messages,
-          temperature: 0.7,
-        }),
-      });
+    const { content: rawContent, provider: usedProvider } = await generateChatCompletion(messages, { temperature: 0.7 });
+    let content = rawContent;
 
-      if (!response.ok) throw new Error(`Groq error ${response.status}`);
-      const data = await response.json();
-      let content = data?.choices?.[0]?.message?.content?.trim() || '';
-
-      if (isPlanRequest && (!content.includes('[') || /^\s*\[\s*\]\s*$/.test(content))) {
-        content = JSON.stringify(getDefaultWorkoutPlan());
-      }
-
-      return {
-        content,
-        suggestions,
-        source: 'groq',
-      };
+    if (isPlanRequest && (!content.includes('[') || /^\s*\[\s*\]\s*$/.test(content))) {
+      content = JSON.stringify(getDefaultWorkoutPlan());
     }
 
-    if (provider === 'ollama') {
-      const base = process.env.OLLAMA_URL || 'http://localhost:11434';
-      const response = await fetchCompat(`${base.replace(/\/$/, '')}/api/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: process.env.OLLAMA_MODEL || 'llama3:latest',
-          messages,
-          stream: false,
-        }),
-      });
-
-      if (!response.ok) throw new Error(`Ollama error ${response.status}`);
-      const data = await response.json();
-      let content = data?.message?.content?.trim() || '';
-
-      if (isPlanRequest && (!content.includes('[') || /^\s*\[\s*\]\s*$/.test(content))) {
-        content = JSON.stringify(getDefaultWorkoutPlan());
-      }
-
-      return {
-        content,
-        suggestions,
-        source: 'ollama',
-      };
-    }
-
-    const fallback = generateFallbackResponse(message, coachingContext);
-    return { ...fallback, suggestions: [...(fallback.suggestions || []), ...COACHING_ACTION_SUGGESTIONS], source: 'fallback' };
+    return {
+      content,
+      suggestions,
+      source: usedProvider,
+    };
   } catch (err) {
     console.error('HeadCoachAgent provider error:', err);
     const fallback = generateFallbackResponse(message, coachingContext);
-    return { ...fallback, suggestions: [...(fallback.suggestions || []), ...COACHING_ACTION_SUGGESTIONS], source: 'fallback' };
+    return {
+      ...fallback,
+      suggestions: [...(fallback.suggestions || []), ...COACHING_ACTION_SUGGESTIONS],
+      source: 'fallback',
+    };
   }
 }

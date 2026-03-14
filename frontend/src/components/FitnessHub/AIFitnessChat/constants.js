@@ -31,4 +31,4 @@ export const CLEAR_MESSAGE = {
 };
 
 /** Shown while the AI is generating a response. */
-export const TYPING_INDICATOR_TEXT = 'AI Coach is analyzing your activity';
+export const TYPING_INDICATOR_TEXT = 'AI Coach is analyzing your activity...';

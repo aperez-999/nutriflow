@@ -222,10 +222,19 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
 
             {isLoading && (
               <HStack spacing={3} alignSelf="flex-start">
-                <Box bg={aiBubbleColor} px={4} py={3} borderRadius="lg" borderBottomLeftRadius="sm">
-                  <HStack spacing={2} align="center">
-                    <Spinner size="sm" />
-                    <Box as="span" fontSize="sm" color={textColor} display="inline-flex" alignItems="center">
+                <Box
+                  bg={aiBubbleColor}
+                  px={4}
+                  py={3}
+                  borderRadius="lg"
+                  borderBottomLeftRadius="sm"
+                  minH="40px"
+                  display="flex"
+                  alignItems="center"
+                >
+                  <HStack spacing={2} align="center" flex="1">
+                    <Spinner size="sm" flexShrink={0} />
+                    <Box as="span" fontSize="sm" color={textColor} display="inline-flex" alignItems="center" lineHeight="1">
                       {TYPING_INDICATOR_TEXT}
                       <TypingDots />
                     </Box>
