@@ -22,6 +22,31 @@ import {
   generateFallbackResponse,
 } from '../../utils/aiUtils.js';
 
+/** Minimum safe daily calorie recommendation (safety clamp for AI output). */
+const MIN_SAFE_CALORIES = 1500;
+
+const SAFE_CALORIE_MESSAGE =
+  "Your calorie intake appears low for your activity level. Most active adults require at least 1500–2000 calories per day to support healthy energy levels.";
+
+/** Detect unsafe low-calorie recommendations in text and return safe message if found. */
+function clampUnsafeCalorieContent(content) {
+  if (typeof content !== 'string' || !content.trim()) return content;
+  const lower = content.toLowerCase();
+  const lowCalMatch = lower.match(/\b(\d{1,4})\s*[-–]?\s*(\d{0,4})?\s*calories?/);
+  if (lowCalMatch) {
+    const a = parseInt(lowCalMatch[1], 10);
+    const b = lowCalMatch[2] ? parseInt(lowCalMatch[2], 10) : a;
+    const minVal = Math.min(a, b);
+    if (minVal > 0 && minVal < MIN_SAFE_CALORIES) return SAFE_CALORIE_MESSAGE;
+  }
+  const underMatch = content.match(/\b(?:under|below|less than)\s+(\d{1,4})\s*calories?/i);
+  if (underMatch) {
+    const n = parseInt(underMatch[1], 10);
+    if (n > 0 && n < MIN_SAFE_CALORIES) return SAFE_CALORIE_MESSAGE;
+  }
+  return content;
+}
+
 /**
  * Runs the HeadCoachAgent: optionally enriches context from DB via get_user_stats,
  * builds messages with the structured context summary, calls LLM, returns content and suggestions.
@@ -80,6 +105,10 @@ export async function runHeadCoachAgent({ message, context = {}, history = [] })
 
     if (isPlanRequest && (!content.includes('[') || /^\s*\[\s*\]\s*$/.test(content))) {
       content = JSON.stringify(getDefaultWorkoutPlan());
+    }
+
+    if (!isPlanRequest) {
+      content = clampUnsafeCalorieContent(content);
     }
 
     return {

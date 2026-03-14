@@ -1,8 +1,7 @@
-# Legacy frontend components
+# Legacy components (moved)
 
-These components are **not used** by the current app. They were moved here during the frontend cleanup pass to avoid confusion and keep the active tree clean.
+The unused layout components that were here have been moved to the project **archive** at:
 
-- **Layout/Footer.jsx** — Old footer with "Caloric Tracker App" branding. The app uses `components/Footer.jsx` instead.
-- **Layout/Header.jsx** — Old header with "Caloric Tracker" branding. The app uses `components/Navbar.jsx` instead.
+`/archive/frontend-legacy/`
 
-Do not import from this folder in active code. These files are kept for reference only and may be removed in a future cleanup.
+See `/archive/README.md` for details. Do not import from this folder or the archive in active code.

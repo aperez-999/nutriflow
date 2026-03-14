@@ -115,7 +115,6 @@ export const parseAIRecommendations = (content) => {
       };
     });
   } catch (error) {
-    console.log('Could not parse AI recommendations:', error);
     return false;
   }
 };

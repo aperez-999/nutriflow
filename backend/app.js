@@ -1,6 +1,7 @@
 import express from 'express';
 import path from 'path';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import connectDB from './config/db.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import dietRoutes from './routes/dietRoutes.js';
@@ -12,6 +13,17 @@ import foodRoutes from './routes/foodRoutes.js';
 import exerciseRoutes from './routes/exerciseRoutes.js';
 
 const app = express();
+
+const aiChatLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  message: { message: 'Too many requests. Please try again in a minute.' },
+});
+const forgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  message: { message: 'Too many requests. Please try again in a minute.' },
+});
 const __dirname = path.resolve();
 
 connectDB();
@@ -29,6 +41,7 @@ app.use(express.static(path.join(__dirname, 'dist')));
 
 app.use('/api/diets', dietRoutes);
 app.use('/api/workouts', workoutRoutes);
+app.use('/api/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/auth', authRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/chat', chatRoutes);
@@ -37,9 +50,8 @@ app.use('/api/exercise', exerciseRoutes);
 
 import { orchestrateAI } from './ai/orchestrator/orchestrate.js';
 
-// AI chat: delegates to the AI orchestration layer (Phase 1 — coach intent only).
-// Preserves existing behavior: content, suggestions, source, fallback, JSON workout plan parsing.
-app.post('/api/ai/chat', async (req, res) => {
+// AI chat: rate-limited, then delegates to the AI orchestration layer.
+app.post('/api/ai/chat', aiChatLimiter, async (req, res) => {
   try {
     const { message, context, history = [] } = req.body || {};
     if (!message?.trim()) {

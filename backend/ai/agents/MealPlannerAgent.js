@@ -96,8 +96,6 @@ export async function runMealPlannerAgent({ message, context = {}, history = [] 
 
   const capped = meals.slice(0, MAX_MEALS);
 
-  console.log('Parsed meal plan:', capped);
-
   return {
     type: 'meal_plan',
     calories: undefined,

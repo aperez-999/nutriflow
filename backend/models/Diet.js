@@ -39,7 +39,9 @@ const dietSchema = new mongoose.Schema({
         type: String
     }
 }, {
-    timestamps: true
+  timestamps: true
 });
+
+dietSchema.index({ user: 1, date: -1 });
 
 export default mongoose.model('Diet', dietSchema);

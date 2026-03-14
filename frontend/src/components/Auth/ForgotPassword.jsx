@@ -30,7 +30,6 @@ function ForgotPassword() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Submitting forgot password request for:', email);
     setIsLoading(true);
     
     try {

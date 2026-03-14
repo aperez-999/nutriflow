@@ -9,6 +9,9 @@
 
 import { get_user_stats } from '../tools/get_user_stats.js';
 
+/** Minimum safe daily calorie recommendation (safety clamp). */
+const MIN_SAFE_CALORIES = 1500;
+
 /** Start of current week (Sunday 00:00) for "this week" counts. */
 function getWeekStart() {
   const d = new Date();
@@ -70,8 +73,10 @@ export async function runInsightsAgent({ message, context = {}, history = [] }) 
   }
 
   if (dietEntries > 0 && averageCalories > 0) {
-    if (averageCalories < 1500) {
-      insights.push("Your calorie intake is very low for your activity level.");
+    if (averageCalories < MIN_SAFE_CALORIES) {
+      insights.push(
+        "Your calorie intake appears low for your activity level. Most active adults require at least 1500–2000 calories per day to support healthy energy levels."
+      );
     } else if (averageCalories > 3500) {
       insights.push("Your average intake is quite high. Consider balancing with your goals.");
     }
@@ -94,8 +99,6 @@ export async function runInsightsAgent({ message, context = {}, history = [] }) 
   if (insights.length === 0) {
     insights.push("Keep logging workouts and meals to get personalized insights.");
   }
-
-  console.log('Insights generated:', insights);
 
   return {
     type: 'insights',

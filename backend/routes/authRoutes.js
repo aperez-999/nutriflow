@@ -33,27 +33,15 @@ router.post('/forgot-password',
     check('email', 'Please include a valid email').isEmail(),
   ],
   async (req, res) => {
-    console.log('🚀 Forgot password route hit');
     try {
       const { email } = req.body;
-      console.log('📧 Received reset request for email:', email);
 
       const user = await User.findOne({ email });
       if (!user) {
-        console.log('User not found:', email);
         return res.status(404).json({ message: 'User not found' });
       }
 
-      // Generate reset token
       const resetToken = crypto.randomBytes(32).toString('hex');
-      console.log('Generated reset token');
-
-      // Before sending email, log the configuration
-      console.log('Email configuration:', {
-        username: process.env.EMAIL_USERNAME,
-        passwordLength: process.env.EMAIL_PASSWORD?.length,
-        frontendUrl: process.env.FRONTEND_URL
-      });
 
       // Create email transporter
       const transporter = nodemailer.createTransport({
@@ -64,16 +52,7 @@ router.post('/forgot-password',
         }
       });
 
-      // Test the transporter connection
-      transporter.verify(function(error, success) {
-        if (error) {
-          console.log('Transporter error:', error);
-        } else {
-          console.log('Server is ready to send emails');
-        }
-      });
-
-      // Send email with more detailed error catching
+      // Send email
       try {
         await transporter.sendMail({
           from: process.env.EMAIL_USERNAME,
@@ -103,7 +82,6 @@ router.post('/forgot-password',
             </div>
           `
         });
-        console.log('Email sent successfully');
       } catch (emailError) {
         console.error('Error sending email:', emailError);
         throw emailError;

@@ -91,8 +91,6 @@ export async function runWorkoutPlannerAgent({ message, context = {}, history = 
     }
   }
 
-  console.log('Parsed workout plan:', plan);
-
   return {
     type: 'workout_plan',
     plan,

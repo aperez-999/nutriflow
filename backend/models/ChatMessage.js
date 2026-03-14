@@ -7,4 +7,6 @@ const chatMessageSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+chatMessageSchema.index({ user: 1, createdAt: -1 });
+
 export default mongoose.model('ChatMessage', chatMessageSchema);

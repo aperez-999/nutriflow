@@ -20,5 +20,5 @@ export function formatInsightsForChat(result) {
     const t = String(text).trim();
     if (t) lines.push(`• ${t}`);
   }
-  return lines.join('\n');
+  return lines.join('\n\n');
 }
