@@ -14,14 +14,18 @@ import { runHeadCoachAgent } from '../agents/HeadCoachAgent.js';
 import { AGENTS } from '../agents/index.js';
 import { verifyAgentResult } from '../agents/VerifierAgent.js';
 import { formatWorkoutPlanForChat, formatMealPlanForChat } from '../utils/formatPlannerOutput.js';
+import { formatInsightsForChat } from '../utils/formatInsightsOutput.js';
 import { COACHING_ACTION_SUGGESTIONS } from '../../utils/aiUtils.js';
 
-/** Supported intents. Phase 1 only uses COACH. */
+const INSIGHTS_SUGGESTIONS = ['Generate workout plan', 'Create meal plan'];
+
+/** Supported intents. */
 export const INTENT = {
   COACH: 'coach',
   WORKOUT_PLAN: 'workout_plan',
   MEAL_PLAN: 'meal_plan',
   ANALYZE_PROGRESS: 'analyze_progress',
+  INSIGHTS: 'insights',
 };
 
 /**
@@ -42,9 +46,15 @@ function detectIntent(message) {
 
   if (m.includes('workout plan')) return INTENT.WORKOUT_PLAN;
   if (m.includes('meal plan')) return INTENT.MEAL_PLAN;
-  if (m.includes('analyze my progress') || (m.includes('analyze') && m.includes('progress'))) {
-    return INTENT.ANALYZE_PROGRESS;
+  if (
+    m.includes('analyze my progress') ||
+    m.includes('progress analysis') ||
+    m.includes('how am i doing') ||
+    m.includes('fitness insights')
+  ) {
+    return INTENT.INSIGHTS;
   }
+  if (m.includes('analyze') && m.includes('progress')) return INTENT.INSIGHTS;
 
   return INTENT.COACH;
 }
@@ -60,20 +70,23 @@ function detectIntent(message) {
 export async function orchestrateAI({ message, context = {}, history = [] }) {
   const intent = detectIntent(message);
 
-  if (intent === INTENT.COACH || intent === INTENT.ANALYZE_PROGRESS) {
-    // All general conversation and progress analysis goes to HeadCoachAgent.
+  if (intent === INTENT.COACH) {
     return runHeadCoachAgent({ message, context, history });
   }
 
   let agentKey = 'coach';
   if (intent === INTENT.WORKOUT_PLAN) agentKey = 'workout_plan';
   if (intent === INTENT.MEAL_PLAN) agentKey = 'meal_plan';
+  if (intent === INTENT.INSIGHTS) agentKey = 'insights';
 
   const agentRunner = AGENTS[agentKey] || runHeadCoachAgent;
   let result = await agentRunner({ message, context, history });
 
-  // Run VerifierAgent for planner outputs before formatting.
-  if (result && (result.type === 'workout_plan' || result.type === 'meal_plan')) {
+  // Run VerifierAgent for planner and insights outputs before formatting.
+  if (
+    result &&
+    (result.type === 'workout_plan' || result.type === 'meal_plan' || result.type === 'insights')
+  ) {
     result = verifyAgentResult(result);
   }
 
@@ -98,6 +111,14 @@ export async function orchestrateAI({ message, context = {}, history = [] }) {
     return {
       content: formatMealPlanForChat(result),
       suggestions: COACHING_ACTION_SUGGESTIONS,
+      source: result.source || 'agent',
+    };
+  }
+
+  if (result && result.type === 'insights') {
+    return {
+      content: formatInsightsForChat(result),
+      suggestions: INSIGHTS_SUGGESTIONS,
       source: result.source || 'agent',
     };
   }

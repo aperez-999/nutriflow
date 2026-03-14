@@ -47,6 +47,15 @@ export function verifyAgentResult(result) {
     return { ...result, calories, meals };
   }
 
+  // Insights: sanitize array of strings, cap length and item size
+  if (result.type === 'insights' && Array.isArray(result.insights)) {
+    const insights = result.insights
+      .filter((s) => typeof s === 'string' && s.trim())
+      .map((s) => String(s).trim().slice(0, 300))
+      .slice(0, 12);
+    return { ...result, insights };
+  }
+
   return result;
 }
 
