@@ -3,34 +3,14 @@
   "buildCommand": "cd frontend && npm run vercel-build",
   "outputDirectory": "frontend/dist",
   "installCommand": "npm install && cd frontend && npm install",
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/diets",
-      "destination": "/api/[collection]?collection=diets"
+      "src": "^/api/(.*)",
+      "dest": "/backend/api/index.js"
     },
     {
-      "source": "/api/workouts",
-      "destination": "/api/[collection]?collection=workouts"
-    },
-    {
-      "source": "/api/diets/:id",
-      "destination": "/api/[collection]/[...id]?collection=diets&id=:id"
-    },
-    {
-      "source": "/api/workouts/:id",
-      "destination": "/api/[collection]/[...id]?collection=workouts&id=:id"
-    },
-    {
-      "source": "/api/auth/reset-password/:token",
-      "destination": "/api/auth/reset-password/[token]?token=:token"
-    },
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/frontend/dist/index.html"
     }
   ]
 }
