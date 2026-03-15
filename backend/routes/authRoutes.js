@@ -97,10 +97,10 @@ router.post('/forgot-password',
       user.resetPasswordExpires = Date.now() + 3600000; // Token valid for 1 hour
       await user.save();
 
-      res.json({ message: 'Password reset link sent to email' });
+      return res.json({ message: 'Password reset link sent to email' });
     } catch (error) {
       console.error('Password reset error:', error);
-      res.status(500).json({ message: 'Error sending reset email' });
+      return res.status(500).json({ message: 'Error sending reset email' });
     }
   }
 );
@@ -127,10 +127,10 @@ const resetPasswordHandler = [
       user.resetPasswordExpires = undefined;
       await user.save();
 
-      res.json({ message: 'Password successfully reset' });
+      return res.json({ message: 'Password successfully reset' });
     } catch (error) {
       console.error('Reset password error:', error);
-      res.status(500).json({ message: 'Error resetting password' });
+      return res.status(500).json({ message: 'Error resetting password' });
     }
   }
 ];

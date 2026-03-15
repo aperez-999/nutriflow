@@ -47,6 +47,7 @@ app.use('/api/diets', dietRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/auth/forgot-password', forgotPasswordLimiter);
 app.use('/api/auth', authRoutes);
+if (process.env.NODE_ENV !== 'production') console.log('Auth routes mounted');
 app.use('/api/contact', contactRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/food', foodRoutes);

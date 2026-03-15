@@ -24,14 +24,15 @@ export const register = async (req, res) => {
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    res.status(201).json({ result: newUser, token });
+    return res.status(201).json({ result: newUser, token });
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    return res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
 export const login = async (req, res) => {
+  if (process.env.NODE_ENV !== 'production') console.log('Login route hit');
   try {
     const { email, password } = req.body;
 
@@ -54,8 +55,7 @@ export const login = async (req, res) => {
       { expiresIn: '1d' }
     );
 
-    // Send response
-    res.status(200).json({
+    return res.status(200).json({
       user: {
         _id: user._id,
         username: user.username,
@@ -65,6 +65,6 @@ export const login = async (req, res) => {
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ message: 'Something went wrong' });
+    return res.status(500).json({ message: 'Something went wrong' });
   }
 };
