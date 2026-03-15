@@ -14,11 +14,15 @@ lerna-debug.log*
 
 # Environment Variables (Critical Security)
 .env
+.env.*
+!.env.example
+!backend/.env.example
 .env.local
+.env.development
 .env.development.local
 .env.test.local
-.env.production.local
 .env.production
+.env.production.local
 .env.staging
 backend/.env
 frontend/.env
