@@ -1,16 +1,19 @@
-import React from 'react';
-import { Button, useColorModeValue } from '@chakra-ui/react';
+import React, { useContext } from 'react';
+import { Button } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { FiMessageCircle } from 'react-icons/fi';
+import { AuthContext } from '../../context/AuthContext';
 
 /**
- * Floating button to open the AI Coach (Fitness Hub). Visible across the app.
+ * Floating button to open the AI Coach (Fitness Hub). Only visible when the user is signed in.
+ * Hidden on Fitness Hub page and on public pages (home, login, register).
  */
 export default function FloatingAICoachButton() {
+  const { user } = useContext(AuthContext);
   const location = useLocation();
   const isOnFitnessHub = location.pathname === '/fitness-hub';
 
-  if (isOnFitnessHub) return null;
+  if (!user || isOnFitnessHub) return null;
 
   return (
     <Button

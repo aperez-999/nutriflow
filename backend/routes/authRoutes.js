@@ -36,6 +36,12 @@ router.post('/forgot-password',
     try {
       const { email } = req.body;
 
+      if (!process.env.EMAIL_USERNAME || !process.env.EMAIL_PASSWORD) {
+        return res.status(503).json({
+          message: 'Password reset email is not configured. Set EMAIL_USERNAME and EMAIL_PASSWORD in the server environment.',
+        });
+      }
+
       const user = await User.findOne({ email });
       if (!user) {
         return res.status(404).json({ message: 'User not found' });
@@ -43,13 +49,12 @@ router.post('/forgot-password',
 
       const resetToken = crypto.randomBytes(32).toString('hex');
 
-      // Create email transporter
       const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: process.env.EMAIL_USERNAME,
-          pass: process.env.EMAIL_PASSWORD
-        }
+          pass: process.env.EMAIL_PASSWORD,
+        },
       });
 
       // Send email
