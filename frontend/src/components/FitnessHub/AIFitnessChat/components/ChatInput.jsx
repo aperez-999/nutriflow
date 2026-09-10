@@ -1,8 +1,8 @@
 import React from 'react';
 import {
   Box,
-  HStack,
-  Input,
+  Stack,
+  Textarea,
   Button,
   Text,
   VStack,
@@ -15,7 +15,7 @@ const ChatInput = ({ value, onChange, onSend, isLoading }) => {
   const inputBg = useColorModeValue('gray.50', 'gray.700');
   const helperTextColor = useColorModeValue('gray.500', 'gray.400');
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       onSend();
@@ -23,35 +23,39 @@ const ChatInput = ({ value, onChange, onSend, isLoading }) => {
   };
 
   return (
-    <Box p={4} borderTop="1px" borderColor={borderColor}>
+    <Box px={{ base: 4, md: 5 }} py={4} borderTop="1px" borderColor={borderColor}>
       <VStack spacing={3} align="stretch">
         <Text fontSize="xs" color={helperTextColor}>
-          Try prompts like “Build me a 4-day split”, “Review my consistency”, or “Adjust my calories for fat loss”.
+          Ask for a weekly plan, nutrition changes, recovery guidance, or a progress check-in.
         </Text>
-        <HStack spacing={2} align="stretch">
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder="Ask the AI coach for a workout plan, meal plan, or progress analysis…"
-          bg={inputBg}
-          border="1px"
-          borderColor={borderColor}
-          minH="44px"
-          _focus={{ borderColor: 'teal.400', boxShadow: '0 0 0 1px var(--chakra-colors-teal-400)' }}
-          disabled={isLoading}
-        />
-        <Button
-          colorScheme="teal"
-          onClick={onSend}
-          isLoading={isLoading}
-          disabled={!value.trim() || isLoading}
-          leftIcon={<FiSend />}
-          transition="all 0.2s ease"
-        >
-          Send
-        </Button>
-        </HStack>
+        <Stack direction={{ base: 'column', md: 'row' }} spacing={3} align="stretch">
+          <Textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Message your AI coach..."
+            bg={inputBg}
+            border="1px"
+            borderColor={borderColor}
+            minH="72px"
+            resize="none"
+            disabled={isLoading}
+            _focus={{ borderColor: 'teal.400', boxShadow: '0 0 0 1px var(--chakra-colors-teal-400)' }}
+          />
+          <Button
+            colorScheme="teal"
+            onClick={onSend}
+            isLoading={isLoading}
+            isDisabled={!value.trim() || isLoading}
+            leftIcon={<FiSend />}
+            minW={{ base: '96px', md: '112px' }}
+            minH="72px"
+            borderRadius="xl"
+            alignSelf={{ base: 'flex-end', md: 'stretch' }}
+          >
+            Send
+          </Button>
+        </Stack>
       </VStack>
     </Box>
   );

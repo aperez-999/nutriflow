@@ -9,44 +9,41 @@ import {
   Flex,
   Badge,
   IconButton,
+  HStack,
+  InputGroup,
+  InputLeftElement,
+  InputRightElement,
+  Divider,
 } from '@chakra-ui/react';
-import { CloseIcon } from '@chakra-ui/icons';
+import { CloseIcon, SearchIcon } from '@chakra-ui/icons';
+import { FiPackage, FiBarChart2, FiTrendingUp } from 'react-icons/fi';
 import { searchFoods } from '../../services/api';
 
-const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = "Search for food..." }) => {
-  // State
+const formatMacro = (value) => `${Math.round((Number(value) || 0) * 10) / 10}g`;
+
+const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = 'Search for food...' }) => {
   const [searchQuery, setSearchQuery] = useState(value || '');
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [selectedFood, setSelectedFood] = useState(null);
-  
-  // Refs
+
   const searchTimeoutRef = useRef(null);
   const resultsRef = useRef(null);
 
-  // Color mode values - all defined at the top
   const bgColor = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const hoverBg = useColorModeValue('gray.50', 'gray.600');
+  const hoverBg = useColorModeValue('gray.50', 'gray.650');
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.300');
-  
-  // Selected state colors
-  const selectedBg = useColorModeValue('green.50', 'green.900');
-  const selectedBorder = useColorModeValue('green.300', 'green.500');
-  const selectedFocusBorder = useColorModeValue('green.400', 'green.400');
-  const selectedHoverBorder = useColorModeValue('green.300', 'green.400');
-  const selectedTextColor = useColorModeValue('green.700', 'green.200');
-  const selectedBoxBorder = useColorModeValue('green.200', 'green.600');
-  
-  // Regular state colors
-  const regularFocusBorder = useColorModeValue('blue.400', 'blue.300');
-  const regularHoverBorder = useColorModeValue('gray.300', 'gray.500');
+  const helperColor = useColorModeValue('gray.500', 'gray.400');
+  const selectedBg = useColorModeValue('teal.50', 'teal.900');
+  const selectedBorder = useColorModeValue('teal.200', 'teal.500');
+  const focusBorder = useColorModeValue('teal.400', 'teal.300');
+  const resultBorder = useColorModeValue('gray.100', 'whiteAlpha.100');
 
-  // Debounced search function
   const performSearch = async (query) => {
-    if (query.length < 2) {
+    if (query.trim().length < 2) {
       setSearchResults([]);
       setShowResults(false);
       return;
@@ -60,59 +57,55 @@ const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = "Search 
     } catch (error) {
       console.error('Food search error:', error);
       setSearchResults([]);
+      setShowResults(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle input change with real-time search
   const handleInputChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
-    onChange(query); // Update parent component
-    
-    // Clear selected food if user is typing
-    if (selectedFood) {
+    onChange(query);
+
+    if (selectedFood && query !== selectedFood.description) {
       setSelectedFood(null);
+      onFoodSelect?.(null);
     }
 
-    // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // Immediate search for better UX (reduced delay)
     searchTimeoutRef.current = setTimeout(() => {
       performSearch(query);
-    }, 150); // Faster response - 150ms delay
+    }, 180);
   };
 
-  // Handle food selection
   const handleFoodSelect = (food) => {
     setSelectedFood(food);
     setSearchQuery(food.description);
     setShowResults(false);
     onChange(food.description);
-    
-    // Notify parent component with nutrition data
-    if (onFoodSelect) {
-      onFoodSelect(food);
-    }
+    onFoodSelect?.(food);
   };
 
-  // Clear selection
   const clearSelection = () => {
     setSelectedFood(null);
     setSearchQuery('');
     setSearchResults([]);
     setShowResults(false);
     onChange('');
-    if (onFoodSelect) {
-      onFoodSelect(null);
-    }
+    onFoodSelect?.(null);
   };
 
-  // Close results when clicking outside
+  useEffect(() => {
+    setSearchQuery(value || '');
+    if (!value) {
+      setSelectedFood(null);
+    }
+  }, [value]);
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (resultsRef.current && !resultsRef.current.contains(event.target)) {
@@ -126,7 +119,6 @@ const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = "Search 
     };
   }, []);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {
@@ -135,127 +127,162 @@ const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = "Search 
     };
   }, []);
 
+  const shouldShowDropdown = showResults && searchQuery.trim().length >= 2;
+
   return (
     <Box position="relative" ref={resultsRef}>
-      <Flex>
+      <InputGroup size="lg">
+        <InputLeftElement pointerEvents="none" color={subTextColor}>
+          <SearchIcon />
+        </InputLeftElement>
         <Input
           value={searchQuery}
           onChange={handleInputChange}
+          onFocus={() => {
+            if (searchQuery.trim().length >= 2) setShowResults(true);
+          }}
           placeholder={placeholder}
           bg={selectedFood ? selectedBg : bgColor}
           borderColor={selectedFood ? selectedBorder : borderColor}
           color={textColor}
+          pl={10}
+          pr={10}
+          borderRadius="xl"
           _placeholder={{ color: subTextColor }}
-          _focus={{
-            borderColor: selectedFood ? selectedFocusBorder : regularFocusBorder,
-            boxShadow: selectedFood ? 
-              `0 0 0 1px ${selectedFocusBorder}` : 
-              `0 0 0 1px ${regularFocusBorder}`
-          }}
-          _hover={{
-            borderColor: selectedFood ? selectedHoverBorder : regularHoverBorder
-          }}
+          _focus={{ borderColor: focusBorder, boxShadow: `0 0 0 1px ${focusBorder}` }}
+          _hover={{ borderColor: focusBorder }}
         />
-        {selectedFood && (
-          <IconButton
-            icon={<CloseIcon />}
-            size="sm"
-            ml={2}
-            onClick={clearSelection}
-            aria-label="Clear selection"
-            colorScheme="gray"
-            variant="ghost"
-          />
-        )}
-      </Flex>
+        <InputRightElement width="3rem">
+          {isLoading ? (
+            <Spinner size="sm" color="teal.400" />
+          ) : selectedFood ? (
+            <IconButton
+              icon={<CloseIcon />}
+              size="sm"
+              aria-label="Clear selection"
+              variant="ghost"
+              onClick={clearSelection}
+            />
+          ) : null}
+        </InputRightElement>
+      </InputGroup>
 
-      {/* Selected food indicator */}
+      <Text fontSize="xs" color={helperColor} mt={2}>
+        Search whole foods or mixed meals like "chicken and rice" for smarter USDA matches.
+      </Text>
+
       {selectedFood && (
-        <Box 
-          mt={2} 
-          p={3} 
+        <Box
+          mt={3}
+          p={4}
           bg={selectedBg}
-          borderRadius="lg" 
-          borderWidth="1px" 
-          borderColor={selectedBoxBorder}
-          boxShadow="sm"
+          borderRadius="xl"
+          borderWidth="1px"
+          borderColor={selectedBorder}
         >
-          <Text fontSize="sm" color={selectedTextColor} fontWeight="semibold">
-            ✓ Selected: {selectedFood.description}
-          </Text>
-          <Flex wrap="wrap" gap={2} mt={1}>
-            <Badge colorScheme="green" variant="subtle" fontSize="xs">
+          <HStack justify="space-between" align="start" spacing={4}>
+            <Box minW={0}>
+              <Text fontSize="sm" fontWeight="700" color={textColor} noOfLines={2}>
+                {selectedFood.description}
+              </Text>
+              <Text fontSize="xs" color={subTextColor} mt={1}>
+                {selectedFood.dataType || 'USDA result'}
+                {selectedFood.brandOwner ? ` · ${selectedFood.brandOwner}` : ''}
+              </Text>
+            </Box>
+            <Badge colorScheme="teal" borderRadius="full" px={2.5} py={1}>
               {selectedFood.nutrition.calories} cal
             </Badge>
-            <Badge colorScheme="blue" variant="subtle" fontSize="xs">
-              {selectedFood.nutrition.protein}g protein
+          </HStack>
+
+          <HStack spacing={2} wrap="wrap" mt={3}>
+            <Badge colorScheme="blue" variant="subtle">Protein {formatMacro(selectedFood.nutrition.protein)}</Badge>
+            <Badge colorScheme="orange" variant="subtle">Carbs {formatMacro(selectedFood.nutrition.carbs)}</Badge>
+            <Badge colorScheme="red" variant="subtle">Fat {formatMacro(selectedFood.nutrition.fats)}</Badge>
+            <Badge colorScheme="purple" variant="subtle">
+              Serving {selectedFood.servingSize || 100}{selectedFood.servingSizeUnit || 'g'}
             </Badge>
-            <Badge colorScheme="orange" variant="subtle" fontSize="xs">
-              {selectedFood.nutrition.carbs}g carbs
-            </Badge>
-            <Badge colorScheme="red" variant="subtle" fontSize="xs">
-              {selectedFood.nutrition.fats}g fat
-            </Badge>
-          </Flex>
+          </HStack>
         </Box>
       )}
 
-      {/* Search results dropdown */}
-      {showResults && (searchResults.length > 0 || isLoading) && (
+      {shouldShowDropdown && (
         <Box
           position="absolute"
-          top="100%"
+          top="calc(100% + 10px)"
           left={0}
           right={0}
           zIndex={1000}
           bg={bgColor}
           borderWidth="1px"
           borderColor={borderColor}
-          borderRadius="md"
-          boxShadow="lg"
-          maxHeight="300px"
+          borderRadius="2xl"
+          boxShadow="xl"
+          maxH="360px"
           overflowY="auto"
-          mt={1}
         >
           {isLoading ? (
-            <Flex justify="center" align="center" p={4}>
-              <Spinner size="sm" mr={2} />
-              <Text fontSize="sm" color={subTextColor}>Searching foods...</Text>
+            <Flex justify="center" align="center" p={5} gap={3}>
+              <Spinner size="sm" color="teal.400" />
+              <Text fontSize="sm" color={subTextColor}>Searching USDA foods...</Text>
             </Flex>
+          ) : searchResults.length === 0 ? (
+            <VStack spacing={2} p={5} align="start">
+              <Text fontSize="sm" fontWeight="600" color={textColor}>
+                No close food matches yet
+              </Text>
+              <Text fontSize="sm" color={subTextColor}>
+                Try a simpler term like "salmon", "greek yogurt", or "chicken rice bowl".
+              </Text>
+            </VStack>
           ) : (
             <VStack spacing={0} align="stretch">
-              {searchResults.map((food) => (
+              {searchResults.map((food, index) => (
                 <Box
                   key={food.fdcId}
-                  p={3}
+                  px={4}
+                  py={3.5}
                   cursor="pointer"
                   _hover={{ bg: hoverBg }}
-                  borderBottomWidth="1px"
-                  borderBottomColor={borderColor}
                   onClick={() => handleFoodSelect(food)}
                 >
-                  <Text fontSize="sm" fontWeight="medium" color={textColor} mb={1}>
-                    {food.description}
-                  </Text>
-                  <Flex wrap="wrap" gap={2}>
-                    <Badge colorScheme="blue" fontSize="xs">
-                      {food.nutrition.calories} cal
-                    </Badge>
-                    <Badge colorScheme="green" fontSize="xs">
-                      {food.nutrition.protein}g protein
-                    </Badge>
-                    <Badge colorScheme="orange" fontSize="xs">
-                      {food.nutrition.carbs}g carbs
-                    </Badge>
-                    <Badge colorScheme="red" fontSize="xs">
-                      {food.nutrition.fats}g fat
-                    </Badge>
-                  </Flex>
-                  {food.brandOwner && (
-                    <Text fontSize="xs" color={subTextColor} mt={1}>
-                      {food.brandOwner}
-                    </Text>
-                  )}
+                  <HStack justify="space-between" align="start" spacing={4}>
+                    <Box minW={0} flex="1">
+                      <HStack spacing={2} mb={1.5} wrap="wrap">
+                        <Badge colorScheme="teal" variant="subtle">
+                          {food.nutrition.calories} cal
+                        </Badge>
+                        {food.dataType && (
+                          <Badge variant="outline">{food.dataType}</Badge>
+                        )}
+                      </HStack>
+                      <Text fontSize="sm" fontWeight="700" color={textColor} noOfLines={2}>
+                        {food.description}
+                      </Text>
+                      <HStack spacing={3} wrap="wrap" mt={2}>
+                        <HStack spacing={1} color={subTextColor}>
+                          <Box as={FiBarChart2} boxSize={3.5} />
+                          <Text fontSize="xs">Protein {formatMacro(food.nutrition.protein)}</Text>
+                        </HStack>
+                        <HStack spacing={1} color={subTextColor}>
+                          <Box as={FiTrendingUp} boxSize={3.5} />
+                          <Text fontSize="xs">Carbs {formatMacro(food.nutrition.carbs)}</Text>
+                        </HStack>
+                        <HStack spacing={1} color={subTextColor}>
+                          <Box as={FiPackage} boxSize={3.5} />
+                          <Text fontSize="xs">
+                            Serving {food.servingSize || 100}{food.servingSizeUnit || 'g'}
+                          </Text>
+                        </HStack>
+                      </HStack>
+                      {food.brandOwner && (
+                        <Text fontSize="xs" color={subTextColor} mt={2} noOfLines={1}>
+                          {food.brandOwner}
+                        </Text>
+                      )}
+                    </Box>
+                  </HStack>
+                  {index < searchResults.length - 1 && <Divider mt={3.5} borderColor={resultBorder} />}
                 </Box>
               ))}
             </VStack>

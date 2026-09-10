@@ -47,6 +47,34 @@ function clampUnsafeCalorieContent(content) {
   return content;
 }
 
+function canParsePlanArray(content) {
+  if (typeof content !== 'string' || !content.trim()) return false;
+  try {
+    let cleaned = content.trim().replace(/```json|```/gi, '').trim();
+    const start = cleaned.indexOf('[');
+    const end = cleaned.lastIndexOf(']');
+    let jsonText = '';
+
+    if (start !== -1 && end !== -1 && end > start) {
+      jsonText = cleaned.slice(start, end + 1);
+    } else if (cleaned.startsWith('{') && cleaned.endsWith('}')) {
+      jsonText = `[${cleaned}]`;
+    } else {
+      return false;
+    }
+
+    jsonText = jsonText
+      .replace(/,\s*([}\]])/g, '$1')
+      .replace(/(\"reps\"\s*:\s*)(\d+)\s*[-\u2013\u2014]\s*(\d+)/g, '$1\"$2-$3\"')
+      .replace(/(\"calories\"\s*:\s*)(\d+)\s*[-\u2013\u2014]\s*(\d+)/g, '$1\"$2-$3\"');
+
+    const parsed = JSON.parse(jsonText);
+    return Array.isArray(parsed) && parsed.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Runs the HeadCoachAgent: optionally enriches context from DB via get_user_stats,
  * builds messages with the structured context summary, calls LLM, returns content and suggestions.
@@ -104,6 +132,10 @@ export async function runHeadCoachAgent({ message, context = {}, history = [] })
     let content = rawContent;
 
     if (isPlanRequest && (!content.includes('[') || /^\s*\[\s*\]\s*$/.test(content))) {
+      content = JSON.stringify(getDefaultWorkoutPlan());
+    }
+
+    if (isPlanRequest && !canParsePlanArray(content)) {
       content = JSON.stringify(getDefaultWorkoutPlan());
     }
 

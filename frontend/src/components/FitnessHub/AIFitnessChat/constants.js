@@ -1,6 +1,14 @@
-/** Primary quick actions — prominent, trigger future agents (workout plan, meal plan, progress). */
+/** Top-level quick actions for the chat rail. */
+export const QUICK_ACTIONS = [
+  'Generate Weekly Plan',
+  'Create Meal Plan',
+  'Analyze My Progress',
+  'How ready am I?',
+];
+
+/** Primary suggestions returned in-chat. */
 export const PRIMARY_SUGGESTIONS = [
-  'Generate Workout Plan',
+  'Generate Weekly Plan',
   'Create Meal Plan',
   'Analyze My Progress',
   'How ready am I?',
@@ -12,15 +20,21 @@ export const SECONDARY_SUGGESTIONS = [
   'Form Tips',
 ];
 
-/** Default set for welcome/clear: primary + secondary. */
+/** Default set for follow-up suggestions inside chat replies. */
 export const DEFAULT_SUGGESTIONS = [...PRIMARY_SUGGESTIONS, ...SECONDARY_SUGGESTIONS];
+
+export const CHAT_ACTION_BUTTON_PROPS = {
+  size: 'sm',
+  borderRadius: 'full',
+  fontWeight: '600',
+};
 
 export const WELCOME_MESSAGE = {
   id: 'welcome-1',
   type: 'ai',
-  content: "Welcome to your AI Fitness Coach. I can help with personalized workout plans, nutrition guidance, recovery suggestions, and progress reviews. What would you like to work on today?",
+  content: 'Welcome to your AI Fitness Coach. I can help with weekly training plans, nutrition guidance, recovery suggestions, and progress reviews. What would you like to work on today?',
   timestamp: new Date(),
-  suggestions: DEFAULT_SUGGESTIONS,
+  suggestions: [],
 };
 
 export const CLEAR_MESSAGE = {
@@ -28,8 +42,8 @@ export const CLEAR_MESSAGE = {
   type: 'ai',
   content: 'Chat cleared. What would you like to focus on next?',
   timestamp: new Date(),
-  suggestions: DEFAULT_SUGGESTIONS,
+  suggestions: [],
 };
 
 /** Shown while the AI is generating a response. */
-export const TYPING_INDICATOR_TEXT = 'AI Coach is analyzing your activity...';
+export const TYPING_INDICATOR_TEXT = 'AI Coach is preparing a personalized response';

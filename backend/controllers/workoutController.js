@@ -1,6 +1,81 @@
 import fetch from 'node-fetch';
 import Workout from '../models/Workout.js';
 
+const WORKOUT_STOP_WORDS = new Set(['and', '&', 'with', 'the', 'a', 'an', 'for']);
+const WORKOUT_FALLBACKS = [
+  { name: 'Brisk walking', type: 'Cardio', equipment: 'None', target: 'Cardiovascular system', caloriesPerMinute: 5, intensity: 'Low' },
+  { name: 'Jogging', type: 'Cardio', equipment: 'None', target: 'Cardiovascular system', caloriesPerMinute: 10, intensity: 'Medium' },
+  { name: 'Bodyweight squats', type: 'Strength', equipment: 'None', target: 'Quadriceps', caloriesPerMinute: 8, intensity: 'Medium' },
+  { name: 'Push-ups', type: 'Strength', equipment: 'None', target: 'Chest', caloriesPerMinute: 8, intensity: 'Medium' },
+  { name: 'Yoga flow', type: 'Flexibility', equipment: 'None', target: 'Full body', caloriesPerMinute: 4, intensity: 'Low' },
+];
+
+function tokenizeWorkoutQuery(text = '') {
+  return text
+    .toLowerCase()
+    .split(/[^a-z0-9]+/i)
+    .map((token) => token.trim())
+    .filter((token) => token && !WORKOUT_STOP_WORDS.has(token));
+}
+
+function buildExerciseQueries(query = '') {
+  const trimmed = query.trim();
+  const tokens = tokenizeWorkoutQuery(trimmed);
+  return Array.from(new Set([trimmed, ...tokens])).filter(Boolean).slice(0, 4);
+}
+
+function getWorkoutKey(exercise) {
+  return [
+    (exercise.name || '').toLowerCase(),
+    (exercise.type || '').toLowerCase(),
+    (exercise.muscle || '').toLowerCase(),
+    (exercise.equipment || '').toLowerCase(),
+  ].join('::');
+}
+
+function rankWorkoutResult(workout, query) {
+  const normalizedQuery = query.trim().toLowerCase();
+  const haystack = [
+    workout.name,
+    workout.type,
+    workout.bodyPart,
+    workout.target,
+    workout.equipment,
+    ...(workout.instructions || []),
+  ]
+    .join(' ')
+    .toLowerCase();
+  const tokens = tokenizeWorkoutQuery(query);
+
+  let score = 0;
+  if (workout.name.toLowerCase() === normalizedQuery) score += 120;
+  if (workout.name.toLowerCase().startsWith(normalizedQuery)) score += 55;
+  if (workout.name.toLowerCase().includes(normalizedQuery)) score += 40;
+
+  const matchedTokens = tokens.filter((token) => haystack.includes(token)).length;
+  score += matchedTokens * 16;
+  if (tokens.length > 1 && matchedTokens === tokens.length) score += 35;
+
+  if (workout.equipment && workout.equipment !== 'None') score += 4;
+  if (workout.intensity === 'Medium') score += 3;
+
+  return score;
+}
+
+function buildFallbackWorkouts(query) {
+  const tokens = tokenizeWorkoutQuery(query);
+  return WORKOUT_FALLBACKS
+    .map((workout, index) => ({
+      id: `fallback-workout-${index}`,
+      bodyPart: workout.target,
+      instructions: [],
+      matchScore: tokens.filter((token) => `${workout.name} ${workout.target}`.toLowerCase().includes(token)).length,
+      ...workout,
+    }))
+    .sort((a, b) => b.matchScore - a.matchScore)
+    .slice(0, 5);
+}
+
 // Get all workouts for a user
 export const getWorkouts = async (req, res) => {
   try {
@@ -66,33 +141,55 @@ export const deleteWorkout = async (req, res) => {
 // Search workouts from external API
 export const searchWorkouts = async (req, res) => {
   try {
-    const { query } = req.query;
+    const rawQuery = typeof req.query?.query === 'string' ? req.query.query : '';
+    const query = rawQuery.trim();
     
-    if (!query || query.trim().length < 2) {
+    if (!query || query.length < 2) {
       return res.status(400).json({ message: 'Search query must be at least 2 characters' });
     }
 
-    if (!process.env.NINJA_API_KEY) {
-      throw new Error('NINJA_API_KEY is not configured');
+    const queryTokens = tokenizeWorkoutQuery(query);
+    if (queryTokens.length === 0) {
+      return res.status(400).json({ message: 'Enter a more specific workout search.' });
     }
 
-    // API Ninjas endpoint
-    const apiUrl = `https://api.api-ninjas.com/v1/exercises?name=${encodeURIComponent(query)}`;
-    
-    const response = await fetch(apiUrl, {
-      method: 'GET',
-      headers: {
-        'X-Api-Key': process.env.NINJA_API_KEY,
-        'Content-Type': 'application/json'
+    if (!process.env.NINJA_API_KEY) {
+      return res.status(200).json({
+        workouts: buildFallbackWorkouts(query),
+        totalResults: 0,
+        message: 'Exercise search is unavailable right now. Showing fallback suggestions.',
+      });
+    }
+
+    const queryVariants = buildExerciseQueries(query);
+    const exerciseResponses = await Promise.all(
+      queryVariants.map(async (variant) => {
+        const apiUrl = `https://api.api-ninjas.com/v1/exercises?name=${encodeURIComponent(variant)}`;
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'X-Api-Key': process.env.NINJA_API_KEY,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(`API Ninjas error: ${response.status} - ${errorData.message || response.statusText}`);
+        }
+
+        return response.json();
+      })
+    );
+
+    const exerciseMap = new Map();
+    exerciseResponses.flat().forEach((exercise) => {
+      const key = getWorkoutKey(exercise);
+      if (!exerciseMap.has(key)) {
+        exerciseMap.set(key, exercise);
       }
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`API Ninjas error: ${response.status} - ${errorData.message || response.statusText}`);
-    }
-
-    const exercises = await response.json();
+    const exercises = Array.from(exerciseMap.values());
     
     // Transform API Ninjas data to our format
     const transformedWorkouts = exercises.map((exercise, index) => ({
@@ -105,31 +202,32 @@ export const searchWorkouts = async (req, res) => {
       // Estimate calories based on exercise type and difficulty
       caloriesPerMinute: calculateEstimatedCalories(exercise),
       intensity: calculateIntensity(exercise),
-      instructions: (exercise.instructions || '').split('. ').filter(Boolean)
+      instructions: (exercise.instructions || '').split('. ').filter(Boolean),
     }));
 
     // Sort by relevance and limit results
     const sortedWorkouts = transformedWorkouts
-      .sort((a, b) => {
-        // Prioritize exact matches
-        const aExact = a.name.toLowerCase() === query.toLowerCase();
-        const bExact = b.name.toLowerCase() === query.toLowerCase();
-        if (aExact && !bExact) return -1;
-        if (!aExact && bExact) return 1;
-        return 0;
-      })
+      .map((workout) => ({
+        ...workout,
+        matchScore: rankWorkoutResult(workout, query),
+      }))
+      .sort((a, b) => b.matchScore - a.matchScore)
       .slice(0, 8); // Limit to 8 results
 
     res.status(200).json({
       workouts: sortedWorkouts,
-      totalResults: exercises.length
+      totalResults: exercises.length,
     });
 
   } catch (error) {
     console.error('Workout search error:', error);
-    res.status(500).json({ 
-      message: 'Error searching workouts',
-      error: error.message 
+    const rawQuery = typeof req.query?.query === 'string' ? req.query.query : '';
+    const query = rawQuery.trim();
+    res.status(200).json({ 
+      workouts: buildFallbackWorkouts(query),
+      totalResults: 0,
+      message: 'Workout search is temporarily unavailable. Showing fallback suggestions instead.',
+      error: error.message, 
     });
   }
 };

@@ -46,10 +46,10 @@ export default function PlanCard({ title = 'Plan', items = [], type = 'workout' 
         </HStack>
       </CardHeader>
       <CardBody pt={0}>
-        <VStack align="stretch" spacing={2}>
+        <VStack align="stretch" spacing={2.5}>
           {Array.isArray(items) && items.length > 0 ? (
             items.map((item, index) => (
-              <Text key={index} fontSize="sm" color={subColor}>
+              <Text key={index} fontSize="sm" color={subColor} lineHeight="1.6" noOfLines={2}>
                 • {typeof item === 'string' ? item : item.label || item.name}
               </Text>
             ))

@@ -1,10 +1,10 @@
 import React from 'react';
 import {
-  VStack,
   HStack,
   Text,
   IconButton,
   Button,
+  Box,
   useColorModeValue,
 } from '@chakra-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
@@ -13,14 +13,24 @@ import { formatDate } from '../utils/dietUtils';
 const DateNavigation = ({ selectedDate, onPreviousDay, onNextDay, onToday }) => {
   const subTextColor = useColorModeValue('gray.600', 'gray.400');
   const textColor = useColorModeValue('gray.800', 'white');
+  const bgColor = useColorModeValue('gray.50', 'whiteAlpha.50');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const hoverBg = useColorModeValue('teal.50', 'teal.900');
   const formattedDate = formatDate(selectedDate);
 
   return (
-    <VStack spacing={3}>
-      <Text fontSize="sm" color={subTextColor} fontWeight="medium">
-        Viewing Date
-      </Text>
-      <HStack spacing={4} align="center">
+    <HStack
+      justify="space-between"
+      align={{ base: 'start', md: 'center' }}
+      flexWrap="wrap"
+      gap={3}
+      p={3}
+      borderWidth="1px"
+      borderColor={borderColor}
+      borderRadius="2xl"
+      bg={bgColor}
+    >
+      <HStack spacing={3} align="center">
         <IconButton
           icon={<ChevronLeftIcon />}
           size="sm"
@@ -28,17 +38,20 @@ const DateNavigation = ({ selectedDate, onPreviousDay, onNextDay, onToday }) => 
           colorScheme="teal"
           onClick={onPreviousDay}
           aria-label="Previous day"
-          _hover={{ bg: useColorModeValue('teal.50', 'teal.900') }}
+          _hover={{ bg: hoverBg }}
         />
-        
-        <VStack spacing={1} minW="120px">
+
+        <Box minW="140px">
+          <Text fontSize="xs" color={subTextColor} fontWeight="700" textTransform="uppercase" letterSpacing="wide">
+            Viewing Date
+          </Text>
           <Text fontSize="lg" fontWeight="bold" color={textColor}>
             {formattedDate.full}
           </Text>
           <Text fontSize="xs" color={subTextColor}>
             {formattedDate.year}
           </Text>
-        </VStack>
+        </Box>
 
         <IconButton
           icon={<ChevronRightIcon />}
@@ -47,21 +60,20 @@ const DateNavigation = ({ selectedDate, onPreviousDay, onNextDay, onToday }) => 
           colorScheme="teal"
           onClick={onNextDay}
           aria-label="Next day"
-          _hover={{ bg: useColorModeValue('teal.50', 'teal.900') }}
+          _hover={{ bg: hoverBg }}
         />
       </HStack>
-      
+
       <Button
-        size="xs"
-        variant="ghost"
+        size="sm"
+        variant="outline"
         colorScheme="teal"
         onClick={onToday}
-        fontSize="xs"
-        _hover={{ bg: useColorModeValue('teal.50', 'teal.900') }}
+        borderRadius="full"
       >
         Today
       </Button>
-    </VStack>
+    </HStack>
   );
 };
 

@@ -8,6 +8,9 @@ import {
   Text,
   Badge,
   Button,
+  Wrap,
+  WrapItem,
+  Stack,
   useColorModeValue,
   Icon,
 } from '@chakra-ui/react';
@@ -33,14 +36,15 @@ const WorkoutCard = React.memo(function WorkoutCard({ workout, onViewDetails, in
         bg={cardBg}
         border="1px"
         borderColor={borderColor}
-        borderRadius="lg"
-        boxShadow="md"
+        borderRadius="xl"
+        boxShadow="sm"
         h="100%"
-        _hover={{ boxShadow: 'lg', borderColor: hoverBorderColor }}
-        transition="box-shadow 0.2s, border-color 0.2s"
+        _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg', borderColor: hoverBorderColor }}
+        transition="all 0.2s ease"
+        overflow="hidden"
       >
         <CardBody>
-          <VStack spacing={3} align="start" h="100%">
+          <VStack spacing={4} align="start" h="100%">
             <Text 
               fontSize="lg" 
               fontWeight="bold" 
@@ -58,56 +62,64 @@ const WorkoutCard = React.memo(function WorkoutCard({ workout, onViewDetails, in
               {workout.description}
             </Text>
             
-            <HStack spacing={2} w="100%">
-              <Badge colorScheme="blue" variant="subtle" size="sm">
-                <HStack spacing={1}>
-                  <Icon as={FaClock} size={3} />
-                  <Text>{workout.duration} min</Text>
-                </HStack>
-              </Badge>
-              <Badge 
-                colorScheme={
-                  workout.intensity === 'High' ? 'red' : 
-                  workout.intensity === 'Medium' ? 'yellow' : 'green'
-                } 
-                variant="subtle" 
-                size="sm"
-              >
-                {workout.intensity}
-              </Badge>
-              <Badge colorScheme="purple" variant="outline" size="sm">
-                {workout.difficulty}
-              </Badge>
-            </HStack>
+            <Wrap spacing={2} w="100%">
+              <WrapItem>
+                <Badge colorScheme="blue" variant="subtle" size="sm">
+                  <HStack spacing={1}>
+                    <Icon as={FaClock} size={3} />
+                    <Text>{workout.duration} min</Text>
+                  </HStack>
+                </Badge>
+              </WrapItem>
+              <WrapItem>
+                <Badge 
+                  colorScheme={
+                    workout.intensity === 'High' ? 'red' : 
+                    workout.intensity === 'Medium' ? 'yellow' : 'green'
+                  } 
+                  variant="subtle" 
+                  size="sm"
+                >
+                  {workout.intensity}
+                </Badge>
+              </WrapItem>
+              <WrapItem>
+                <Badge colorScheme="purple" variant="outline" size="sm">
+                  {workout.difficulty}
+                </Badge>
+              </WrapItem>
+            </Wrap>
 
             {workout.focusAreas && workout.focusAreas.length > 0 && (
-              <Box w="100%">
+              <Box w="100%" minW={0}>
                 <Text fontSize="xs" color={subTextColor} mb={1} fontWeight="medium">
                   Focus Areas:
                 </Text>
-                <HStack wrap="wrap" gap={1}>
+                <Wrap spacing={1}>
                   {workout.focusAreas.map((area, idx) => (
-                    <Badge 
-                      key={idx} 
-                      colorScheme="teal" 
-                      variant="outline" 
-                      size="xs"
-                    >
-                      {area}
-                    </Badge>
+                    <WrapItem key={idx}>
+                      <Badge 
+                        colorScheme="teal" 
+                        variant="outline" 
+                        size="xs"
+                        maxW="100%"
+                      >
+                        {area}
+                      </Badge>
+                    </WrapItem>
                   ))}
-                </HStack>
+                </Wrap>
               </Box>
             )}
 
             {workout.exercises && workout.exercises.length > 0 && (
-              <Box w="100%">
+              <Box w="100%" minW={0}>
                 <Text fontSize="xs" color={subTextColor} mb={1} fontWeight="medium">
                   Key Exercises:
                 </Text>
                 <VStack spacing={1} align="start">
                   {workout.exercises.slice(0, 3).map((exercise, idx) => (
-                    <Text key={idx} fontSize="xs" color={textColor}>
+                    <Text key={idx} fontSize="xs" color={textColor} noOfLines={2}>
                       • {exercise.name}
                       {exercise.sets && exercise.reps && ` (${exercise.sets}×${exercise.reps})`}
                       {exercise.interval && ` (${exercise.interval})`}
@@ -122,7 +134,7 @@ const WorkoutCard = React.memo(function WorkoutCard({ workout, onViewDetails, in
               </Box>
             )}
 
-            <HStack spacing={2} w="100%" mt="auto">
+            <Stack spacing={2} w="100%" mt="auto">
               {workout.videoId && (
                 <Button
                   size="sm"
@@ -136,7 +148,7 @@ const WorkoutCard = React.memo(function WorkoutCard({ workout, onViewDetails, in
                       : `https://www.youtube.com/watch?v=${v}`;
                     window.open(url, '_blank');
                   }}
-                  flex={1}
+                  w="100%"
                 >
                   Watch Demo
                 </Button>
@@ -147,11 +159,11 @@ const WorkoutCard = React.memo(function WorkoutCard({ workout, onViewDetails, in
                 variant="outline"
                 leftIcon={<FaDumbbell />}
                 onClick={() => onViewDetails(workout)}
-                flex={1}
+                w="100%"
               >
                 View Details
               </Button>
-            </HStack>
+            </Stack>
           </VStack>
         </CardBody>
       </Card>

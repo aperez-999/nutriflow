@@ -5,6 +5,8 @@ import {
   Heading,
   Text,
   SimpleGrid,
+  HStack,
+  Badge,
   useColorModeValue,
 } from '@chakra-ui/react';
 import { FiPackage, FiCoffee } from 'react-icons/fi';
@@ -97,19 +99,29 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
         />
 
         {/* Diet Records Section */}
-        <Box 
-          p={6} 
-          bg={bgColor} 
-          borderRadius="xl" 
+        <Box
+          p={{ base: 5, md: 6 }}
+          bg={bgColor}
+          borderRadius="2xl"
           borderWidth="1px" 
           borderColor={borderColor}
           boxShadow="lg"
         >
           <VStack spacing={4} align="stretch">
-            <Heading size="md" color={textColor} textAlign="center" display="flex" alignItems="center" justifyContent="center" gap={2}>
-              <Box as={FiPackage} />
-              Your Diet Records
-            </Heading>
+            <HStack justify="space-between" align={{ base: 'start', md: 'center' }} flexWrap="wrap" gap={3}>
+              <Box>
+                <Heading size="md" color={textColor} display="flex" alignItems="center" gap={2}>
+                  <Box as={FiPackage} />
+                  Nutrition Log
+                </Heading>
+                <Text fontSize="sm" color={subTextColor} mt={1}>
+                  Recent meal entries with clearer macro detail and easier scanning.
+                </Text>
+              </Box>
+              <Badge colorScheme="teal" borderRadius="full" px={3} py={1}>
+                {diets.length} total record{diets.length === 1 ? '' : 's'}
+              </Badge>
+            </HStack>
             
             {diets.length === 0 ? (
               <VStack spacing={4} py={8} px={2} align="center">
@@ -122,10 +134,10 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
                 </Text>
               </VStack>
             ) : (
-              <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={4}>
+              <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={5}>
                 {diets
                   .sort((a, b) => new Date(b.date) - new Date(a.date))
-                  .slice(0, 6) // Show only recent 6 records
+                  .slice(0, 6)
                   .map((diet) => (
                     <DietCard
                       key={diet._id}
@@ -139,7 +151,7 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
             
             {diets.length > 6 && (
               <Text fontSize="sm" color={subTextColor} textAlign="center" mt={4}>
-                Showing 6 most recent records. Total: {diets.length} records.
+                Showing the 6 most recent nutrition records.
               </Text>
             )}
           </VStack>

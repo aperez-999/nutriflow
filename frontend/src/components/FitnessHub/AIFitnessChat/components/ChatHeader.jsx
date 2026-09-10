@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Flex,
   HStack,
+  Stack,
   VStack,
   Text,
   Avatar,
@@ -21,12 +22,14 @@ const ChatHeader = ({ onClear, autoScroll, onAutoScrollChange }) => {
 
   return (
     <Flex
-      px={5}
+      px={{ base: 4, md: 5 }}
       py={4}
       borderBottom="1px"
       borderColor={borderColor}
-      align="center"
+      align={{ base: 'flex-start', md: 'center' }}
       justify="space-between"
+      direction={{ base: 'column', md: 'row' }}
+      gap={3}
       bg={headerBg}
       borderTopRadius="xl"
     >
@@ -42,7 +45,7 @@ const ChatHeader = ({ onClear, autoScroll, onAutoScrollChange }) => {
           <Text fontSize="xs" color={subTextColor}>Ask for plans, recovery ideas, nutrition support, or progress reviews</Text>
         </VStack>
       </HStack>
-      <HStack spacing={4}>
+      <Stack direction="row" spacing={4} align="center" w={{ base: '100%', md: 'auto' }} justify={{ base: 'space-between', md: 'flex-end' }}>
         <HStack spacing={2} align="center">
           <Text fontSize="xs" color={subTextColor}>Auto-scroll</Text>
           <Switch
@@ -61,7 +64,7 @@ const ChatHeader = ({ onClear, autoScroll, onAutoScrollChange }) => {
             aria-label="Clear chat"
           />
         </Tooltip>
-      </HStack>
+      </Stack>
     </Flex>
   );
 };

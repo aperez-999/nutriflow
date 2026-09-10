@@ -10,52 +10,44 @@ import {
   Badge,
   IconButton,
   HStack,
+  InputGroup,
+  InputLeftElement,
+  InputRightElement,
+  Divider,
 } from '@chakra-ui/react';
-import { CloseIcon } from '@chakra-ui/icons';
-import { 
-  FiActivity, 
-  FiZap, 
-  FiClock, 
-  FiTrendingUp,
-  FiTarget,
-  FiHeart
-} from 'react-icons/fi';
+import { CloseIcon, SearchIcon } from '@chakra-ui/icons';
+import { FiActivity, FiZap, FiTarget, FiClock, FiTool } from 'react-icons/fi';
 import { searchExercises } from '../../services/api';
 
-const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = "Search for workout..." }) => {
-  // State
+const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'Search for workout...' }) => {
   const [searchQuery, setSearchQuery] = useState(value || '');
   const [searchResults, setSearchResults] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState(null);
-  
-  // Refs
+
   const searchTimeoutRef = useRef(null);
   const resultsRef = useRef(null);
 
-  // Color mode values - all defined at the top
   const bgColor = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const hoverBg = useColorModeValue('gray.50', 'gray.600');
+  const hoverBg = useColorModeValue('gray.50', 'gray.650');
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.300');
-  
-  // Selected state colors
+  const helperColor = useColorModeValue('gray.500', 'gray.400');
   const selectedBg = useColorModeValue('blue.50', 'blue.900');
-  const selectedBorder = useColorModeValue('blue.300', 'blue.500');
-  const selectedFocusBorder = useColorModeValue('blue.400', 'blue.400');
-  const selectedHoverBorder = useColorModeValue('blue.300', 'blue.400');
-  const selectedTextColor = useColorModeValue('blue.700', 'blue.200');
-  const selectedBoxBorder = useColorModeValue('blue.200', 'blue.600');
-  
-  // Regular state colors
-  const regularFocusBorder = useColorModeValue('blue.400', 'blue.300');
-  const regularHoverBorder = useColorModeValue('gray.300', 'gray.500');
+  const selectedBorder = useColorModeValue('blue.200', 'blue.500');
+  const focusBorder = useColorModeValue('blue.400', 'blue.300');
+  const resultBorder = useColorModeValue('gray.100', 'whiteAlpha.100');
 
-  // Search function
+  const getIntensityColor = (intensity) => {
+    if (intensity === 'High') return 'red';
+    if (intensity === 'Low') return 'green';
+    return 'yellow';
+  };
+
   const performSearch = async (query) => {
-    if (query.length < 2) {
+    if (query.trim().length < 2) {
       setSearchResults([]);
       setShowResults(false);
       return;
@@ -69,80 +61,55 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = "S
     } catch (error) {
       console.error('Exercise search error:', error);
       setSearchResults([]);
+      setShowResults(true);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle input change with real-time search
   const handleInputChange = (e) => {
     const query = e.target.value;
     setSearchQuery(query);
     onChange(query);
-    
-    // Clear selected workout if user is typing
-    if (selectedWorkout) {
+
+    if (selectedWorkout && query !== selectedWorkout.name) {
       setSelectedWorkout(null);
+      onWorkoutSelect?.(null);
     }
 
-    // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // Debounced search
     searchTimeoutRef.current = setTimeout(() => {
       performSearch(query);
-    }, 150);
+    }, 180);
   };
 
-  // Handle workout selection
   const handleWorkoutSelect = (workout) => {
     setSelectedWorkout(workout);
     setSearchQuery(workout.name);
     setShowResults(false);
     onChange(workout.name);
-    
-    // Notify parent component with workout data
-    if (onWorkoutSelect) {
-      onWorkoutSelect(workout);
-    }
+    onWorkoutSelect?.(workout);
   };
 
-  // Clear selection
   const clearSelection = () => {
     setSelectedWorkout(null);
     setSearchQuery('');
     setSearchResults([]);
     setShowResults(false);
     onChange('');
-    if (onWorkoutSelect) {
-      onWorkoutSelect(null);
-    }
+    onWorkoutSelect?.(null);
   };
 
-  // Get intensity color
-  const getIntensityColor = (intensity) => {
-    switch (intensity) {
-      case 'Low': return 'green';
-      case 'Medium': return 'yellow';
-      case 'High': return 'red';
-      default: return 'gray';
+  useEffect(() => {
+    setSearchQuery(value || '');
+    if (!value) {
+      setSelectedWorkout(null);
     }
-  };
+  }, [value]);
 
-  // Get type icon
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case 'Cardio': return FiHeart;
-      case 'Strength': return FiActivity;
-      case 'Flexibility': return FiTarget;
-      case 'Sports': return FiTrendingUp;
-      default: return FiActivity;
-    }
-  };
-
-  // Close results when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (resultsRef.current && !resultsRef.current.contains(event.target)) {
@@ -156,7 +123,6 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = "S
     };
   }, []);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (searchTimeoutRef.current) {
@@ -165,138 +131,159 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = "S
     };
   }, []);
 
+  const shouldShowDropdown = showResults && searchQuery.trim().length >= 2;
+
   return (
     <Box position="relative" ref={resultsRef}>
-      <Flex>
+      <InputGroup size="lg">
+        <InputLeftElement pointerEvents="none" color={subTextColor}>
+          <SearchIcon />
+        </InputLeftElement>
         <Input
           value={searchQuery}
           onChange={handleInputChange}
+          onFocus={() => {
+            if (searchQuery.trim().length >= 2) setShowResults(true);
+          }}
           placeholder={placeholder}
           bg={selectedWorkout ? selectedBg : bgColor}
           borderColor={selectedWorkout ? selectedBorder : borderColor}
           color={textColor}
+          pl={10}
+          pr={10}
+          borderRadius="xl"
           _placeholder={{ color: subTextColor }}
-          _focus={{
-            borderColor: selectedWorkout ? selectedFocusBorder : regularFocusBorder,
-            boxShadow: selectedWorkout ? 
-              `0 0 0 1px ${selectedFocusBorder}` : 
-              `0 0 0 1px ${regularFocusBorder}`
-          }}
-          _hover={{
-            borderColor: selectedWorkout ? selectedHoverBorder : regularHoverBorder
-          }}
+          _focus={{ borderColor: focusBorder, boxShadow: `0 0 0 1px ${focusBorder}` }}
+          _hover={{ borderColor: focusBorder }}
         />
-        {selectedWorkout && (
-          <IconButton
-            icon={<CloseIcon />}
-            size="sm"
-            ml={2}
-            onClick={clearSelection}
-            aria-label="Clear selection"
-            colorScheme="gray"
-            variant="ghost"
-          />
-        )}
-      </Flex>
+        <InputRightElement width="3rem">
+          {isLoading ? (
+            <Spinner size="sm" color="blue.400" />
+          ) : selectedWorkout ? (
+            <IconButton
+              icon={<CloseIcon />}
+              size="sm"
+              aria-label="Clear selection"
+              variant="ghost"
+              onClick={clearSelection}
+            />
+          ) : null}
+        </InputRightElement>
+      </InputGroup>
 
-      {/* Selected workout indicator */}
+      <Text fontSize="xs" color={helperColor} mt={2}>
+        Search moves, equipment, or muscle groups like "dumbbell chest" or "hamstring stretch".
+      </Text>
+
       {selectedWorkout && (
-        <Box 
-          mt={2} 
-          p={3} 
+        <Box
+          mt={3}
+          p={4}
           bg={selectedBg}
-          borderRadius="lg" 
-          borderWidth="1px" 
-          borderColor={selectedBoxBorder}
-          boxShadow="sm"
+          borderRadius="xl"
+          borderWidth="1px"
+          borderColor={selectedBorder}
         >
-          <Text fontSize="sm" color={selectedTextColor} fontWeight="semibold">
-            ✓ Selected: {selectedWorkout.name}
-          </Text>
-          <Flex wrap="wrap" gap={2} mt={1}>
-            <Badge colorScheme="blue" variant="subtle" fontSize="xs">
-              <HStack spacing={1}>
-                <Box as={getTypeIcon(selectedWorkout.type)} size={3} />
-                <Text>{selectedWorkout.type}</Text>
-              </HStack>
+          <HStack justify="space-between" align="start" spacing={4}>
+            <Box minW={0}>
+              <Text fontSize="sm" fontWeight="700" color={textColor} noOfLines={2}>
+                {selectedWorkout.name}
+              </Text>
+              <Text fontSize="xs" color={subTextColor} mt={1}>
+                {selectedWorkout.type} · {selectedWorkout.target || selectedWorkout.bodyPart || 'General'}
+              </Text>
+            </Box>
+            <Badge colorScheme="blue" borderRadius="full" px={2.5} py={1}>
+              {selectedWorkout.caloriesPerMinute} cal/min
             </Badge>
-            <Badge colorScheme={getIntensityColor(selectedWorkout.intensity)} variant="subtle" fontSize="xs">
+          </HStack>
+
+          <HStack spacing={2} wrap="wrap" mt={3}>
+            <Badge colorScheme="blue" variant="subtle">{selectedWorkout.type}</Badge>
+            <Badge colorScheme={getIntensityColor(selectedWorkout.intensity)} variant="subtle">
               {selectedWorkout.intensity} intensity
             </Badge>
-            <Badge colorScheme="orange" variant="subtle" fontSize="xs">
-              <HStack spacing={1}>
-                <Box as={FiZap} size={3} />
-                <Text>{selectedWorkout.caloriesPerMinute} cal/min</Text>
-              </HStack>
+            <Badge colorScheme="purple" variant="subtle">
+              Equipment: {selectedWorkout.equipment || 'None'}
             </Badge>
-          </Flex>
+          </HStack>
         </Box>
       )}
 
-      {/* Search results dropdown */}
-      {showResults && (searchResults.length > 0 || isLoading) && (
+      {shouldShowDropdown && (
         <Box
           position="absolute"
-          top="100%"
+          top="calc(100% + 10px)"
           left={0}
           right={0}
           zIndex={1000}
           bg={bgColor}
           borderWidth="1px"
           borderColor={borderColor}
-          borderRadius="md"
-          boxShadow="lg"
-          maxHeight="300px"
+          borderRadius="2xl"
+          boxShadow="xl"
+          maxH="360px"
           overflowY="auto"
-          mt={1}
         >
           {isLoading ? (
-            <Flex justify="center" align="center" p={4}>
-              <Spinner size="sm" mr={2} />
-              <Text fontSize="sm" color={subTextColor}>Searching workouts...</Text>
+            <Flex justify="center" align="center" p={5} gap={3}>
+              <Spinner size="sm" color="blue.400" />
+              <Text fontSize="sm" color={subTextColor}>Searching workout matches...</Text>
             </Flex>
+          ) : searchResults.length === 0 ? (
+            <VStack spacing={2} p={5} align="start">
+              <Text fontSize="sm" fontWeight="600" color={textColor}>
+                No workout matches yet
+              </Text>
+              <Text fontSize="sm" color={subTextColor}>
+                Try broader terms like "rowing", "chest press", or "mobility".
+              </Text>
+            </VStack>
           ) : (
             <VStack spacing={0} align="stretch">
-              {searchResults.map((workout) => {
-                const TypeIcon = getTypeIcon(workout.type);
-                return (
-                  <Box
-                    key={workout.id}
-                    p={3}
-                    cursor="pointer"
-                    _hover={{ bg: hoverBg }}
-                    borderBottomWidth="1px"
-                    borderBottomColor={borderColor}
-                    onClick={() => handleWorkoutSelect(workout)}
-                  >
-                    <Text fontSize="sm" fontWeight="medium" color={textColor} mb={1}>
-                      {workout.name}
-                    </Text>
-                    <Flex wrap="wrap" gap={2}>
-                      <Badge colorScheme="blue" fontSize="xs">
-                        <HStack spacing={1}>
-                          <Box as={TypeIcon} size={3} />
-                          <Text>{workout.type}</Text>
-                        </HStack>
-                      </Badge>
-                      <Badge colorScheme={getIntensityColor(workout.intensity)} fontSize="xs">
-                        {workout.intensity}
-                      </Badge>
-                      <Badge colorScheme="orange" fontSize="xs">
-                        <HStack spacing={1}>
-                          <Box as={FiZap} size={3} />
-                          <Text>{workout.caloriesPerMinute} cal/min</Text>
-                        </HStack>
-                      </Badge>
-                    </Flex>
-                    {workout.equipment !== 'None' && (
-                      <Text fontSize="xs" color={subTextColor} mt={1}>
-                        Equipment: {workout.equipment}
+              {searchResults.map((workout, index) => (
+                <Box
+                  key={workout.id}
+                  px={4}
+                  py={3.5}
+                  cursor="pointer"
+                  _hover={{ bg: hoverBg }}
+                  onClick={() => handleWorkoutSelect(workout)}
+                >
+                  <HStack justify="space-between" align="start" spacing={4}>
+                    <Box minW={0} flex="1">
+                      <HStack spacing={2} mb={1.5} wrap="wrap">
+                        <Badge colorScheme="blue" variant="subtle">{workout.type}</Badge>
+                        <Badge colorScheme={getIntensityColor(workout.intensity)} variant="subtle">
+                          {workout.intensity}
+                        </Badge>
+                      </HStack>
+                      <Text fontSize="sm" fontWeight="700" color={textColor} noOfLines={2}>
+                        {workout.name}
                       </Text>
-                    )}
-                  </Box>
-                );
-              })}
+                      <HStack spacing={3} wrap="wrap" mt={2}>
+                        <HStack spacing={1} color={subTextColor}>
+                          <Box as={FiZap} boxSize={3.5} />
+                          <Text fontSize="xs">{workout.caloriesPerMinute} cal/min</Text>
+                        </HStack>
+                        <HStack spacing={1} color={subTextColor}>
+                          <Box as={FiTarget} boxSize={3.5} />
+                          <Text fontSize="xs">{workout.target || workout.bodyPart || 'General'}</Text>
+                        </HStack>
+                        <HStack spacing={1} color={subTextColor}>
+                          <Box as={FiTool} boxSize={3.5} />
+                          <Text fontSize="xs">{workout.equipment || 'None'}</Text>
+                        </HStack>
+                        <HStack spacing={1} color={subTextColor}>
+                          <Box as={FiClock} boxSize={3.5} />
+                          <Text fontSize="xs">Quick lookup</Text>
+                        </HStack>
+                      </HStack>
+                    </Box>
+                  </HStack>
+                  {index < searchResults.length - 1 && <Divider mt={3.5} borderColor={resultBorder} />}
+                </Box>
+              ))}
             </VStack>
           )}
         </Box>

@@ -39,6 +39,28 @@ function stripBullet(line) {
   return line.replace(/^[•\-*]\s*/, '').trim();
 }
 
+function buildFallbackWeeklyPlan(rawContent) {
+  const extractedExercises = String(rawContent || '')
+    .split('\n')
+    .map((line) => stripBullet(line))
+    .filter((line) => line && !isDayHeading(line))
+    .slice(0, 12);
+
+  const buckets = [
+    { day: 'Monday', exercises: extractedExercises.slice(0, 4) },
+    { day: 'Wednesday', exercises: extractedExercises.slice(4, 8) },
+    { day: 'Friday', exercises: extractedExercises.slice(8, 12) },
+  ].filter((entry) => entry.exercises.length > 0);
+
+  if (buckets.length > 0) return buckets;
+
+  return [
+    { day: 'Monday', exercises: ['Squats 3x8', 'Push-ups 3x12', 'Rows 3x10'] },
+    { day: 'Wednesday', exercises: ['Deadlifts 3x6', 'Overhead Press 3x8', 'Plank 3 x 30 sec'] },
+    { day: 'Friday', exercises: ['Lunges 3x10', 'Bench Press 3x8', 'Lat Pulldown 3x10'] },
+  ];
+}
+
 export async function runWorkoutPlannerAgent({ message, context = {}, history = [] }) {
   let stats = null;
   if (context.userId) {
@@ -91,9 +113,11 @@ export async function runWorkoutPlannerAgent({ message, context = {}, history = 
     }
   }
 
+  const finalPlan = plan.length > 0 ? plan : buildFallbackWeeklyPlan(content);
+
   return {
     type: 'workout_plan',
-    plan,
+    plan: finalPlan,
     rawContent: content,
     source: provider,
   };

@@ -12,19 +12,21 @@ import {
   FormControl,
   FormLabel,
   Select,
+  Button,
+  Badge,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { FaDumbbell, FaRunning, FaHeartbeat, FaFireAlt, FaCheckCircle } from 'react-icons/fa';
+import { FaDumbbell, FaRunning, FaHeartbeat, FaFireAlt, FaCheckCircle, FaYoutube } from 'react-icons/fa';
 import { Icon } from '@chakra-ui/react';
 
 const cardHoverStyles = {
+  borderRadius: 'xl',
+  boxShadow: 'sm',
+  borderWidth: '1px',
   _hover: { transform: 'translateY(-2px)', boxShadow: 'lg' },
   transition: 'all 0.2s ease',
 };
 
-/**
- * Fitness Hub — AI-Powered Workout Discovery card (filters + exercise list + feature grid).
- */
 export default function FitnessHubDiscoverySection({
   muscle,
   equipment,
@@ -47,18 +49,18 @@ export default function FitnessHubDiscoverySection({
       <Text fontSize="sm" fontWeight="600" color={headingColor} letterSpacing="wider" mb={3}>
         EXERCISE DISCOVERY
       </Text>
-      <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="xl" boxShadow="sm" {...cardHoverStyles}>
+      <Card bg={cardBg} borderColor={borderColor} {...cardHoverStyles}>
         <CardBody>
           <VStack align="stretch" spacing={6}>
             <Stack direction={{ base: 'column', lg: 'row' }} justify="space-between" spacing={6}>
               <VStack spacing={3} align="start" maxW="640px">
                 <Icon as={FaDumbbell} boxSize={10} color={accentColor} />
                 <Text as="h2" fontSize="lg" fontWeight="600" color={headingColor}>
-                  Explore exercises with faster filtering
+                  Explore exercises with guided demo links
                 </Text>
                 <Text color={textColor} maxW="600px" fontSize="sm">
-                  Browse by muscle group, equipment, and difficulty to find movements that match the plan you are
-                  building with the AI coach.
+                  Filter the exercise library by muscle group, equipment, and difficulty, then jump into placeholder
+                  demo videos while you build your next plan.
                 </Text>
               </VStack>
               <Box bg={panelBg} borderWidth="1px" borderColor={borderColor} borderRadius="lg" px={4} py={3}>
@@ -77,18 +79,12 @@ export default function FitnessHubDiscoverySection({
             <Divider borderColor={borderColor} />
 
             <Stack direction={{ base: 'column', md: 'row' }} spacing={4} flexWrap="wrap" align={{ md: 'flex-end' }}>
-              <Text fontSize="sm" color={textColor} minW={{ md: '160px' }}>
-                Refine the library to match the current training context.
+              <Text fontSize="sm" color={textColor} minW={{ md: '180px' }}>
+                Refine the library to match the training focus of your current plan.
               </Text>
               <FormControl maxW="180px">
                 <FormLabel fontSize="sm" color={headingColor}>Muscle Group</FormLabel>
-                <Select
-                  placeholder="All"
-                  size="sm"
-                  value={muscle}
-                  onChange={(e) => onMuscleChange(e.target.value)}
-                  borderColor={borderColor}
-                >
+                <Select placeholder="All" size="sm" value={muscle} onChange={(e) => onMuscleChange(e.target.value)} borderColor={borderColor}>
                   <option value="Chest">Chest</option>
                   <option value="Back">Back</option>
                   <option value="Legs">Legs</option>
@@ -97,13 +93,7 @@ export default function FitnessHubDiscoverySection({
               </FormControl>
               <FormControl maxW="180px">
                 <FormLabel fontSize="sm" color={headingColor}>Equipment</FormLabel>
-                <Select
-                  placeholder="All"
-                  size="sm"
-                  value={equipment}
-                  onChange={(e) => onEquipmentChange(e.target.value)}
-                  borderColor={borderColor}
-                >
+                <Select placeholder="All" size="sm" value={equipment} onChange={(e) => onEquipmentChange(e.target.value)} borderColor={borderColor}>
                   <option value="Bodyweight">Bodyweight</option>
                   <option value="Dumbbells">Dumbbells</option>
                   <option value="Machines">Machines</option>
@@ -111,13 +101,7 @@ export default function FitnessHubDiscoverySection({
               </FormControl>
               <FormControl maxW="180px">
                 <FormLabel fontSize="sm" color={headingColor}>Difficulty</FormLabel>
-                <Select
-                  placeholder="All"
-                  size="sm"
-                  value={difficulty}
-                  onChange={(e) => onDifficultyChange(e.target.value)}
-                  borderColor={borderColor}
-                >
+                <Select placeholder="All" size="sm" value={difficulty} onChange={(e) => onDifficultyChange(e.target.value)} borderColor={borderColor}>
                   <option value="Beginner">Beginner</option>
                   <option value="Intermediate">Intermediate</option>
                   <option value="Advanced">Advanced</option>
@@ -126,26 +110,50 @@ export default function FitnessHubDiscoverySection({
             </Stack>
 
             {filteredExercises.length > 0 ? (
-              <SimpleGrid columns={{ base: 1, sm: 2, lg: 3 }} spacing={4}>
-                {filteredExercises.map((ex, i) => (
-                  <Box
-                    key={i}
-                    p={3}
-                    borderRadius="lg"
-                    borderWidth="1px"
+              <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} spacing={4}>
+                {filteredExercises.map((ex) => (
+                  <Card
+                    key={`${ex.name}-${ex.equipment}-${ex.difficulty}`}
+                    bg={cardBg}
                     borderColor={borderColor}
-                    _hover={{ bg: exerciseCardHoverBg }}
+                    borderRadius="xl"
+                    borderWidth="1px"
+                    boxShadow="sm"
+                    _hover={{ bg: exerciseCardHoverBg, boxShadow: 'md', transform: 'translateY(-2px)' }}
                     transition="all 0.2s ease"
+                    h="100%"
                   >
-                    <Text fontWeight="600" color={headingColor} fontSize="sm">{ex.name}</Text>
-                    <HStack mt={1} spacing={2} flexWrap="wrap">
-                      <Text fontSize="xs" color={textColor}>{ex.muscleGroup}</Text>
-                      <Text fontSize="xs" color={textColor}>·</Text>
-                      <Text fontSize="xs" color={textColor}>{ex.equipment}</Text>
-                      <Text fontSize="xs" color={textColor}>·</Text>
-                      <Text fontSize="xs" color={textColor}>{ex.difficulty}</Text>
-                    </HStack>
-                  </Box>
+                    <CardBody>
+                      <VStack align="stretch" spacing={4} h="100%">
+                        <VStack align="start" spacing={2}>
+                          <Text fontWeight="600" color={headingColor} fontSize="md">
+                            {ex.name}
+                          </Text>
+                          <HStack spacing={2} flexWrap="wrap">
+                            <Badge colorScheme="blue" variant="subtle">{ex.muscleGroup}</Badge>
+                            <Badge colorScheme="purple" variant="subtle">{ex.equipment}</Badge>
+                            <Badge colorScheme="teal" variant="outline">{ex.difficulty}</Badge>
+                          </HStack>
+                        </VStack>
+                        <Text fontSize="sm" color={textColor}>
+                          Demo-ready movement with a placeholder YouTube walkthrough for quick form review.
+                        </Text>
+                        <Button
+                          as="a"
+                          href={ex.videoUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          leftIcon={<FaYoutube />}
+                          colorScheme="red"
+                          variant="outline"
+                          size="sm"
+                          mt="auto"
+                        >
+                          Watch demo
+                        </Button>
+                      </VStack>
+                    </CardBody>
+                  </Card>
                 ))}
               </SimpleGrid>
             ) : (
@@ -161,7 +169,7 @@ export default function FitnessHubDiscoverySection({
                   <Text fontWeight="semibold" color={headingColor}>Personalized Plans</Text>
                 </HStack>
                 <Text color={textColor} fontSize="sm">
-                  AI-generated workouts tailored to your fitness level, available equipment, and specific goals.
+                  Match your discovery flow to the plan your coach generated so exploration stays relevant.
                 </Text>
               </VStack>
               <VStack spacing={4} align="start">
@@ -170,7 +178,7 @@ export default function FitnessHubDiscoverySection({
                   <Text fontWeight="semibold" color={headingColor}>Progress Tracking</Text>
                 </HStack>
                 <Text color={textColor} fontSize="sm">
-                  Monitor your improvements and get recommendations that adapt to your evolving fitness journey.
+                  Use filters to quickly find variations that fit your equipment, recovery, and current level.
                 </Text>
               </VStack>
               <VStack spacing={4} align="start">
@@ -179,7 +187,7 @@ export default function FitnessHubDiscoverySection({
                   <Text fontWeight="semibold" color={headingColor}>Variety & Challenge</Text>
                 </HStack>
                 <Text color={textColor} fontSize="sm">
-                  Discover new exercises and workout styles to keep your routine fresh and engaging.
+                  Swap movements more confidently without leaving the Fitness Hub or breaking your training rhythm.
                 </Text>
               </VStack>
               <VStack spacing={4} align="start">
@@ -188,7 +196,7 @@ export default function FitnessHubDiscoverySection({
                   <Text fontWeight="semibold" color={headingColor}>Form & Safety</Text>
                 </HStack>
                 <Text color={textColor} fontSize="sm">
-                  Get tips on proper technique and form to maximize results while preventing injuries.
+                  Placeholder demo links make it easier to review technique before adding new exercises to your routine.
                 </Text>
               </VStack>
             </SimpleGrid>

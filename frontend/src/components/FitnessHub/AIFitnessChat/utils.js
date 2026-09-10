@@ -119,6 +119,89 @@ export const parseAIRecommendations = (content) => {
   }
 };
 
+export const fallbackParseWorkoutPlan = (content) => {
+  if (!content || typeof content !== 'string') return false;
+
+  const cleaned = content.replace(/```/g, '').trim();
+  const lines = cleaned.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (lines.length === 0) return false;
+
+  const dayHeadingRegex = /^(?:#{1,3}\s*)?(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Push Day|Pull Day|Leg Day|Upper Body|Lower Body|Full Body|Recovery Day|Conditioning|Mobility Day)(?:\s*[:\-].*)?$/i;
+  const bulletRegex = /^(?:[-*•]\s+)(.+)$/;
+  const repRegex = /(.+?)(?:\s+\(?\d+\s*x\s*[\d-]+\)?|\s+\d+\s*reps?)/i;
+
+  const plan = [];
+  let current = null;
+
+  lines.forEach((line, index) => {
+    const headingMatch = line.match(dayHeadingRegex);
+    if (headingMatch) {
+      current = {
+        title: line.replace(/^#{1,3}\s*/, '').trim(),
+        duration: 45,
+        intensity: 'Medium',
+        focusAreas: ['General Fitness'],
+        exercises: [],
+        description: `Training focus for ${line.replace(/^#{1,3}\s*/, '').trim()}`,
+        calories: '250-350',
+        difficulty: 'Intermediate',
+      };
+      plan.push(current);
+      return;
+    }
+
+    if (!current && index === 0) {
+      current = {
+        title: 'Weekly Plan',
+        duration: 45,
+        intensity: 'Medium',
+        focusAreas: ['General Fitness'],
+        exercises: [],
+        description: 'AI-generated weekly training outline',
+        calories: '250-350',
+        difficulty: 'Intermediate',
+      };
+      plan.push(current);
+    }
+
+    const bulletMatch = line.match(bulletRegex);
+    const repMatch = line.match(repRegex);
+    const exerciseName = bulletMatch?.[1] || repMatch?.[1];
+
+    if (current && exerciseName) {
+      current.exercises.push({
+        name: exerciseName.trim(),
+        sets: undefined,
+        reps: undefined,
+        interval: undefined,
+      });
+    }
+  });
+
+  const normalized = plan
+    .map((workout, index) => ({
+      ...workout,
+      title: workout.title || `Workout ${index + 1}`,
+      exercises: Array.isArray(workout.exercises) && workout.exercises.length > 0
+        ? workout.exercises.slice(0, 6)
+        : [{ name: `Workout block ${index + 1}` }],
+    }))
+    .filter((workout) => Array.isArray(workout.exercises) && workout.exercises.length > 0);
+
+  return normalized.length > 0 ? normalized : false;
+};
+
+const ACTION_PROMPT_MAP = {
+  'Generate Weekly Plan': 'Can you generate a personalized weekly fitness plan for me based on my recent activity and fitness level? Include a short readable overview with headings for each workout day, and also include the machine-readable plan payload. [[RETURN_JSON_WORKOUT_PLAN]]',
+  'Create Meal Plan': 'Create a personalized meal plan based on my recent activity and nutrition patterns. Use clear markdown headings like Overview, Breakfast, Lunch, Dinner, Snacks, and Next Steps. Respond in plain language, not JSON.',
+  'Analyze My Progress': 'Analyze my recent fitness and nutrition progress. Use markdown headings for Wins, Watchouts, and Next Steps. Respond in plain language, not JSON.',
+  'How ready am I?': 'Based on my recent workouts and nutrition, tell me how ready I am for a harder training day today. Use markdown headings for Readiness, Why, and Recommendation. Respond in plain language, not JSON.',
+  'Nutrition Advice': 'Give me personalized nutrition advice based on my recent habits. Use markdown headings for Priority Focus, What to Keep, and What to Adjust. Respond in plain language, not JSON.',
+  'Form Tips': 'Give me practical form tips for safer, more effective workouts. Use markdown headings for Setup, Common Mistakes, and Coaching Cues. Respond in plain language, not JSON.',
+};
+
+export const resolveAssistantActionPrompt = (text) => ACTION_PROMPT_MAP[text] || text;
+
 export const createUserMessage = (text) => ({
   id: `user-${Date.now()}`,
   type: 'user',
@@ -141,9 +224,53 @@ export const createErrorMessage = () => ({
   timestamp: new Date(),
 });
 
-export const createSuccessMessage = () => ({
+export const formatWorkoutsAsMarkdown = (workouts = []) => {
+  if (!Array.isArray(workouts) || workouts.length === 0) {
+    return 'I generated a plan, but there were no workouts to display.';
+  }
+
+  const sections = workouts.map((workout, index) => {
+    const heading = workout.title || `Workout ${index + 1}`;
+    const focus = Array.isArray(workout.focusAreas) && workout.focusAreas.length > 0
+      ? `Focus: ${workout.focusAreas.join(', ')}`
+      : 'Focus: General fitness';
+    const exercises = Array.isArray(workout.exercises) && workout.exercises.length > 0
+      ? workout.exercises
+          .slice(0, 5)
+          .map((exercise) => {
+            const details = [];
+            if (exercise.sets && exercise.reps) details.push(`${exercise.sets} x ${exercise.reps}`);
+            if (exercise.interval) details.push(`${exercise.interval}`);
+            return `- ${exercise.name}${details.length ? ` (${details.join(', ')})` : ''}`;
+          })
+          .join('\n')
+      : '- Personalized exercise details available in the plan card';
+
+    return `## ${heading}
+${focus}
+
+${workout.description || 'A personalized training block based on your recent activity.'}
+
+### Key exercises
+${exercises}`;
+  });
+
+  return `# Your Weekly Plan
+I created a personalized weekly training plan and saved it to your AI Generated Plans section.
+
+${sections.join('\n\n')}`;
+};
+
+export const createSuccessMessage = (workouts = []) => ({
   id: `success-${Date.now()}`,
   type: 'ai',
-  content: '✅ **Workout Plan Generated!** I\'ve created a personalized fitness plan for you. Scroll down to view the workout cards.',
+  content: formatWorkoutsAsMarkdown(workouts),
+  timestamp: new Date(),
+});
+
+export const createPlanFormattingMessage = () => ({
+  id: `plan-format-${Date.now()}`,
+  type: 'ai',
+  content: 'I generated a weekly plan, but I had to fall back to the plain-text version this time. The plan details are still shown below.',
   timestamp: new Date(),
 });

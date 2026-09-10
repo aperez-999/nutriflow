@@ -3,7 +3,6 @@ import {
   Box,
   Card,
   CardBody,
-  SimpleGrid,
   Text,
   VStack,
   HStack,
@@ -29,15 +28,12 @@ const cardStyles = {
   transition: 'all 0.2s ease',
 };
 
-/**
- * AI Insights section: shows insight cards or empty state.
- * insights: array of { type: 'training'|'nutrition'|'consistency', title?, content } (optional).
- */
 export default function AIInsightsSection({ insights = [] }) {
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'white');
   const subColor = useColorModeValue('gray.600', 'gray.400');
+  const sectionBg = useColorModeValue('gray.50', 'whiteAlpha.50');
 
   if (!insights || insights.length === 0) {
     return (
@@ -47,14 +43,16 @@ export default function AIInsightsSection({ insights = [] }) {
         </Text>
         <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} {...cardStyles}>
           <CardBody>
-            <VStack py={8} spacing={3} align="center" justify="center">
+            <VStack py={10} spacing={4} align="center" justify="center" textAlign="center" minH="240px">
               <Icon as={FiActivity} boxSize={10} color={subColor} />
-              <Text fontSize="md" fontWeight="600" color={textColor}>
-                Insights will appear here
-              </Text>
-              <Text color={subColor} textAlign="center" fontSize="sm" maxW="320px">
-                Log workouts or meals to receive AI-generated insights.
-              </Text>
+              <VStack spacing={2} maxW="320px">
+                <Text fontSize="md" fontWeight="600" color={textColor}>
+                  Insights will appear here
+                </Text>
+                <Text color={subColor} fontSize="sm" lineHeight="1.7">
+                  Log workouts or meals to receive AI-generated insights.
+                </Text>
+              </VStack>
             </VStack>
           </CardBody>
         </Card>
@@ -67,30 +65,37 @@ export default function AIInsightsSection({ insights = [] }) {
       <Text fontSize="sm" fontWeight="600" color={textColor} letterSpacing="wider" mb={3}>
         AI INSIGHTS
       </Text>
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={4}>
-        {insights.map((insight, index) => {
-          const config = INSIGHT_CONFIG.find((c) => c.key === insight.type) || INSIGHT_CONFIG[index % INSIGHT_CONFIG.length];
-          return (
-            <Card
-              key={insight.id || index}
-              bg={cardBg}
-              borderWidth="1px"
-              borderColor={borderColor}
-              {...cardStyles}
-            >
-              <CardBody>
-                <HStack spacing={2} mb={2}>
-                  <Icon as={config.icon} boxSize={4} color={config.color} />
-                  <Text fontSize="sm" fontWeight="600" color={textColor}>
-                    {insight.title || config.title}
-                  </Text>
-                </HStack>
-                <Text fontSize="sm" color={subColor}>{insight.content}</Text>
-              </CardBody>
-            </Card>
-          );
-        })}
-      </SimpleGrid>
+      <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} {...cardStyles}>
+        <CardBody>
+          <VStack spacing={4} align="stretch">
+            {insights.map((insight, index) => {
+              const config = INSIGHT_CONFIG.find((c) => c.key === insight.type) || INSIGHT_CONFIG[index % INSIGHT_CONFIG.length];
+              return (
+                <Box
+                  key={insight.id || index}
+                  p={4}
+                  bg={sectionBg}
+                  borderWidth="1px"
+                  borderColor={borderColor}
+                  borderRadius="lg"
+                >
+                  <VStack align="stretch" spacing={3}>
+                    <HStack spacing={3} align="center">
+                      <Icon as={config.icon} boxSize={4} color={config.color} />
+                      <Text fontSize="sm" fontWeight="600" color={textColor}>
+                        {insight.title || config.title}
+                      </Text>
+                    </HStack>
+                    <Text fontSize="sm" color={subColor} lineHeight="1.7">
+                      {insight.content}
+                    </Text>
+                  </VStack>
+                </Box>
+              );
+            })}
+          </VStack>
+        </CardBody>
+      </Card>
     </Box>
   );
 }
