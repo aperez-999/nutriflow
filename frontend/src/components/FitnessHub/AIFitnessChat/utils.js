@@ -1,3 +1,5 @@
+import { DEFAULT_SUGGESTIONS, GENERIC_BACKEND_FALLBACK_MESSAGE } from './constants';
+
 export const parseAIRecommendations = (content) => {
   try {
     if (!content || typeof content !== 'string') return false;
@@ -26,17 +28,17 @@ export const parseAIRecommendations = (content) => {
       // Remove trailing commas before ] or }
       .replace(/,\s*([}\]])/g, '$1')
       // Fix common invalid JSON from models: reps: 8-12 should be a string
-      .replace(/(\"reps\"\s*:\s*)(\d+)\s*-\s*(\d+)/g, '$1\"$2-$3\"')
+      .replace(/("reps"\s*:\s*)(\d+)\s*-\s*(\d+)/g, '$1"$2-$3"')
       // Handle en-dash ranges
-      .replace(/(\"reps\"\s*:\s*)(\d+)\s*[-\u2013\u2014]\s*(\d+)/g, '$1\"$2-$3\"')
+      .replace(/("reps"\s*:\s*)(\d+)\s*[-\u2013\u2014]\s*(\d+)/g, '$1"$2-$3"')
       // Quote any bare reps value (e.g., 30-60 seconds)
-      .replace(/(\"reps\"\s*:\s*)(?!\")(.*?)(?=,|[}\]])/g, (m, p1, p2) => p1 + '\"' + String(p2).trim().replace(/\"/g, '\\\"') + '\"')
+      .replace(/("reps"\s*:\s*)(?!")(.*?)(?=,|[}\]])/g, (m, p1, p2) => p1 + '"' + String(p2).trim().replace(/"/g, '\\"') + '"')
       // Quote calories ranges like 250-300
-      .replace(/(\"calories\"\s*:\s*)(\d+)\s*[-\u2013\u2014]\s*(\d+)/g, '$1\"$2-$3\"')
+      .replace(/("calories"\s*:\s*)(\d+)\s*[-\u2013\u2014]\s*(\d+)/g, '$1"$2-$3"')
       // Quote difficulty fractions like 6/10
-      .replace(/(\"difficulty\"\s*:\s*)(\d+)\s*\/\s*(\d+)/g, '$1\"$2/$3\"')
+      .replace(/("difficulty"\s*:\s*)(\d+)\s*\/\s*(\d+)/g, '$1"$2/$3"')
       // Ensure N/A is quoted
-      .replace(/(\"difficulty\"\s*:\s*)(N\/A)/gi, '$1\"N/A\"');
+      .replace(/("difficulty"\s*:\s*)(N\/A)/gi, '$1"N/A"');
 
     const parsed = JSON.parse(jsonText);
     if (!Array.isArray(parsed) || parsed.length === 0) return false;
@@ -114,7 +116,7 @@ export const parseAIRecommendations = (content) => {
         difficulty: typeof w.difficulty === 'string' ? w.difficulty : 'Intermediate',
       };
     });
-  } catch (error) {
+  } catch {
     return false;
   }
 };
@@ -126,7 +128,7 @@ export const fallbackParseWorkoutPlan = (content) => {
   const lines = cleaned.split('\n').map((line) => line.trim()).filter(Boolean);
   if (lines.length === 0) return false;
 
-  const dayHeadingRegex = /^(?:#{1,3}\s*)?(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Push Day|Pull Day|Leg Day|Upper Body|Lower Body|Full Body|Recovery Day|Conditioning|Mobility Day)(?:\s*[:\-].*)?$/i;
+  const dayHeadingRegex = /^(?:#{1,3}\s*)?(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Push Day|Pull Day|Leg Day|Upper Body|Lower Body|Full Body|Recovery Day|Conditioning|Mobility Day)(?:\s*[:-].*)?$/i;
   const bulletRegex = /^(?:[-*•]\s+)(.+)$/;
   const repRegex = /(.+?)(?:\s+\(?\d+\s*x\s*[\d-]+\)?|\s+\d+\s*reps?)/i;
 
@@ -201,6 +203,57 @@ const ACTION_PROMPT_MAP = {
 };
 
 export const resolveAssistantActionPrompt = (text) => ACTION_PROMPT_MAP[text] || text;
+
+export const isGenericBackendFallback = (content) =>
+  typeof content === 'string' && content.trim().includes(GENERIC_BACKEND_FALLBACK_MESSAGE.slice(0, 36));
+
+const pickTailoredOpening = (message, context) => {
+  const normalized = (message || '').trim().toLowerCase();
+  const userName = context?.userName || 'there';
+  const workoutCount = Array.isArray(context?.recentWorkouts) ? context.recentWorkouts.length : 0;
+  const dietCount = Array.isArray(context?.recentDiets) ? context.recentDiets.length : 0;
+
+  if (/^(hi|hello|hey|yo|good (morning|afternoon|evening))\b/.test(normalized)) {
+    return `Hey ${userName}! I can help with training, nutrition, recovery, or reviewing your progress.`;
+  }
+
+  if (/(build|gain|add) muscle|muscle gain|get stronger|strength/.test(normalized)) {
+    return `To build muscle, focus on progressive overload, 3-5 strength sessions a week, enough protein, and solid recovery.`;
+  }
+
+  if (/(lose fat|fat loss|weight loss|cutting|lean down|drop weight)/.test(normalized)) {
+    return `For fat loss, keep protein high, stay consistent with training, and aim for a calorie deficit you can sustain.`;
+  }
+
+  if (/(recover|rest|sore|fatigued|tired|burnt out)/.test(normalized)) {
+    return `If recovery is the goal, reduce intensity for a day, sleep a little more, and keep the next session lighter.`;
+  }
+
+  if (workoutCount > 0 || dietCount > 0) {
+    return `Based on your recent activity, I can tailor this to the ${workoutCount} workouts and ${dietCount} nutrition logs you’ve already tracked.`;
+  }
+
+  return `I can help you build a training plan, review nutrition, or answer fitness questions in a more specific way.`;
+};
+
+export const buildConversationalFallbackResponse = (message, context = {}) => {
+  const opening = pickTailoredOpening(message, context);
+  const normalized = (message || '').trim().toLowerCase();
+
+  let followUp = 'Tell me your main goal and how many days you want to train each week, and I’ll shape the next step.';
+  if (/(build|gain|add) muscle|muscle gain|get stronger|strength/.test(normalized)) {
+    followUp = 'If you want, I can turn that into a weekly split or a full-body plan next.';
+  } else if (/(lose fat|fat loss|weight loss|cutting|lean down|drop weight)/.test(normalized)) {
+    followUp = 'If you want, I can also help with meal timing and calorie targets.';
+  } else if (/^(hi|hello|hey|yo|good (morning|afternoon|evening))\b/.test(normalized)) {
+    followUp = 'If you want a jump start, ask me for a weekly plan, meal plan, or readiness check.';
+  }
+
+  return {
+    content: `${opening} ${followUp}`,
+    suggestions: DEFAULT_SUGGESTIONS,
+  };
+};
 
 export const createUserMessage = (text) => ({
   id: `user-${Date.now()}`,

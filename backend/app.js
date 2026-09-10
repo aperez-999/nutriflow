@@ -13,6 +13,7 @@ import contactRoutes from './routes/contactRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import foodRoutes from './routes/foodRoutes.js';
 import exerciseRoutes from './routes/exerciseRoutes.js';
+import { selectProvider } from './ai/config/aiProvider.js';
 
 const app = express();
 
@@ -56,7 +57,7 @@ app.use('/api/exercise', exerciseRoutes);
 import { orchestrateAI } from './ai/orchestrator/orchestrate.js';
 
 // AI chat: rate-limited, then delegates to the AI orchestration layer.
-app.post('/api/ai/chat', aiChatLimiter, async (req, res) => {
+const handleAIChat = async (req, res) => {
   try {
     const { message, context, history = [] } = req.body || {};
     if (!message?.trim()) {
@@ -69,11 +70,14 @@ app.post('/api/ai/chat', aiChatLimiter, async (req, res) => {
     console.error('AI chat error:', error);
     return res.status(500).json({ message: 'Error generating AI response' });
   }
-});
+};
+
+app.post('/api/ai/chat', aiChatLimiter, handleAIChat);
+app.post('/api/chat', aiChatLimiter, handleAIChat);
 
 // Health check and not-found helpers
 app.get('/api/health', (req, res) => {
-  const provider = process.env.NODE_ENV === 'production' ? 'groq' : 'ollama';
+  const provider = selectProvider();
   const model = provider === 'groq' ? 
     process.env.GROQ_MODEL || 'llama3-8b-8192' : 
     process.env.OLLAMA_MODEL || 'llama3:latest';

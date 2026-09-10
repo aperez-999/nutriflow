@@ -12,6 +12,12 @@ import { generateChatCompletion } from '../config/aiProvider.js';
 
 const MEAL_LABELS = ['breakfast', 'lunch', 'dinner', 'snack'];
 const MAX_MEALS = 6;
+const FALLBACK_MEAL_SUGGESTIONS = [
+  { meal: 'Breakfast', food: 'Greek yogurt, berries, and oats' },
+  { meal: 'Lunch', food: 'Chicken rice bowl with vegetables' },
+  { meal: 'Dinner', food: 'Salmon, potatoes, and a side salad' },
+  { meal: 'Snack', food: 'Protein shake with fruit' },
+];
 
 function stripBullet(line) {
   return line.replace(/^[•\-*]\s*/, '').trim();
@@ -71,7 +77,22 @@ export async function runMealPlannerAgent({ message, context = {}, history = [] 
     },
   ];
 
-  const { content, provider } = await generateChatCompletion(messages, { temperature: 0.7 });
+  let content = '';
+  let provider = 'fallback';
+  try {
+    const result = await generateChatCompletion(messages, { temperature: 0.7 });
+    content = result.content;
+    provider = result.provider;
+  } catch (err) {
+    console.error('MealPlannerAgent provider error:', err);
+    return {
+      type: 'meal_plan',
+      calories: undefined,
+      meals: FALLBACK_MEAL_SUGGESTIONS,
+      rawContent: 'Daily Meal Plan\n\nBreakfast\nGreek yogurt, berries, and oats\n\nLunch\nChicken rice bowl with vegetables\n\nDinner\nSalmon, potatoes, and a side salad\n\nSnack\nProtein shake with fruit',
+      source: 'fallback',
+    };
+  }
 
   const lines = content.split('\n').map((l) => stripBullet(l)).map((l) => l.trim()).filter(Boolean);
   const meals = [];

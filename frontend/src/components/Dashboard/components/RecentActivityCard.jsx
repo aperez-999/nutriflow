@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, VStack, Text, HStack, Icon, useColorModeValue } from '@chakra-ui/react';
 import { FiClock, FiCoffee, FiActivity } from 'react-icons/fi';
+import { getTodayDayKey, toDayKey } from '../../../utils/dateUtils';
 
 /**
  * List of recent diet and workout entries (mixed, by date).
@@ -15,12 +16,12 @@ export default function RecentActivityCard({ items }) {
 
   const formatTime = (date) => {
     const d = new Date(date);
-    const today = new Date().toISOString().split('T')[0];
-    const dateStr = d.toISOString().split('T')[0];
+    const today = getTodayDayKey();
+    const dateStr = toDayKey(d);
     if (dateStr === today) return 'Today';
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    if (dateStr === yesterday.toISOString().split('T')[0]) return 'Yesterday';
+    if (dateStr === toDayKey(yesterday)) return 'Yesterday';
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 

@@ -15,14 +15,14 @@ import { FiUser, FiCpu } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { PRIMARY_SUGGESTIONS, CHAT_ACTION_BUTTON_PROPS } from '../constants';
+import { QUICK_ACTIONS, PRIMARY_SUGGESTIONS, CHAT_ACTION_BUTTON_PROPS } from '../constants';
 
 const MotionBox = motion(Box);
 
 function splitSuggestions(suggestions) {
   if (!Array.isArray(suggestions)) return { primary: [], secondary: [] };
-  const primary = suggestions.filter((s) => PRIMARY_SUGGESTIONS.includes(s));
-  const secondary = suggestions.filter((s) => !PRIMARY_SUGGESTIONS.includes(s));
+  const primary = suggestions.filter((s) => PRIMARY_SUGGESTIONS.includes(s) && !QUICK_ACTIONS.includes(s));
+  const secondary = suggestions.filter((s) => !PRIMARY_SUGGESTIONS.includes(s) && !QUICK_ACTIONS.includes(s));
   return { primary, secondary };
 }
 

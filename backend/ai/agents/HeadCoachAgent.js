@@ -13,7 +13,7 @@
 
 import { get_user_stats } from '../tools/get_user_stats.js';
 import { COACH_SYSTEM_PROMPT, buildContextSummary } from '../prompts/coachPrompt.js';
-import { generateChatCompletion, selectProvider } from '../config/aiProvider.js';
+import { generateChatCompletion } from '../config/aiProvider.js';
 import {
   categorizeMessage,
   suggestionsByCategory,
@@ -125,8 +125,6 @@ export async function runHeadCoachAgent({ message, context = {}, history = [] })
   const type = categorizeMessage(message);
   const categorySuggestions = suggestionsByCategory[type] || suggestionsByCategory.default;
   const suggestions = [...categorySuggestions, ...COACHING_ACTION_SUGGESTIONS];
-  const provider = selectProvider();
-
   try {
     const { content: rawContent, provider: usedProvider } = await generateChatCompletion(messages, { temperature: 0.7 });
     let content = rawContent;

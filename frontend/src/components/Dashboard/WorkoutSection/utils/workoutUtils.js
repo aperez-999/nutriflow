@@ -1,7 +1,9 @@
+import { formatDayKey, getTodayDayKey, shiftDayKey, toDayKey } from '../../../../utils/dateUtils';
+
 // Calculate daily totals for selected date
 export const getDailyTotals = (workouts, selectedDate) => {
   const todaysWorkouts = workouts.filter(workout => 
-    workout.date && workout.date.split('T')[0] === selectedDate
+    workout.date && toDayKey(workout.date) === selectedDate
   );
   
   return todaysWorkouts.reduce((totals, workout) => ({
@@ -14,19 +16,15 @@ export const getDailyTotals = (workouts, selectedDate) => {
 // Date navigation functions
 export const getNavigationDates = (selectedDate) => {
   const getPreviousDay = () => {
-    const currentDate = new Date(selectedDate);
-    currentDate.setDate(currentDate.getDate() - 1);
-    return currentDate.toISOString().split('T')[0];
+    return shiftDayKey(selectedDate, -1);
   };
 
   const getNextDay = () => {
-    const currentDate = new Date(selectedDate);
-    currentDate.setDate(currentDate.getDate() + 1);
-    return currentDate.toISOString().split('T')[0];
+    return shiftDayKey(selectedDate, 1);
   };
 
   const getToday = () => {
-    return new Date().toISOString().split('T')[0];
+    return getTodayDayKey();
   };
 
   return {
@@ -38,14 +36,13 @@ export const getNavigationDates = (selectedDate) => {
 
 // Format date for display
 export const formatDate = (dateString) => {
-  const date = new Date(dateString);
   return {
-    full: date.toLocaleDateString('en-US', { 
+    full: formatDayKey(dateString, {
       weekday: 'short',
-      month: 'short', 
+      month: 'short',
       day: 'numeric'
     }),
-    year: date.getFullYear()
+    year: formatDayKey(dateString, { year: 'numeric' })
   };
 };
 

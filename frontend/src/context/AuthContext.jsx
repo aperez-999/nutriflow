@@ -2,6 +2,22 @@ import React, { createContext, useState, useEffect } from 'react';
 
 export const AuthContext = createContext();
 
+const normalizeUserRecord = (payload) => {
+  if (!payload) return null;
+  const account = payload.user || payload.result || payload;
+  if (!account) return null;
+
+  return {
+    ...payload,
+    user: {
+      ...account,
+      preferences: {
+        notificationsEnabled: account.preferences?.notificationsEnabled ?? true,
+      },
+    },
+  };
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -11,7 +27,7 @@ export const AuthProvider = ({ children }) => {
       // Get user data from localStorage
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        setUser(normalizeUserRecord(JSON.parse(storedUser)));
       }
     } catch (error) {
       console.error('Error parsing profile:', error);
@@ -24,12 +40,20 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData) => {
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
+    const normalized = normalizeUserRecord(userData);
+    localStorage.setItem('user', JSON.stringify(normalized));
+    setUser(normalized);
+  };
+
+  const updateUser = (nextUserData) => {
+    const normalized = normalizeUserRecord(nextUserData);
+    localStorage.setItem('user', JSON.stringify(normalized));
+    setUser(normalized);
   };
 
   const logout = () => {
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     setUser(null);
   };
 
@@ -38,7 +62,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

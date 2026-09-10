@@ -17,6 +17,7 @@ const inferBaseUrl = () => {
 };
 const base = inferBaseUrl().replace(/\/?api\/?$/, '');
 axios.defaults.baseURL = base;
+axios.defaults.timeout = 60000;
 
 // When deploying on Vercel Hobby, consolidate serverless routes under /api/[collection]
 // so FE calls need to support both styles
@@ -121,6 +122,24 @@ export const register = async ({ username, email, password }) => {
     }
 };
 
+export const updateProfile = async (profileData) => {
+  try {
+    const response = await axios.put('/api/auth/me', profileData);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to update profile' };
+  }
+};
+
+export const changePassword = async ({ currentPassword, newPassword }) => {
+  try {
+    const response = await axios.put('/api/auth/me/password', { currentPassword, newPassword });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to update password' };
+  }
+};
+
 // Diet functions
 export const getDiets = async () => {
     try {
@@ -196,7 +215,7 @@ export const resetPassword = async (token, password) => {
 // AI Fitness Chat & History
 export const aiChat = async (message, context, history = []) => {
   try {
-    const response = await axios.post('/api/ai/chat', { message, context, history });
+    const response = await axios.post('/api/ai/chat', { message, context, history }, { timeout: 65000 });
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: 'AI chat failed' };

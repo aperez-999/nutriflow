@@ -1,29 +1,39 @@
 import React, { useContext } from 'react';
 import {
+  Avatar,
+  Badge,
   Box,
-  Flex,
   Button,
-  Heading,
-  Spacer,
-  useToast,
-  useColorMode,
+  Container,
+  Flex,
+  HStack,
   IconButton,
   Menu,
   MenuButton,
-  MenuList,
+  MenuDivider,
   MenuItem,
+  MenuList,
+  Text,
+  useColorMode,
   useColorModeValue,
+  useToast,
+  VStack,
   Image,
-  HStack
 } from '@chakra-ui/react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import { SunIcon, MoonIcon, HamburgerIcon } from '@chakra-ui/icons';
+import { HamburgerIcon, MoonIcon, SettingsIcon, SunIcon } from '@chakra-ui/icons';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Link as RouterLink } from 'react-router-dom';
-import { FaChartBar, FaDumbbell } from 'react-icons/fa';
+import { FiGrid, FiLogOut, FiUser, FiZap } from 'react-icons/fi';
+import { AuthContext } from '../context/AuthContext';
 
 const MotionBox = motion(Box);
+
+const NAV_ITEMS = [
+  { label: 'Dashboard', path: '/dashboard', icon: FiGrid },
+  { label: 'Fitness Hub', path: '/fitness-hub', icon: FiZap },
+];
+
+const getAccount = (user) => user?.user || user?.result || user || {};
 
 function Navbar() {
   const { user, logout } = useContext(AuthContext);
@@ -31,8 +41,17 @@ function Navbar() {
   const location = useLocation();
   const toast = useToast();
   const { colorMode, toggleColorMode } = useColorMode();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const account = getAccount(user);
+
+  const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname) || location.pathname.startsWith('/reset-password/');
+  const isLoggedIn = Boolean(user);
+  const bgColor = useColorModeValue('rgba(255,255,255,0.88)', 'rgba(26,32,44,0.88)');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
+  const mutedColor = useColorModeValue('gray.600', 'gray.400');
+  const activeBg = useColorModeValue('teal.50', 'whiteAlpha.100');
+  const activeColor = useColorModeValue('teal.700', 'teal.200');
+  const ghostHoverBg = useColorModeValue('gray.100', 'whiteAlpha.100');
+  const logoBg = useColorModeValue('teal.50', 'whiteAlpha.100');
 
   const handleLogout = () => {
     try {
@@ -41,7 +60,7 @@ function Navbar() {
       toast({
         title: 'Logged out successfully',
         status: 'success',
-        duration: 2000,
+        duration: 2500,
         isClosable: true,
       });
     } catch (error) {
@@ -49,128 +68,203 @@ function Navbar() {
       toast({
         title: 'Error logging out',
         status: 'error',
-        duration: 2000,
+        duration: 2500,
         isClosable: true,
       });
     }
   };
 
-  // Prevent showing nav options on login/register pages
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/register';
+  const renderNavButton = (item) => {
+    const isActive = location.pathname === item.path;
+    return (
+      <Button
+        key={item.path}
+        as={RouterLink}
+        to={item.path}
+        variant="ghost"
+        leftIcon={<item.icon />}
+        bg={isActive ? activeBg : 'transparent'}
+        color={isActive ? activeColor : undefined}
+        borderRadius="full"
+        _hover={{ bg: isActive ? activeBg : ghostHoverBg }}
+      >
+        {item.label}
+      </Button>
+    );
+  };
 
   return (
-    <MotionBox
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
+    <MotionBox initial={{ y: -48, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.35 }}>
       <Box
-        bg={bgColor}
-        px={4}
-        py={3}
-        borderBottom="1px"
-        borderColor={borderColor}
         position="sticky"
         top={0}
         zIndex="sticky"
+        backdropFilter="blur(16px)"
+        bg={bgColor}
+        borderBottom="1px solid"
+        borderColor={borderColor}
         boxShadow="sm"
       >
-        <Flex alignItems="center" maxW="container.xl" mx="auto">
-          <Image
-            src="/images/nutriflowlogo.webp"
-            alt="NutriFlow Logo"
-            height="32px"
-            mr={2}
-          />
-          <Heading
-            size="md"
-            cursor="pointer"
-            onClick={() => user ? navigate('/dashboard') : navigate('/')}
-            _hover={{ transform: 'scale(1.05)' }}
-            transition="all 0.2s"
-          >
-            NutriFlow
-          </Heading>
-          
-          <Spacer />
+        <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={3}>
+          <Flex align="center" justify="space-between" gap={4}>
+            <HStack
+              spacing={3}
+              cursor="pointer"
+              onClick={() => navigate(isLoggedIn ? '/dashboard' : '/')}
+              minW={0}
+            >
+              <Box
+                p={2}
+                borderRadius="xl"
+                bg={logoBg}
+                borderWidth="1px"
+                borderColor={borderColor}
+              >
+                <Image src="/images/nutriflowlogo.webp" alt="NutriFlow Logo" height="28px" />
+              </Box>
+              <VStack spacing={0} align="start">
+                <Text fontSize="lg" fontWeight="800" lineHeight="1">
+                  NutriFlow
+                </Text>
+                <Text fontSize="xs" color={mutedColor} letterSpacing="widest" textTransform="uppercase">
+                  Fitness Workspace
+                </Text>
+              </VStack>
+            </HStack>
 
-          <IconButton
-            aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
-            icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
-            onClick={toggleColorMode}
-            variant="ghost"
-            mr={2}
-          />
-
-          {!isAuthPage && (
-            <Box display={{ base: 'none', md: 'block' }}>
-              <HStack spacing={4}>
-                <Button
-                  as={RouterLink}
-                  to="/dashboard"
-                  variant="ghost"
-                  leftIcon={<FaChartBar />}
-                >
-                  Dashboard
-                </Button>
-                <Button
-                  as={RouterLink}
-                  to="/fitness-hub"
-                  variant="ghost"
-                  leftIcon={<FaDumbbell />}
-                >
-                  Fitness Hub
-                </Button>
-                {user && (
-                  <Button
-                    as={motion.button}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    colorScheme="red"
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </Button>
-                )}
+            {!isAuthPage && isLoggedIn && (
+              <HStack spacing={2} display={{ base: 'none', md: 'flex' }}>
+                {NAV_ITEMS.map(renderNavButton)}
               </HStack>
-            </Box>
-          )}
+            )}
 
-          {/* Mobile Menu */}
-          <Box display={{ base: 'block', md: 'none' }}>
-            <Menu>
-              <MenuButton
-                as={IconButton}
-                icon={<HamburgerIcon />}
-                variant="outline"
-                aria-label="Options"
+            <HStack spacing={2}>
+              {!isLoggedIn && !isAuthPage && (
+                <HStack spacing={2} display={{ base: 'none', md: 'flex' }}>
+                  <Button as={RouterLink} to="/login" variant="ghost" borderRadius="full">
+                    Login
+                  </Button>
+                  <Button as={RouterLink} to="/register" colorScheme="teal" borderRadius="full">
+                    Get Started
+                  </Button>
+                </HStack>
+              )}
+
+              <IconButton
+                aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
+                icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+                onClick={toggleColorMode}
+                variant="ghost"
+                borderRadius="full"
               />
-              <MenuList>
-                {user ? (
-                  <>
-                    <MenuItem onClick={() => navigate('/dashboard')}>
-                      Dashboard
-                    </MenuItem>
-                    <MenuItem onClick={() => navigate('/fitness-hub')}>
-                      Fitness Hub
-                    </MenuItem>
-                    <MenuItem onClick={handleLogout}>Logout</MenuItem>
-                  </>
-                ) : (
-                  <>
-                    <MenuItem onClick={() => navigate('/login')}>Login</MenuItem>
-                    <MenuItem onClick={() => navigate('/register')}>
-                      Register
-                    </MenuItem>
-                  </>
-                )}
-              </MenuList>
-            </Menu>
-          </Box>
-        </Flex>
+
+              {isLoggedIn && !isAuthPage ? (
+                <>
+                  <Menu>
+                    <MenuButton
+                      as={Button}
+                      variant="ghost"
+                      borderRadius="full"
+                      px={2}
+                      display={{ base: 'none', md: 'inline-flex' }}
+                    >
+                      <HStack spacing={3}>
+                        <Avatar
+                          size="sm"
+                          name={account.username || 'User'}
+                          bg="teal.500"
+                          color="white"
+                        />
+                        <Box textAlign="left" maxW="150px">
+                          <Text fontSize="sm" fontWeight="700" noOfLines={1}>
+                            {account.username || 'Your profile'}
+                          </Text>
+                          <Text fontSize="xs" color={mutedColor} noOfLines={1}>
+                            {account.email || 'Manage account'}
+                          </Text>
+                        </Box>
+                      </HStack>
+                    </MenuButton>
+                    <MenuList borderRadius="xl">
+                      <MenuItem icon={<FiUser />} onClick={() => navigate('/settings')}>
+                        Profile & Settings
+                      </MenuItem>
+                      <MenuItem icon={<FiGrid />} onClick={() => navigate('/dashboard')}>
+                        Dashboard
+                      </MenuItem>
+                      <MenuItem icon={<FiZap />} onClick={() => navigate('/fitness-hub')}>
+                        Fitness Hub
+                      </MenuItem>
+                      <MenuDivider />
+                      <MenuItem icon={<FiLogOut />} onClick={handleLogout}>
+                        Logout
+                      </MenuItem>
+                    </MenuList>
+                  </Menu>
+
+                  <Menu>
+                    <MenuButton
+                      as={IconButton}
+                      icon={<HamburgerIcon />}
+                      variant="outline"
+                      borderRadius="full"
+                      aria-label="Navigation menu"
+                      display={{ base: 'inline-flex', md: 'none' }}
+                    />
+                    <MenuList borderRadius="xl">
+                      <Box px={3} py={2}>
+                        <HStack spacing={3}>
+                          <Avatar size="sm" name={account.username || 'User'} bg="teal.500" color="white" />
+                          <Box minW={0}>
+                            <Text fontSize="sm" fontWeight="700" noOfLines={1}>
+                              {account.username || 'User'}
+                            </Text>
+                            <Text fontSize="xs" color={mutedColor} noOfLines={1}>
+                              {account.email || 'Signed in'}
+                            </Text>
+                          </Box>
+                        </HStack>
+                      </Box>
+                      <MenuDivider />
+                      {NAV_ITEMS.map((item) => (
+                        <MenuItem key={item.path} icon={<item.icon />} onClick={() => navigate(item.path)}>
+                          {item.label}
+                        </MenuItem>
+                      ))}
+                      <MenuItem icon={<SettingsIcon />} onClick={() => navigate('/settings')}>
+                        Profile & Settings
+                      </MenuItem>
+                      <MenuDivider />
+                      <MenuItem icon={<FiLogOut />} onClick={handleLogout}>
+                        Logout
+                      </MenuItem>
+                    </MenuList>
+                  </Menu>
+                </>
+              ) : (
+                !isAuthPage && (
+                  <Menu>
+                    <MenuButton
+                      as={IconButton}
+                      icon={<HamburgerIcon />}
+                      variant="outline"
+                      borderRadius="full"
+                      aria-label="Navigation menu"
+                      display={{ base: 'inline-flex', md: 'none' }}
+                    />
+                    <MenuList borderRadius="xl">
+                      <MenuItem onClick={() => navigate('/login')}>Login</MenuItem>
+                      <MenuItem onClick={() => navigate('/register')}>Get Started</MenuItem>
+                    </MenuList>
+                  </Menu>
+                )
+              )}
+            </HStack>
+          </Flex>
+        </Container>
       </Box>
     </MotionBox>
   );
 }
 
-export default Navbar; 
+export default Navbar;

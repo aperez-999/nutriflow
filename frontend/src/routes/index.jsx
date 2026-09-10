@@ -12,6 +12,7 @@ import Privacy from '../components/Footer/Privacy';
 import Terms from '../components/Footer/Terms';
 import Contact from '../components/Footer/Contact';
 import FitnessHub from '../pages/FitnessHub';
+import ProfileSettings from '../pages/ProfileSettings';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -48,6 +49,14 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <FitnessHub />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/settings"
+        element={
+          <ProtectedRoute>
+            <ProfileSettings />
           </ProtectedRoute>
         }
       />

@@ -96,7 +96,21 @@ export async function runWorkoutPlannerAgent({ message, context = {}, history = 
     },
   ];
 
-  const { content, provider } = await generateChatCompletion(messages, { temperature: 0.7 });
+  let content = '';
+  let provider = 'fallback';
+  try {
+    const result = await generateChatCompletion(messages, { temperature: 0.7 });
+    content = result.content;
+    provider = result.provider;
+  } catch (err) {
+    console.error('WorkoutPlannerAgent provider error:', err);
+    return {
+      type: 'workout_plan',
+      plan: buildFallbackWeeklyPlan(message),
+      rawContent: 'Workout Plan\n\nMonday\n• Squats 3x8\n• Push-ups 3x12\n• Rows 3x10\n\nWednesday\n• Deadlifts 3x6\n• Overhead Press 3x8\n• Plank 3 x 30 sec\n\nFriday\n• Lunges 3x10\n• Bench Press 3x8\n• Lat Pulldown 3x10',
+      source: 'fallback',
+    };
+  }
 
   const lines = content.split('\n').map((l) => l.trim()).filter(Boolean);
   const plan = [];

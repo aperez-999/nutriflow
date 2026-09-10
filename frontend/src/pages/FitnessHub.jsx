@@ -45,13 +45,31 @@ const DISCOVERY_EXERCISES = [
     equipment: 'Bodyweight',
     difficulty: 'Beginner',
     videoUrl: 'https://www.youtube.com/watch?v=IODxDxX7oi4',
+    notes: 'A reliable push pattern for warm-ups, hypertrophy, and conditioning.',
+  },
+  {
+    name: 'Incline Push-ups',
+    muscleGroup: 'Chest',
+    equipment: 'Bodyweight',
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=IODxDxX7oi4',
+    notes: 'An easier press variation that keeps the shoulder angle friendly.',
   },
   {
     name: 'Bench Press',
     muscleGroup: 'Chest',
-    equipment: 'Machines',
+    equipment: 'Barbell',
     difficulty: 'Intermediate',
     videoUrl: 'https://www.youtube.com/watch?v=rT7DgCr-3pg',
+    notes: 'Classic strength builder for chest, triceps, and front delts.',
+  },
+  {
+    name: 'Dumbbell Fly',
+    muscleGroup: 'Chest',
+    equipment: 'Dumbbells',
+    difficulty: 'Intermediate',
+    videoUrl: 'https://www.youtube.com/watch?v=8iPEnn-ltC8',
+    notes: 'Great for controlled chest isolation and a wider range of motion.',
   },
   {
     name: 'Pull-ups',
@@ -59,13 +77,31 @@ const DISCOVERY_EXERCISES = [
     equipment: 'Bodyweight',
     difficulty: 'Advanced',
     videoUrl: 'https://www.youtube.com/watch?v=eGo4IYlbE5g',
+    notes: 'A major upper-back and lat strength marker.',
   },
   {
-    name: 'Rows',
+    name: 'Lat Pulldown',
     muscleGroup: 'Back',
-    equipment: 'Dumbbells',
+    equipment: 'Machine',
     difficulty: 'Intermediate',
     videoUrl: 'https://www.youtube.com/watch?v=pYcpY20QaE8',
+    notes: 'Useful for building vertical pulling strength with smoother load control.',
+  },
+  {
+    name: 'Seated Cable Row',
+    muscleGroup: 'Back',
+    equipment: 'Cable',
+    difficulty: 'Intermediate',
+    videoUrl: 'https://www.youtube.com/watch?v=GZbfZ033f74',
+    notes: 'A strong horizontal pull for mid-back thickness and posture.',
+  },
+  {
+    name: 'Single-arm Row',
+    muscleGroup: 'Back',
+    equipment: 'Dumbbells',
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=roCP6wCXPqo',
+    notes: 'Lets each side work independently and helps correct strength imbalances.',
   },
   {
     name: 'Squats',
@@ -73,13 +109,55 @@ const DISCOVERY_EXERCISES = [
     equipment: 'Bodyweight',
     difficulty: 'Beginner',
     videoUrl: 'https://www.youtube.com/watch?v=aclHkVaku9U',
+    notes: 'Foundational lower-body movement for strength and mobility.',
   },
   {
-    name: 'Deadlift',
+    name: 'Goblet Squat',
+    muscleGroup: 'Legs',
+    equipment: 'Dumbbells',
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=MeIiIdhvXT4',
+    notes: 'A highly usable squat variation for improving depth and torso control.',
+  },
+  {
+    name: 'Romanian Deadlift',
     muscleGroup: 'Legs',
     equipment: 'Dumbbells',
     difficulty: 'Advanced',
     videoUrl: 'https://www.youtube.com/watch?v=op9kVnSso6Q',
+    notes: 'Great posterior-chain builder for hamstrings and glutes.',
+  },
+  {
+    name: 'Walking Lunge',
+    muscleGroup: 'Legs',
+    equipment: 'Dumbbells',
+    difficulty: 'Intermediate',
+    videoUrl: 'https://www.youtube.com/watch?v=wrwwXE_x-pQ',
+    notes: 'Adds unilateral strength, balance, and dynamic stability.',
+  },
+  {
+    name: 'Leg Press',
+    muscleGroup: 'Legs',
+    equipment: 'Machine',
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=IZxyjW7MPJQ',
+    notes: 'Machine-based leg volume that is easy to scale up safely.',
+  },
+  {
+    name: 'Standing Calf Raise',
+    muscleGroup: 'Legs',
+    equipment: 'Machine',
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=YMmgqO8Jo-k',
+    notes: 'Simple accessory work that adds lower-leg volume and ankle strength.',
+  },
+  {
+    name: 'Bulgarian Split Squat',
+    muscleGroup: 'Glutes',
+    equipment: 'Dumbbells',
+    difficulty: 'Advanced',
+    videoUrl: 'https://www.youtube.com/watch?v=2C-uNgKwPLE',
+    notes: 'Hard unilateral leg work with a big glute and quad stimulus.',
   },
   {
     name: 'Plank',
@@ -87,13 +165,79 @@ const DISCOVERY_EXERCISES = [
     equipment: 'Bodyweight',
     difficulty: 'Beginner',
     videoUrl: 'https://www.youtube.com/watch?v=pSHjTRCQxIw',
+    notes: 'A simple anti-extension drill for core stability.',
   },
   {
-    name: 'Crunches',
+    name: 'Dead Bug',
     muscleGroup: 'Core',
     equipment: 'Bodyweight',
     difficulty: 'Beginner',
-    videoUrl: 'https://www.youtube.com/watch?v=Xyd_fa5zoEU',
+    videoUrl: 'https://www.youtube.com/watch?v=4XLEnwUr1d8',
+    notes: 'Great for trunk control while keeping the lower back protected.',
+  },
+  {
+    name: 'Pallof Press',
+    muscleGroup: 'Core',
+    equipment: 'Cable',
+    difficulty: 'Intermediate',
+    videoUrl: 'https://www.youtube.com/watch?v=FQskThL0VJg',
+    notes: 'Anti-rotation core work that carries over to nearly every lift.',
+  },
+  {
+    name: 'Shoulder Press',
+    muscleGroup: 'Shoulders',
+    equipment: 'Dumbbells',
+    difficulty: 'Intermediate',
+    videoUrl: 'https://www.youtube.com/watch?v=qEwKCR5JCog',
+    notes: 'Primary vertical press for delts, triceps, and upper-body strength.',
+  },
+  {
+    name: 'Lateral Raise',
+    muscleGroup: 'Shoulders',
+    equipment: 'Dumbbells',
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=3VcKaXpzqRo',
+    notes: 'Useful isolation work for side delt development.',
+  },
+  {
+    name: 'Bicep Curl',
+    muscleGroup: 'Arms',
+    equipment: 'Dumbbells',
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=av7-8igSXTs',
+    notes: 'A classic arm movement that pairs well with pull days.',
+  },
+  {
+    name: 'Triceps Pushdown',
+    muscleGroup: 'Arms',
+    equipment: 'Cable',
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=2-LAMcpzODU',
+    notes: 'Easy-to-load triceps work for arm volume and elbow-friendly reps.',
+  },
+  {
+    name: 'Kettlebell Swing',
+    muscleGroup: 'Full Body',
+    equipment: 'Kettlebell',
+    difficulty: 'Intermediate',
+    videoUrl: 'https://www.youtube.com/watch?v=YSxHifyI6s8',
+    notes: 'Explosive hinge work that blends conditioning and posterior-chain power.',
+  },
+  {
+    name: 'Jump Rope Intervals',
+    muscleGroup: 'Cardio',
+    equipment: 'Bodyweight',
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=1BZMtlT9cMM',
+    notes: 'A compact conditioning option that is easy to scale by interval length.',
+  },
+  {
+    name: 'Mobility Flow',
+    muscleGroup: 'Mobility',
+    equipment: 'Bodyweight',
+    difficulty: 'Beginner',
+    videoUrl: 'https://www.youtube.com/watch?v=HqFPO5qz0AA',
+    notes: 'A recovery-friendly movement break for hips, spine, and shoulders.',
   },
 ];
 
@@ -385,12 +529,12 @@ function FitnessHub() {
           <Grid
             templateColumns={{ base: '1fr', xl: 'minmax(0, 1.55fr) minmax(360px, 1fr)' }}
             gap={8}
-            alignItems="start"
+            alignItems="stretch"
           >
-            <Box minW={0}>
+            <Box minW={0} display="flex" h="100%">
               <FitnessHubChatSection userWorkouts={userWorkouts} userDiets={userDiets} toast={toast} />
             </Box>
-            <Box minW={0}>
+            <Box minW={0} display="flex" h="100%">
               <FitnessHubPlansSection
                 sectionRef={recSectionRef}
                 recommendationsLoading={recommendationsLoading}
@@ -421,12 +565,12 @@ function FitnessHub() {
           <Grid
             templateColumns={{ base: '1fr', xl: 'minmax(320px, 0.95fr) minmax(0, 1.35fr)' }}
             gap={8}
-            alignItems="start"
+            alignItems="stretch"
           >
-            <Box minW={0}>
+            <Box minW={0} display="flex" h="100%">
               <FitnessHubInsightsSection insights={insights} />
             </Box>
-            <Box minW={0}>
+            <Box minW={0} display="flex" h="100%">
               <FitnessHubDiscoverySection
                 muscle={discoveryMuscle}
                 equipment={discoveryEquipment}
@@ -435,6 +579,12 @@ function FitnessHub() {
                 onEquipmentChange={setDiscoveryEquipment}
                 onDifficultyChange={setDiscoveryDifficulty}
                 filteredExercises={filteredExercises}
+                totalExercises={DISCOVERY_EXERCISES.length}
+                onClearFilters={() => {
+                  setDiscoveryMuscle('');
+                  setDiscoveryEquipment('');
+                  setDiscoveryDifficulty('');
+                }}
               />
             </Box>
           </Grid>

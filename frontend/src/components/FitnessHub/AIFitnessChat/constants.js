@@ -47,3 +47,6 @@ export const CLEAR_MESSAGE = {
 
 /** Shown while the AI is generating a response. */
 export const TYPING_INDICATOR_TEXT = 'AI Coach is preparing a personalized response';
+
+export const GENERIC_BACKEND_FALLBACK_MESSAGE =
+  "I'm here to help with your fitness journey! What would you like to focus on today?";

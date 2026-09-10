@@ -241,12 +241,13 @@ function Dashboard() {
         </SimpleGrid>
 
         {/* Diet and Workout sections */}
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8}>
+        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} alignItems="stretch">
           <MotionBox
             id="diet-section"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            h="100%"
           >
             <DietSection
               diets={diets}
@@ -260,6 +261,7 @@ function Dashboard() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            h="100%"
           >
             <WorkoutSection
               workouts={workouts}

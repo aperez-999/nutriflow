@@ -93,14 +93,15 @@ const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
 
   return (
     <Box
-      p={{ base: 5, md: 6 }}
+      p={{ base: 5, md: 5.5 }}
       bg={bgColor}
       borderRadius="2xl"
       borderWidth="1px"
       borderColor={borderColor}
       boxShadow="lg"
+      minH={{ base: 'auto', xl: '732px' }}
     >
-      <VStack spacing={6} align="stretch">
+      <VStack spacing={5} align="stretch">
         <Box>
           <HStack spacing={3} mb={2}>
             <Box
@@ -123,7 +124,7 @@ const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
         </Box>
 
         <form onSubmit={handleSubmit}>
-          <VStack spacing={5} align="stretch">
+          <VStack spacing={4} align="stretch">
             <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
               <FormControl isRequired>
                 <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
@@ -180,7 +181,7 @@ const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
               />
             </FormControl>
 
-            <Box p={4} borderRadius="2xl" bg={mutedBg} borderWidth="1px" borderColor={borderColor}>
+            <Box p={3.5} borderRadius="2xl" bg={mutedBg} borderWidth="1px" borderColor={borderColor}>
               <HStack justify="space-between" align={{ base: 'start', md: 'center' }} flexWrap="wrap" gap={3} mb={4}>
                 <Box>
                   <Text fontSize="sm" fontWeight="700" color={textColor}>
@@ -199,9 +200,9 @@ const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
                 )}
               </HStack>
 
-              <SimpleGrid columns={{ base: 2, xl: 4 }} spacing={3}>
+              <SimpleGrid columns={{ base: 2, lg: 4 }} spacing={3}>
                 {metricCards.map((metric) => (
-                  <Box key={metric.key} p={3.5} borderRadius="xl" bg={bgColor} borderWidth="1px" borderColor={borderColor}>
+                  <Box key={metric.key} p={3} borderRadius="xl" bg={bgColor} borderWidth="1px" borderColor={borderColor}>
                     <HStack spacing={2} mb={2} color={metric.color}>
                       <Box as={metric.icon} boxSize={4} />
                       <Text fontSize="xs" fontWeight="700" textTransform="uppercase" letterSpacing="wide">
@@ -302,7 +303,7 @@ const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
                 borderColor={borderColor}
                 color={textColor}
                 borderRadius="xl"
-                rows={3}
+                rows={2}
                 _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
               />
             </FormControl>

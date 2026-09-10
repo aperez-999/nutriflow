@@ -12,11 +12,11 @@ import {
   Spinner,
   Wrap,
   WrapItem,
-  Select,
   IconButton,
+  Select,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { FiCpu, FiChevronLeft, FiChevronRight, FiPlus, FiTrash2 } from 'react-icons/fi';
+import { FiCpu, FiPlus, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { AuthContext } from '../../../context/AuthContext';
 import { aiChat, saveChatHistory, loadChatHistory, clearChatHistory } from '../../../services/api';
 import { ChatHeader, ChatInput, ChatMessage, TypingDots } from './components';
@@ -30,6 +30,8 @@ import {
   createSuccessMessage,
   createPlanFormattingMessage,
   resolveAssistantActionPrompt,
+  isGenericBackendFallback,
+  buildConversationalFallbackResponse,
 } from './utils';
 import { handleApiError } from '../../../utils/apiErrorHandler';
 
@@ -53,8 +55,6 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [autoScroll, setAutoScroll] = useState(true);
-  const [isAtBottom, setIsAtBottom] = useState(true);
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -93,22 +93,17 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     );
   }, [activeConversationId]);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  const scrollToBottom = useCallback((behavior = 'smooth') => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
   }, []);
 
   useEffect(() => {
-    if (autoScroll && isAtBottom) {
-      scrollToBottom();
-    }
-  }, [messages, isLoading, autoScroll, isAtBottom, scrollToBottom]);
-
-  const handleScroll = useCallback(() => {
-    const el = messagesContainerRef.current;
-    if (!el) return;
-    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
-    setIsAtBottom(atBottom);
-  }, []);
+    const behavior = messages.length <= 1 ? 'auto' : 'smooth';
+    const frame = window.requestAnimationFrame(() => scrollToBottom(behavior));
+    return () => window.cancelAnimationFrame(frame);
+  }, [activeConversationId, isLoading, messages, scrollToBottom]);
 
   useEffect(() => {
     if (didInitRef.current) return;
@@ -217,6 +212,15 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
         };
       }
 
+      if (data?.source === 'fallback' || isGenericBackendFallback(data.content)) {
+        const fallbackResponse = buildConversationalFallbackResponse(userMessage, userContext);
+        return {
+          content: fallbackResponse.content,
+          suggestions: fallbackResponse.suggestions,
+          parsedRecommendations: false,
+        };
+      }
+
       return { content: data.content, suggestions: data.suggestions, parsedRecommendations: false };
     } finally {
       setIsLoading(false);
@@ -287,8 +291,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
       bg={bgColor}
       w="100%"
       maxW="100%"
-      minH={{ base: '760px', lg: '820px' }}
-      height={{ base: '760px', lg: '820px' }}
+      h={{ base: '760px', md: '800px', xl: '820px' }}
       display="flex"
       flexDirection="column"
       variant="flat"
@@ -303,19 +306,17 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
       <CardBody p={0} display="flex" flexDirection="column" height="100%">
         <ChatHeader
           onClear={clearCurrentConversation}
-          autoScroll={autoScroll}
-          onAutoScrollChange={setAutoScroll}
         />
 
-        <Box px={{ base: 4, md: 5 }} py={4} borderBottom="1px" borderColor={cardBorderColor} bg={railBg}>
+        <Box px={{ base: 4, md: 5 }} py={{ base: 3.5, md: 4 }} borderBottom="1px" borderColor={cardBorderColor} bg={railBg}>
           <VStack align="stretch" spacing={3}>
             <Stack direction={{ base: 'column', lg: 'row' }} justify="space-between" gap={3}>
-              <Stack direction={{ base: 'column', md: 'row' }} spacing={3} flex="1">
+              <Stack direction={{ base: 'column', md: 'row' }} spacing={3} flex="1" minW={0}>
                 <Select
                   value={activeConversationId || ''}
                   onChange={(e) => setActiveConversationId(e.target.value)}
                   size="sm"
-                  maxW={{ base: '100%', md: '260px' }}
+                  maxW={{ base: '100%', md: '280px' }}
                   borderColor={cardBorderColor}
                 >
                   {conversations.map((conversation) => (
@@ -324,7 +325,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
                     </option>
                   ))}
                 </Select>
-                <HStack spacing={2}>
+                <HStack spacing={2} flexWrap="wrap">
                   <Button size="sm" leftIcon={<FiPlus />} variant="outline" onClick={startNewConversation}>
                     New chat
                   </Button>
@@ -333,12 +334,12 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
                   </Button>
                 </HStack>
               </Stack>
-              <Text fontSize="xs" color={subTextColor}>
+              <Text fontSize="xs" color={subTextColor} maxW="320px">
                 Your chat threads stay saved locally for this user
               </Text>
             </Stack>
 
-            <Wrap spacing={2}>
+            <Wrap spacing={2.5}>
               {QUICK_ACTIONS.map((suggestion) => (
                 <WrapItem key={suggestion}>
                   <Button
@@ -359,12 +360,13 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
         <Box
           flex="1"
           overflowY="auto"
+          overscrollBehaviorY="contain"
+          sx={{ WebkitOverflowScrolling: 'touch' }}
           px={{ base: 4, md: 6 }}
-          py={{ base: 5, md: 6 }}
+          py={{ base: 4, md: 5 }}
           position="relative"
           ref={messagesContainerRef}
-          onScroll={handleScroll}
-          scrollBehavior="smooth"
+          minH={0}
         >
           <VStack spacing={6} align="stretch">
             {messages.map((message) => (
@@ -401,13 +403,12 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
                 </Box>
               </HStack>
             )}
-
             <div ref={messagesEndRef} />
           </VStack>
         </Box>
 
-        <Box px={{ base: 4, md: 5 }} py={2} borderTop="1px" borderColor={cardBorderColor} bg={railBg}>
-          <HStack justify="space-between">
+        <Box px={{ base: 4, md: 5 }} py={2.5} borderTop="1px" borderColor={cardBorderColor} bg={railBg}>
+          <HStack justify="space-between" align="center" gap={3} flexWrap="wrap">
             <Text fontSize="xs" color={subTextColor}>
               {messages.filter((message) => message.type === 'user').length} prompts in this conversation
             </Text>

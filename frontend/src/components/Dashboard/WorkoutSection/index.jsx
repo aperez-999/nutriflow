@@ -16,11 +16,12 @@ import {
   WorkoutForm,
   WorkoutCard,
 } from './components';
+import { getTodayDayKey, toDayKey } from '../../../utils/dateUtils';
 
 const MotionBox = motion(Box);
 
 const initialFormState = {
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayDayKey(),
   type: '',
   workoutName: '',
   duration: '',
@@ -34,7 +35,7 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
   const [formData, setFormData] = useState(initialFormState);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getTodayDayKey());
 
   const handleSubmit = async (formattedData) => {
     try {
@@ -55,7 +56,7 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
     setIsEditing(true);
     setEditingId(workout._id);
     setFormData({
-      date: workout.date.split('T')[0],
+      date: toDayKey(workout.date),
       type: workout.type || '',
       workoutName: workout.workoutName || workout.type || '',
       duration: workout.duration?.toString() || '',
@@ -83,8 +84,9 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
+      h="100%"
     >
-      <VStack spacing={6} align="stretch">
+      <VStack spacing={6} align="stretch" h="100%">
         <DailySummaryCard
           workouts={workouts}
           selectedDate={selectedDate}
@@ -106,6 +108,7 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
           borderWidth="1px" 
           borderColor={borderColor}
           boxShadow="lg"
+          flex="1"
         >
           <VStack spacing={4} align="stretch">
             <HStack justify="space-between" align={{ base: 'start', md: 'center' }} flexWrap="wrap" gap={3}>

@@ -16,11 +16,12 @@ import {
   DietForm,
   DietCard,
 } from './components';
+import { getTodayDayKey, toDayKey } from '../../../utils/dateUtils';
 
 const MotionBox = motion(Box);
 
 const initialFormState = {
-  date: new Date().toISOString().split('T')[0],
+  date: getTodayDayKey(),
   mealType: '',
   foodName: '',
   calories: '',
@@ -34,7 +35,7 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
   const [formData, setFormData] = useState(initialFormState);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getTodayDayKey());
 
   const handleSubmit = async (formattedData) => {
     try {
@@ -55,7 +56,7 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
     setIsEditing(true);
     setEditingId(diet._id);
     setFormData({
-      date: diet.date.split('T')[0],
+      date: toDayKey(diet.date),
       mealType: diet.mealType || '',
       foodName: diet.foodName || '',
       calories: diet.calories?.toString() || '',
@@ -83,8 +84,9 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
+      h="100%"
     >
-      <VStack spacing={6} align="stretch">
+      <VStack spacing={5} align="stretch" h="100%">
         <DailySummaryCard
           diets={diets}
           selectedDate={selectedDate}
@@ -106,6 +108,7 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
           borderWidth="1px" 
           borderColor={borderColor}
           boxShadow="lg"
+          flex="1"
         >
           <VStack spacing={4} align="stretch">
             <HStack justify="space-between" align={{ base: 'start', md: 'center' }} flexWrap="wrap" gap={3}>

@@ -39,10 +39,16 @@ export const INTENT = {
  */
 function detectIntent(message) {
   const text = message || '';
-  const m = text.toLowerCase();
+  const m = text.toLowerCase().trim();
 
   // Existing special token path handled by HeadCoachAgent.
   if (/\[\[RETURN_JSON_WORKOUT_PLAN\]\]/i.test(text)) {
+    return INTENT.COACH;
+  }
+
+  if (!m) return INTENT.COACH;
+  if (/^(hi|hello|hey|yo|good (morning|afternoon|evening)|what'?s up)\b/.test(m)) return INTENT.COACH;
+  if (m.includes('build muscle') || m.includes('gain muscle') || m.includes('muscle') || m.includes('hypertrophy') || m.includes('bulk')) {
     return INTENT.COACH;
   }
 

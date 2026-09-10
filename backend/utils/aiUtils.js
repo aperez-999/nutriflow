@@ -1,6 +1,10 @@
 export const categorizeMessage = (text) => {
-  const m = text.toLowerCase();
-  if (m.includes('workout') || m.includes('exercise') || m.includes('train')) return 'workout';
+  const m = (text || '').toLowerCase();
+
+  if (/^(hi|hello|hey|yo|good (morning|afternoon|evening)|what'?s up)\b/.test(m)) return 'greeting';
+  if (m.includes('build muscle') || m.includes('gain muscle') || m.includes('muscle') || m.includes('hypertrophy') || m.includes('bulk')) return 'muscle';
+  if (m.includes('workout') || m.includes('exercise') || m.includes('train') || m.includes('lift')) return 'workout';
+  if (m.includes('nutrition') || m.includes('protein') || m.includes('calorie') || m.includes('meal') || m.includes('eat')) return 'nutrition';
   if (m.includes('form') || m.includes('technique') || m.includes('how to')) return 'form';
   if (m.includes('progress') || m.includes('analyze') || m.includes('track')) return 'progress';
   if (m.includes('plan') || m.includes('schedule') || m.includes('week')) return 'plan';
@@ -8,11 +12,14 @@ export const categorizeMessage = (text) => {
 };
 
 export const suggestionsByCategory = {
+  greeting: ['How can I build muscle?', 'Create a workout plan', 'Nutrition advice', 'How ready am I?'],
+  muscle: ['Create a workout plan', 'Nutrition advice', 'Form tips', 'How ready am I?'],
   workout: ['Show me the exercises', 'Adjust difficulty', 'Plan my week', 'How ready am I?'],
+  nutrition: ['Create a meal plan', 'Nutrition advice', 'Track my intake', 'How ready am I?'],
   form: ['Specific exercise form', 'Video demonstrations', 'Form checklist', 'Common mistakes'],
   progress: ['Detailed analysis', 'Set new goals', 'Weekly plan', 'How ready am I?'],
   plan: ['Customize plan', 'Add to calendar', 'Nutrition details', 'Exercise library'],
-  default: ['Workout plan', 'Nutrition advice', 'How ready am I?', 'Progress tracking'],
+  default: ['How can I build muscle?', 'Workout plan', 'Nutrition advice', 'How ready am I?'],
 };
 
 /** Suggestions that trigger future agents (workout plan, meal plan, progress analysis). */
@@ -85,9 +92,17 @@ export const generateFallbackResponse = (message, context) => {
 };
 
 const getFallbackContent = (type, ctx) => {
+  const name = ctx?.userName || 'there';
+
   switch (type) {
+    case 'greeting':
+      return `Hey ${name} - I can help with training, nutrition, recovery, or your next plan. Tell me your goal and I'll help you map the next step.`;
+    case 'muscle':
+      return `If your goal is to build muscle, focus on progressive overload, enough protein, and consistent training. Tell me how many days you train and what equipment you have, and I'll help you shape a plan.`;
     case 'workout':
       return `I'll help you design an effective workout based on your goals and fitness level. What type of workout interests you most: strength, cardio, or flexibility?`;
+    case 'nutrition':
+      return `I can help you tune your nutrition around your goal. If you want, tell me whether you're trying to gain muscle, cut fat, or just eat better, and I'll tailor the advice.`;
     case 'form':
       return `Proper form is essential for both results and safety. Which exercise would you like to learn more about?`;
     case 'progress':
@@ -95,6 +110,6 @@ const getFallbackContent = (type, ctx) => {
     case 'plan':
       return `I'll help you create a personalized plan. What are your main fitness goals right now?`;
     default:
-      return `I'm here to help with your fitness journey! What would you like to focus on today?`;
+      return `I'm here for the full coaching side of your fitness journey: training, nutrition, recovery, and planning. Tell me what you want to improve, and I'll help you move forward.`;
   }
 };

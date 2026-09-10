@@ -3,6 +3,17 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 
+function buildUserPayload(user) {
+  return {
+    _id: user._id,
+    username: user.username,
+    email: user.email,
+    preferences: {
+      notificationsEnabled: user.preferences?.notificationsEnabled ?? true,
+    },
+  };
+}
+
 export const register = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -24,7 +35,7 @@ export const register = async (req, res) => {
 
     const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
-    return res.status(201).json({ result: newUser, token });
+    return res.status(201).json({ result: buildUserPayload(newUser), token });
   } catch (error) {
     console.error('Register error:', error);
     return res.status(500).json({ message: 'Something went wrong' });
@@ -56,15 +67,102 @@ export const login = async (req, res) => {
     );
 
     return res.status(200).json({
-      user: {
-        _id: user._id,
-        username: user.username,
-        email: user.email
-      },
+      user: buildUserPayload(user),
       token
     });
   } catch (error) {
     console.error('Login error:', error);
     return res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
+export const updateProfile = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid profile input' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const nextUsername = String(req.body.username || '').trim();
+    const nextEmail = String(req.body.email || '').trim().toLowerCase();
+    const notificationsEnabled = req.body?.preferences?.notificationsEnabled;
+
+    if (!nextUsername || !nextEmail) {
+      return res.status(400).json({ message: 'Username and email are required' });
+    }
+
+    const existingUsername = await User.findOne({
+      username: nextUsername,
+      _id: { $ne: user._id },
+    });
+    if (existingUsername) {
+      return res.status(400).json({ message: 'Username is already in use' });
+    }
+
+    const existingEmail = await User.findOne({
+      email: nextEmail,
+      _id: { $ne: user._id },
+    });
+    if (existingEmail) {
+      return res.status(400).json({ message: 'Email is already in use' });
+    }
+
+    user.username = nextUsername;
+    user.email = nextEmail;
+    user.preferences = {
+      ...user.preferences,
+      ...(typeof notificationsEnabled === 'boolean' ? { notificationsEnabled } : {}),
+    };
+
+    await user.save();
+
+    return res.status(200).json({
+      message: 'Profile updated successfully',
+      user: buildUserPayload(user),
+    });
+  } catch (error) {
+    console.error('Update profile error:', error);
+    return res.status(500).json({ message: 'Unable to update profile right now' });
+  }
+};
+
+export const changePassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid password input' });
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+
+    if (String(newPassword).length < 6) {
+      return res.status(400).json({ message: 'New password must be 6 or more characters' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Current password is incorrect' });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    await user.save();
+
+    return res.status(200).json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    return res.status(500).json({ message: 'Unable to update password right now' });
   }
 };

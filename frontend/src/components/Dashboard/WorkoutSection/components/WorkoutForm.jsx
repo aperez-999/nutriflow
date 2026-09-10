@@ -116,6 +116,7 @@ const WorkoutForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
       borderWidth="1px"
       borderColor={borderColor}
       boxShadow="lg"
+      minH={{ base: 'auto', xl: '760px' }}
     >
       <VStack spacing={6} align="stretch">
         <Box>

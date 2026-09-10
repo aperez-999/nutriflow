@@ -39,6 +39,7 @@ const DailySummaryCard = ({ diets, selectedDate, setSelectedDate }) => {
       borderWidth="1px"
       borderColor={borderColor}
       boxShadow="lg"
+      minH={{ base: 'auto', xl: '328px' }}
       position="relative"
       overflow="hidden"
     >

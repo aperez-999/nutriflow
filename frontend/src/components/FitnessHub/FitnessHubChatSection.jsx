@@ -5,10 +5,12 @@ import AIFitnessChat from './AIFitnessChat/index.jsx';
 export default function FitnessHubChatSection({ userWorkouts = [], userDiets = [], toast }) {
   const headingColor = useColorModeValue('gray.800', 'white');
   const textColor = useColorModeValue('gray.600', 'gray.400');
+  const panelBg = useColorModeValue('gray.50', 'whiteAlpha.50');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   return (
-    <Box w="100%">
-      <VStack align="stretch" spacing={4} w="100%">
+    <Box w="100%" h="100%">
+      <VStack align="stretch" spacing={4} w="100%" h="100%">
         <VStack align="start" spacing={2}>
           <Text fontSize="sm" fontWeight="600" color={headingColor} letterSpacing="wider">
             COACHING CONSOLE
@@ -19,7 +21,17 @@ export default function FitnessHubChatSection({ userWorkouts = [], userDiets = [
           </Text>
         </VStack>
 
-        <HStack spacing={2} flexWrap="wrap">
+        <HStack
+          spacing={2}
+          flexWrap="wrap"
+          bg={panelBg}
+          borderWidth="1px"
+          borderColor={borderColor}
+          borderRadius="2xl"
+          px={3}
+          py={2.5}
+          align="center"
+        >
           <Badge colorScheme="blue" variant="subtle" px={2} py={1} borderRadius="full">
             {userWorkouts.length} workout signals
           </Badge>
@@ -31,7 +43,9 @@ export default function FitnessHubChatSection({ userWorkouts = [], userDiets = [
           </Badge>
         </HStack>
 
-        <AIFitnessChat userWorkouts={userWorkouts} userDiets={userDiets} toast={toast} />
+        <Box flex="1" minH={0}>
+          <AIFitnessChat userWorkouts={userWorkouts} userDiets={userDiets} toast={toast} />
+        </Box>
       </VStack>
     </Box>
   );

@@ -1,8 +1,10 @@
+import { getTodayDayKey, parseDayKey, toDayKey, toStoredIsoFromDayKey } from '../../../utils/dateUtils';
+
 // Progress Calculations
 export const calculateDailyCalories = (diets) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayDayKey();
   const todaysDiets = diets.filter(diet => {
-    const dietDate = new Date(diet.date).toISOString().split('T')[0];
+    const dietDate = toDayKey(diet.date);
     return dietDate === today;
   });
   return todaysDiets.reduce((sum, diet) => sum + (Number(diet.calories) || 0), 0);
@@ -29,10 +31,10 @@ export const getWeeklyCaloriesByDay = (diets) => {
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
-    const dayName = dayNames[d.getDay()];
+    const dateStr = toDayKey(d);
+    const dayName = dayNames[parseDayKey(dateStr).getDay()];
     const dayDiets = (diets || []).filter(
-      (diet) => new Date(diet.date).toISOString().split('T')[0] === dateStr
+      (diet) => toDayKey(diet.date) === dateStr
     );
     const calories = dayDiets.reduce((sum, diet) => sum + (Number(diet.calories) || 0), 0);
     result.push({ dayName, date: dateStr, calories });
@@ -48,7 +50,7 @@ export const getWeeklyCaloriesAverage = (diets) => {
   const inWeek = diets.filter((d) => new Date(d.date) >= weekAgo);
   if (inWeek.length === 0) return 0;
   const total = inWeek.reduce((sum, d) => sum + (Number(d.calories) || 0), 0);
-  const daysWithData = new Set(inWeek.map((d) => new Date(d.date).toISOString().split('T')[0])).size;
+  const daysWithData = new Set(inWeek.map((d) => toDayKey(d.date))).size;
   return daysWithData > 0 ? Math.round(total / daysWithData) : 0;
 };
 
@@ -58,12 +60,12 @@ export const getWeeklyCaloriesAverage = (diets) => {
  */
 export const getLoggingStreak = (diets, workouts) => {
   const datesWithLogs = new Set();
-  (diets || []).forEach((d) => datesWithLogs.add(new Date(d.date).toISOString().split('T')[0]));
-  (workouts || []).forEach((w) => datesWithLogs.add(new Date(w.date).toISOString().split('T')[0]));
+  (diets || []).forEach((d) => datesWithLogs.add(toDayKey(d.date)));
+  (workouts || []).forEach((w) => datesWithLogs.add(toDayKey(w.date)));
   let streak = 0;
   const d = new Date();
   for (let i = 0; i < 365; i++) {
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = toDayKey(d);
     if (datesWithLogs.has(dateStr)) streak++;
     else break;
     d.setDate(d.getDate() - 1);
@@ -119,7 +121,7 @@ export const transformDietData = (dietData) => {
     ...dietData,
     calories: Number(dietData.calories),
     protein: Number(dietData.protein),
-    date: new Date(dietData.date).toISOString(),
+    date: toStoredIsoFromDayKey(dietData.date),
   };
 };
 
@@ -128,7 +130,7 @@ export const transformWorkoutData = (workoutData) => {
     ...workoutData,
     duration: Number(workoutData.duration),
     caloriesBurned: Number(workoutData.caloriesBurned),
-    date: new Date(workoutData.date).toISOString(),
+    date: toStoredIsoFromDayKey(workoutData.date),
   };
 };
 

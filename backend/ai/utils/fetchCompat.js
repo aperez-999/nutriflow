@@ -6,10 +6,26 @@
 
 let _fetch = globalThis.fetch;
 
-export async function fetchCompat(...args) {
+export async function fetchCompat(input, init = {}) {
   if (!_fetch) {
     const mod = await import('node-fetch');
     _fetch = mod.default;
   }
-  return _fetch(...args);
+
+  const { timeoutMs, ...restInit } = init || {};
+  if (!timeoutMs || typeof AbortController === 'undefined') {
+    return _fetch(input, restInit);
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new Error(`Request timed out after ${timeoutMs}ms`)), timeoutMs);
+
+  try {
+    return await _fetch(input, {
+      ...restInit,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timer);
+  }
 }

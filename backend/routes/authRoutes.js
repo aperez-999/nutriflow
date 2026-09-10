@@ -1,10 +1,11 @@
 import express from 'express';
 import { check } from 'express-validator';
-import { register, login } from '../controllers/authController.js';
+import { register, login, updateProfile, changePassword } from '../controllers/authController.js';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import User from '../models/User.js';
 import bcrypt from 'bcrypt';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -25,6 +26,26 @@ router.post(
     check('password', 'Password is required').exists(),
   ],
   login
+);
+
+router.put(
+  '/me',
+  protect,
+  [
+    check('username', 'Username is required').not().isEmpty(),
+    check('email', 'Please include a valid email').isEmail(),
+  ],
+  updateProfile
+);
+
+router.put(
+  '/me/password',
+  protect,
+  [
+    check('currentPassword', 'Current password is required').exists(),
+    check('newPassword', 'New password must be 6 or more characters').isLength({ min: 6 }),
+  ],
+  changePassword
 );
 
 // New forgot password route
