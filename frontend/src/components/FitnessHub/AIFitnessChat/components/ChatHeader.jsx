@@ -8,6 +8,7 @@ import {
   IconButton,
   Tooltip,
   Switch,
+  Badge,
   useColorModeValue,
 } from '@chakra-ui/react';
 import { FiCpu, FiRefreshCw } from 'react-icons/fi';
@@ -16,12 +17,12 @@ const ChatHeader = ({ onClear, autoScroll, onAutoScrollChange }) => {
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.400');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const headerBg = useColorModeValue('gray.50', 'gray.700');
+  const headerBg = useColorModeValue('white', 'gray.700');
 
   return (
     <Flex
-      px={4}
-      py={3}
+      px={5}
+      py={4}
       borderBottom="1px"
       borderColor={borderColor}
       align="center"
@@ -32,8 +33,13 @@ const ChatHeader = ({ onClear, autoScroll, onAutoScrollChange }) => {
       <HStack spacing={3}>
         <Avatar size="sm" bg="teal.500" color="white" icon={<FiCpu size={14} />} />
         <VStack spacing={0} align="start">
-          <Text fontWeight="600" fontSize="sm" color={textColor}>AI Fitness Coach</Text>
-          <Text fontSize="xs" color={subTextColor}>Ask for plans, tips, or progress</Text>
+          <HStack spacing={2}>
+            <Text fontWeight="600" fontSize="sm" color={textColor}>AI Fitness Coach</Text>
+            <Badge colorScheme="green" variant="subtle" borderRadius="full">
+              Live
+            </Badge>
+          </HStack>
+          <Text fontSize="xs" color={subTextColor}>Ask for plans, recovery ideas, nutrition support, or progress reviews</Text>
         </VStack>
       </HStack>
       <HStack spacing={4}>

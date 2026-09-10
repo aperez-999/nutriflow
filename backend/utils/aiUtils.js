@@ -8,11 +8,11 @@ export const categorizeMessage = (text) => {
 };
 
 export const suggestionsByCategory = {
-  workout: ['Show me the exercises', 'Adjust difficulty', 'Plan my week', 'Track this workout'],
+  workout: ['Show me the exercises', 'Adjust difficulty', 'Plan my week', 'How ready am I?'],
   form: ['Specific exercise form', 'Video demonstrations', 'Form checklist', 'Common mistakes'],
-  progress: ['Detailed analysis', 'Set new goals', 'Weekly plan', 'Nutrition tips'],
+  progress: ['Detailed analysis', 'Set new goals', 'Weekly plan', 'How ready am I?'],
   plan: ['Customize plan', 'Add to calendar', 'Nutrition details', 'Exercise library'],
-  default: ['Workout plan', 'Nutrition advice', 'Form tips', 'Progress tracking'],
+  default: ['Workout plan', 'Nutrition advice', 'How ready am I?', 'Progress tracking'],
 };
 
 /** Suggestions that trigger future agents (workout plan, meal plan, progress analysis). */
@@ -20,6 +20,7 @@ export const COACHING_ACTION_SUGGESTIONS = [
   'Generate workout plan',
   'Create meal plan',
   'Analyze my progress',
+  'How ready am I?',
 ];
 
 export const getDefaultWorkoutPlan = () => [

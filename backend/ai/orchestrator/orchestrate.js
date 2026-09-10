@@ -18,6 +18,7 @@ import { formatInsightsForChat } from '../utils/formatInsightsOutput.js';
 import { COACHING_ACTION_SUGGESTIONS } from '../../utils/aiUtils.js';
 
 const INSIGHTS_SUGGESTIONS = ['Generate workout plan', 'Create meal plan'];
+const READINESS_SUGGESTIONS = ['How can I improve my readiness?', 'Plan a light workout for today', 'Analyze my progress'];
 
 /** Supported intents. */
 export const INTENT = {
@@ -26,6 +27,7 @@ export const INTENT = {
   MEAL_PLAN: 'meal_plan',
   ANALYZE_PROGRESS: 'analyze_progress',
   INSIGHTS: 'insights',
+  READINESS: 'readiness',
 };
 
 /**
@@ -46,6 +48,16 @@ function detectIntent(message) {
 
   if (m.includes('workout plan')) return INTENT.WORKOUT_PLAN;
   if (m.includes('meal plan')) return INTENT.MEAL_PLAN;
+  if (
+    m.includes('readiness score') ||
+    m.includes('how ready am i') ||
+    m.includes('am i ready') ||
+    m.includes('should i train today') ||
+    m.includes('can i train today') ||
+    m.includes('ready to train')
+  ) {
+    return INTENT.READINESS;
+  }
   if (
     m.includes('analyze my progress') ||
     m.includes('progress analysis') ||
@@ -78,6 +90,7 @@ export async function orchestrateAI({ message, context = {}, history = [] }) {
   if (intent === INTENT.WORKOUT_PLAN) agentKey = 'workout_plan';
   if (intent === INTENT.MEAL_PLAN) agentKey = 'meal_plan';
   if (intent === INTENT.INSIGHTS) agentKey = 'insights';
+  if (intent === INTENT.READINESS) agentKey = 'readiness';
 
   const agentRunner = AGENTS[agentKey] || runHeadCoachAgent;
   let result = await agentRunner({ message, context, history });
@@ -94,7 +107,7 @@ export async function orchestrateAI({ message, context = {}, history = [] }) {
   if (result && typeof result.content === 'string') {
     return {
       content: result.content,
-      suggestions: result.suggestions || COACHING_ACTION_SUGGESTIONS,
+      suggestions: result.suggestions || (result.type === 'readiness' ? READINESS_SUGGESTIONS : COACHING_ACTION_SUGGESTIONS),
       source: result.source || 'agent',
     };
   }

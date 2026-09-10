@@ -14,7 +14,7 @@ import Workout from '../../models/Workout.js';
 import User from '../../models/User.js';
 
 /** Default limit for recent diet and workout entries. */
-const DEFAULT_LIMIT = 10;
+const DEFAULT_LIMIT = 30;
 
 /**
  * Fetches recent diets and workouts for a user and their display name.

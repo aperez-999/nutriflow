@@ -4,6 +4,8 @@ import {
   HStack,
   Input,
   Button,
+  Text,
+  VStack,
   useColorModeValue,
 } from '@chakra-ui/react';
 import { FiSend } from 'react-icons/fi';
@@ -11,6 +13,7 @@ import { FiSend } from 'react-icons/fi';
 const ChatInput = ({ value, onChange, onSend, isLoading }) => {
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const inputBg = useColorModeValue('gray.50', 'gray.700');
+  const helperTextColor = useColorModeValue('gray.500', 'gray.400');
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -21,7 +24,11 @@ const ChatInput = ({ value, onChange, onSend, isLoading }) => {
 
   return (
     <Box p={4} borderTop="1px" borderColor={borderColor}>
-      <HStack spacing={2} align="stretch">
+      <VStack spacing={3} align="stretch">
+        <Text fontSize="xs" color={helperTextColor}>
+          Try prompts like “Build me a 4-day split”, “Review my consistency”, or “Adjust my calories for fat loss”.
+        </Text>
+        <HStack spacing={2} align="stretch">
         <Input
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -44,7 +51,8 @@ const ChatInput = ({ value, onChange, onSend, isLoading }) => {
         >
           Send
         </Button>
-      </HStack>
+        </HStack>
+      </VStack>
     </Box>
   );
 };

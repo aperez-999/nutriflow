@@ -7,3 +7,4 @@ export { default as WeeklySummaryCard } from './WeeklySummaryCard';
 export { default as RecentActivityCard } from './RecentActivityCard';
 export { default as QuickActionsCard } from './QuickActionsCard';
 export { default as RecommendedActionsCard } from './RecommendedActionsCard';
+export { default as DailyReadinessCard } from './DailyReadinessCard';

@@ -8,6 +8,7 @@ import {
   Text,
   SimpleGrid,
   Stack,
+  Divider,
   FormControl,
   FormLabel,
   Select,
@@ -39,24 +40,46 @@ export default function FitnessHubDiscoverySection({
   const textColor = useColorModeValue('gray.600', 'gray.400');
   const accentColor = useColorModeValue('teal.500', 'teal.300');
   const exerciseCardHoverBg = useColorModeValue('gray.50', 'gray.700');
+  const panelBg = useColorModeValue('gray.50', 'whiteAlpha.100');
 
   return (
-    <Box mt={8} w="100%">
+    <Box w="100%">
+      <Text fontSize="sm" fontWeight="600" color={headingColor} letterSpacing="wider" mb={3}>
+        EXERCISE DISCOVERY
+      </Text>
       <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="xl" boxShadow="sm" {...cardHoverStyles}>
         <CardBody>
           <VStack align="stretch" spacing={6}>
-            <VStack spacing={3} align="center">
-              <Icon as={FaDumbbell} boxSize={12} color={accentColor} />
-              <Text as="h2" fontSize="lg" fontWeight="600" color={headingColor}>
-                AI-Powered Workout Discovery
-              </Text>
-              <Text color={textColor} textAlign="center" maxW="600px" fontSize="sm">
-                Get personalized workout recommendations based on your fitness level, goals, and recent activity.
-                Our AI analyzes your progress and creates custom plans just for you.
-              </Text>
-            </VStack>
+            <Stack direction={{ base: 'column', lg: 'row' }} justify="space-between" spacing={6}>
+              <VStack spacing={3} align="start" maxW="640px">
+                <Icon as={FaDumbbell} boxSize={10} color={accentColor} />
+                <Text as="h2" fontSize="lg" fontWeight="600" color={headingColor}>
+                  Explore exercises with faster filtering
+                </Text>
+                <Text color={textColor} maxW="600px" fontSize="sm">
+                  Browse by muscle group, equipment, and difficulty to find movements that match the plan you are
+                  building with the AI coach.
+                </Text>
+              </VStack>
+              <Box bg={panelBg} borderWidth="1px" borderColor={borderColor} borderRadius="lg" px={4} py={3}>
+                <Text fontSize="xs" color={textColor} textTransform="uppercase" letterSpacing="wider" mb={1}>
+                  Current result set
+                </Text>
+                <Text fontSize="2xl" fontWeight="700" color={headingColor}>
+                  {filteredExercises.length}
+                </Text>
+                <Text fontSize="sm" color={textColor}>
+                  exercises match your filters
+                </Text>
+              </Box>
+            </Stack>
+
+            <Divider borderColor={borderColor} />
 
             <Stack direction={{ base: 'column', md: 'row' }} spacing={4} flexWrap="wrap" align={{ md: 'flex-end' }}>
+              <Text fontSize="sm" color={textColor} minW={{ md: '160px' }}>
+                Refine the library to match the current training context.
+              </Text>
               <FormControl maxW="180px">
                 <FormLabel fontSize="sm" color={headingColor}>Muscle Group</FormLabel>
                 <Select

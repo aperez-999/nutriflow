@@ -1,17 +1,19 @@
-import React, { useState, useRef, useEffect, useContext, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useRef, useEffect, useContext, forwardRef, useImperativeHandle, useCallback } from 'react';
 import {
   Box,
   VStack,
   HStack,
   Card,
   CardBody,
+  Text,
+  Button,
   Spinner,
   useColorModeValue,
 } from '@chakra-ui/react';
 import { AuthContext } from '../../../context/AuthContext';
 import { aiChat, saveChatHistory, loadChatHistory, clearChatHistory } from '../../../services/api';
 import { ChatHeader, ChatInput, ChatMessage, TypingDots } from './components';
-import { WELCOME_MESSAGE, CLEAR_MESSAGE, TYPING_INDICATOR_TEXT } from './constants';
+import { WELCOME_MESSAGE, CLEAR_MESSAGE, PRIMARY_SUGGESTIONS, TYPING_INDICATOR_TEXT } from './constants';
 import {
   parseAIRecommendations,
   createUserMessage,
@@ -38,25 +40,79 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
   const bgColor = useColorModeValue('white', 'gray.800');
   const aiBubbleColor = useColorModeValue('gray.100', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'white');
+  const subTextColor = useColorModeValue('gray.600', 'gray.400');
   const cardBorderColor = useColorModeValue('gray.200', 'gray.600');
+  const railBg = useColorModeValue('gray.50', 'whiteAlpha.50');
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  };
+  }, []);
 
   // Auto-scroll only when user is near bottom (so we don’t interrupt reading history).
   useEffect(() => {
     if (autoScroll && isAtBottom) {
       scrollToBottom();
     }
-  }, [messages, isLoading, autoScroll, isAtBottom]);
+  }, [messages, isLoading, autoScroll, isAtBottom, scrollToBottom]);
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     const el = messagesContainerRef.current;
     if (!el) return;
     const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 20;
     setIsAtBottom(atBottom);
-  };
+  }, []);
+
+  const generateAIResponse = useCallback(async (userMessage) => {
+    setIsLoading(true);
+    const isPlanRequest = /\[\[RETURN_JSON_WORKOUT_PLAN\]\]/i.test(userMessage);
+    if (isPlanRequest) {
+      window.dispatchEvent(new CustomEvent('ai-recommendations-loading'));
+    }
+    try {
+      const userContext = {
+        recentWorkouts: userWorkouts.slice(-5),
+        recentDiets: userDiets.slice(-5),
+        userName: user?.result?.username || user?.username || 'there',
+        ...((user?.user?._id || user?._id) && { userId: user?.user?._id || user._id }),
+      };
+
+      const history = messages.map((m) => ({ type: m.type, content: m.content }));
+      const data = await aiChat(userMessage, userContext, history);
+
+      if (isPlanRequest) {
+        const workouts = parseAIRecommendations(data.content);
+        if (workouts) {
+          window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: workouts }));
+          setMessages((prev) => [...prev, createSuccessMessage()]);
+          return { content: data.content, suggestions: data.suggestions, parsedRecommendations: true };
+        }
+        window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: [] }));
+      }
+
+      return { content: data.content, suggestions: data.suggestions, parsedRecommendations: false };
+    } finally {
+      setIsLoading(false);
+    }
+  }, [messages, userWorkouts, userDiets, user]);
+
+  const sendMessage = useCallback(async (text) => {
+    if (!text.trim()) return;
+
+    const userMessage = createUserMessage(text);
+    setMessages((prev) => [...prev, userMessage]);
+
+    try {
+      const aiResponse = await generateAIResponse(text);
+      if (!aiResponse.parsedRecommendations) {
+        const aiMessage = createAIMessage(aiResponse.content, aiResponse.suggestions);
+        setMessages((prev) => [...prev, aiMessage]);
+      }
+    } catch (error) {
+      console.error('Error generating AI response:', error);
+      window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: [] }));
+      setMessages((prev) => [...prev, createErrorMessage()]);
+    }
+  }, [generateAIResponse]);
 
   // Hook up AI Recommendations button
   useEffect(() => {
@@ -66,7 +122,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     };
     window.addEventListener('nf-ai-recommendations', handler);
     return () => window.removeEventListener('nf-ai-recommendations', handler);
-  }, [userWorkouts]);
+  }, [sendMessage]);
 
   // Load persisted history on mount
   useEffect(() => {
@@ -97,7 +153,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
         suppressSaveRef.current = false;
       }
     })();
-  }, []);
+  }, [toast]);
 
   // Persist history after each AI reply
   useEffect(() => {
@@ -111,63 +167,9 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     
     const toSave = nonEmpty.map(m => ({ type: m.type, content: m.content }));
     saveChatHistory(toSave).catch((err) => handleApiError(err, 'saving chat history', toast));
-  }, [messages]);
+  }, [messages, toast]);
 
-  const generateAIResponse = async (userMessage) => {
-    setIsLoading(true);
-    const isPlanRequest = /\[\[RETURN_JSON_WORKOUT_PLAN\]\]/i.test(userMessage);
-    if (isPlanRequest) {
-      window.dispatchEvent(new CustomEvent('ai-recommendations-loading'));
-    }
-    try {
-      const userContext = {
-        recentWorkouts: userWorkouts.slice(-5),
-        recentDiets: userDiets.slice(-5),
-        userName: user?.result?.username || user?.username || 'there',
-        ...((user?.user?._id || user?._id) && { userId: user?.user?._id || user._id }),
-      };
-      
-      const history = messages.map(m => ({ type: m.type, content: m.content }));
-      const data = await aiChat(userMessage, userContext, history);
-      
-      if (isPlanRequest) {
-        const workouts = parseAIRecommendations(data.content);
-        if (workouts) {
-          window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: workouts }));
-          setMessages(prev => [...prev, createSuccessMessage()]);
-          return { content: data.content, suggestions: data.suggestions, parsedRecommendations: true };
-        }
-        window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: [] }));
-      }
-      
-      return { content: data.content, suggestions: data.suggestions, parsedRecommendations: false };
-    } catch (e) {
-      throw e;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const sendMessage = async (text) => {
-    if (!text.trim()) return;
-
-    const userMessage = createUserMessage(text);
-    setMessages(prev => [...prev, userMessage]);
-
-    try {
-      const aiResponse = await generateAIResponse(text);
-      if (!aiResponse.parsedRecommendations) {
-        const aiMessage = createAIMessage(aiResponse.content, aiResponse.suggestions);
-        setMessages(prev => [...prev, aiMessage]);
-      }
-    } catch (error) {
-      console.error('Error generating AI response:', error);
-      window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: [] }));
-      setMessages(prev => [...prev, createErrorMessage()]);
-    }
-  };
-
-  const clearChat = async () => {
+  const clearChat = useCallback(async () => {
     setMessages([CLEAR_MESSAGE]);
     try {
       await clearChatHistory();
@@ -175,7 +177,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     } catch (err) {
       handleApiError(err, 'clearing chat history', toast);
     }
-  };
+  }, [toast]);
 
   useImperativeHandle(ref, () => ({
     send: sendMessage,
@@ -202,6 +204,32 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
           autoScroll={autoScroll}
           onAutoScrollChange={setAutoScroll}
         />
+
+        <Box px={5} py={4} borderBottom="1px" borderColor={cardBorderColor} bg={railBg}>
+          <VStack align="stretch" spacing={3}>
+            <HStack justify="space-between" flexWrap="wrap" gap={2}>
+              <Text fontSize="sm" fontWeight="600" color={textColor}>
+                Popular actions
+              </Text>
+              <Text fontSize="xs" color={subTextColor}>
+                Personalized using your recent activity
+              </Text>
+            </HStack>
+            <HStack spacing={2} flexWrap="wrap">
+              {PRIMARY_SUGGESTIONS.map((suggestion) => (
+                <Button
+                  key={suggestion}
+                  size="sm"
+                  colorScheme="teal"
+                  variant="outline"
+                  onClick={() => sendMessage(suggestion)}
+                >
+                  {suggestion}
+                </Button>
+              ))}
+            </HStack>
+          </VStack>
+        </Box>
 
         <Box
           flex="1"

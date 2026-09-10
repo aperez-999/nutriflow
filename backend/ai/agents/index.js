@@ -2,6 +2,7 @@ import { runHeadCoachAgent } from './HeadCoachAgent.js';
 import { runWorkoutPlannerAgent } from './WorkoutPlannerAgent.js';
 import { runMealPlannerAgent } from './MealPlannerAgent.js';
 import { runInsightsAgent } from './InsightsAgent.js';
+import { runReadinessAgent } from './ReadinessAgent.js';
 
 /**
  * Agent registry — maps logical agent keys to their runner functions.
@@ -17,5 +18,5 @@ export const AGENTS = {
   workout_plan: runWorkoutPlannerAgent,
   meal_plan: runMealPlannerAgent,
   insights: runInsightsAgent,
+  readiness: runReadinessAgent,
 };
-

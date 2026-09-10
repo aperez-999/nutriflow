@@ -22,6 +22,7 @@ import {
   GoalsModal,
   QuickStatsStrip,
   TodayAISummary,
+  DailyReadinessCard,
   WeeklyCaloriesChart,
   WeeklySummaryCard,
   RecentActivityCard,
@@ -36,6 +37,7 @@ import {
   getWeeklyCaloriesByDay,
   getRecentActivity,
   getLoggingStreak,
+  calculateDailyReadiness,
   handleApiError,
   handleApiSuccess,
   transformDietData,
@@ -161,6 +163,7 @@ function Dashboard() {
   const avgCaloriesThisWeek = getWeeklyCaloriesAverage(diets);
   const recentActivity = getRecentActivity(diets, workouts, 6);
   const loggingStreak = getLoggingStreak(diets, workouts);
+  const readiness = calculateDailyReadiness(workouts, diets);
 
   const scrollToDiet = () => document.getElementById('diet-section')?.scrollIntoView({ behavior: 'smooth' });
   const scrollToWorkout = () => document.getElementById('workout-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -187,12 +190,15 @@ function Dashboard() {
         </VStack>
 
         {/* Today's AI Summary */}
-        <TodayAISummary
-          dailyCalories={dailyCalories}
-          dailyCalorieGoal={goals.dailyCalories}
-          weeklyWorkouts={weeklyWorkoutCount}
-          weeklyWorkoutGoal={goals.weeklyWorkouts}
-        />
+        <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={6}>
+          <TodayAISummary
+            dailyCalories={dailyCalories}
+            dailyCalorieGoal={goals.dailyCalories}
+            weeklyWorkouts={weeklyWorkoutCount}
+            weeklyWorkoutGoal={goals.weeklyWorkouts}
+          />
+          <DailyReadinessCard readiness={readiness} />
+        </SimpleGrid>
 
         {/* At-a-glance stats */}
         <QuickStatsStrip

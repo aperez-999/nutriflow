@@ -41,14 +41,17 @@ export default function AIInsightsSection({ insights = [] }) {
 
   if (!insights || insights.length === 0) {
     return (
-      <Box mt={8}>
+      <Box>
         <Text fontSize="sm" fontWeight="600" color={textColor} letterSpacing="wider" mb={3}>
           AI INSIGHTS
         </Text>
         <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} {...cardStyles}>
           <CardBody>
-            <VStack py={8} spacing={2} align="center" justify="center">
+            <VStack py={8} spacing={3} align="center" justify="center">
               <Icon as={FiActivity} boxSize={10} color={subColor} />
+              <Text fontSize="md" fontWeight="600" color={textColor}>
+                Insights will appear here
+              </Text>
               <Text color={subColor} textAlign="center" fontSize="sm" maxW="320px">
                 Log workouts or meals to receive AI-generated insights.
               </Text>
@@ -60,7 +63,7 @@ export default function AIInsightsSection({ insights = [] }) {
   }
 
   return (
-    <Box mt={8}>
+    <Box>
       <Text fontSize="sm" fontWeight="600" color={textColor} letterSpacing="wider" mb={3}>
         AI INSIGHTS
       </Text>

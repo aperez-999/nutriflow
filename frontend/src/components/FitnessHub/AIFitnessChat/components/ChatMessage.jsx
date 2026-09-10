@@ -30,6 +30,7 @@ const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick
   const aiBubbleColor = useColorModeValue('gray.100', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.400');
+  const bubbleBorderColor = useColorModeValue('gray.200', 'gray.600');
 
   const { primary, secondary } = useMemo(
     () => splitSuggestions(message.suggestions),
@@ -59,6 +60,8 @@ const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick
               color={message.type === 'user' ? 'white' : textColor}
               px={4}
               py={3}
+              borderWidth={message.type === 'user' ? '0' : '1px'}
+              borderColor={bubbleBorderColor}
               borderRadius="lg"
               borderBottomLeftRadius={message.type === 'user' ? 'lg' : 'sm'}
               borderBottomRightRadius={message.type === 'user' ? 'sm' : 'lg'}
@@ -123,7 +126,7 @@ const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick
               </VStack>
             )}
 
-            <Text fontSize="xs" color={subTextColor}>
+            <Text fontSize="xs" color={subTextColor} px={1}>
               {new Date(message.timestamp).toLocaleTimeString([], {
                 hour: '2-digit',
                 minute: '2-digit',

@@ -1,5 +1,19 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Box, Container, Heading, Text, VStack, useColorModeValue, useDisclosure, useToast } from '@chakra-ui/react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import {
+  Box,
+  Container,
+  Heading,
+  Text,
+  VStack,
+  HStack,
+  SimpleGrid,
+  Card,
+  CardBody,
+  Badge,
+  useColorModeValue,
+  useDisclosure,
+  useToast,
+} from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import FitnessHubChatSection from '../components/FitnessHub/FitnessHubChatSection';
 import FitnessHubInsightsSection from '../components/FitnessHub/FitnessHubInsightsSection';
@@ -37,7 +51,12 @@ function FitnessHub() {
   const [discoveryDifficulty, setDiscoveryDifficulty] = useState('');
 
   const bgColor = useColorModeValue('gray.50', 'gray.900');
+  const surfaceBg = useColorModeValue('white', 'gray.800');
+  const heroBg = useColorModeValue('linear(to-br, white, teal.50, blue.50)', 'linear(to-br, gray.800, gray.800, blue.900)');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const heroTextColor = useColorModeValue('gray.800', 'white');
   const textColor = useColorModeValue('gray.600', 'gray.400');
+  const mutedColor = useColorModeValue('gray.500', 'gray.500');
 
   useEffect(() => {
     let isMounted = true;
@@ -100,58 +119,143 @@ function FitnessHub() {
     window.dispatchEvent(new CustomEvent('nf-ai-recommendations'));
   }, []);
 
-  const filteredExercises = DISCOVERY_EXERCISES.filter((ex) => {
-    if (discoveryMuscle && ex.muscleGroup !== discoveryMuscle) return false;
-    if (discoveryEquipment && ex.equipment !== discoveryEquipment) return false;
-    if (discoveryDifficulty && ex.difficulty !== discoveryDifficulty) return false;
-    return true;
-  });
+  const filteredExercises = useMemo(
+    () =>
+      DISCOVERY_EXERCISES.filter((ex) => {
+        if (discoveryMuscle && ex.muscleGroup !== discoveryMuscle) return false;
+        if (discoveryEquipment && ex.equipment !== discoveryEquipment) return false;
+        if (discoveryDifficulty && ex.difficulty !== discoveryDifficulty) return false;
+        return true;
+      }),
+    [discoveryDifficulty, discoveryEquipment, discoveryMuscle]
+  );
+
+  const hubStats = useMemo(
+    () => [
+      { label: 'Logged Workouts', value: userWorkouts.length, hint: 'Used to personalize AI plans' },
+      { label: 'Meals Logged', value: userDiets.length, hint: 'Nutrition context for coaching' },
+      { label: 'AI Plans Ready', value: aiWorkouts.length, hint: aiWorkouts.length ? 'Fresh recommendations available' : 'Generate your first plan' },
+    ],
+    [aiWorkouts.length, userDiets.length, userWorkouts.length]
+  );
 
   return (
     <Box bg={bgColor} minH="100vh">
       <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
-        <VStack spacing={0} align="stretch">
+        <VStack spacing={8} align="stretch">
           <MotionBox
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            textAlign="center"
             mt={0}
           >
-            <Heading size="2xl" mb={4} bgGradient="linear(to-r, teal.400, blue.500)" bgClip="text">
-              Fitness Hub
-            </Heading>
-            <Text fontSize="xl" color={textColor} maxW="2xl" mx="auto">
-              Discover workouts, learn proper form, and achieve your fitness goals with our comprehensive exercise
-              library.
-            </Text>
+            <Card
+              bgGradient={heroBg}
+              border="1px solid"
+              borderColor={borderColor}
+              borderRadius="2xl"
+              boxShadow="xl"
+              overflow="hidden"
+            >
+              <CardBody p={{ base: 6, md: 8 }}>
+                <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 6, lg: 10 }} alignItems="center">
+                  <VStack align="start" spacing={4}>
+                    <Badge colorScheme="teal" variant="subtle" px={3} py={1} borderRadius="full">
+                      AI-Powered Fitness Workspace
+                    </Badge>
+                    <Heading size="2xl" color={heroTextColor} lineHeight="1.05">
+                      Fitness Hub
+                    </Heading>
+                    <Text fontSize={{ base: 'md', md: 'lg' }} color={textColor} maxW="2xl">
+                      Manage your coaching conversations, review AI plans, and discover new workouts from one cleaner
+                      workspace built to feel more like a polished SaaS dashboard.
+                    </Text>
+                    <HStack spacing={3} flexWrap="wrap">
+                      <Badge colorScheme="blue" variant="outline" px={3} py={1} borderRadius="full">
+                        Personalized plans
+                      </Badge>
+                      <Badge colorScheme="teal" variant="outline" px={3} py={1} borderRadius="full">
+                        Chat-driven coaching
+                      </Badge>
+                      <Badge colorScheme="orange" variant="outline" px={3} py={1} borderRadius="full">
+                        Exercise discovery
+                      </Badge>
+                    </HStack>
+                  </VStack>
+
+                  <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={4}>
+                    {hubStats.map((stat) => (
+                      <Card
+                        key={stat.label}
+                        bg={surfaceBg}
+                        border="1px solid"
+                        borderColor={borderColor}
+                        borderRadius="xl"
+                        boxShadow="sm"
+                      >
+                        <CardBody>
+                          <Text fontSize="sm" color={mutedColor} mb={2}>
+                            {stat.label}
+                          </Text>
+                          <Heading size="lg" color={heroTextColor} mb={2}>
+                            {stat.value}
+                          </Heading>
+                          <Text fontSize="sm" color={textColor}>
+                            {stat.hint}
+                          </Text>
+                        </CardBody>
+                      </Card>
+                    ))}
+                  </SimpleGrid>
+                </SimpleGrid>
+              </CardBody>
+            </Card>
           </MotionBox>
 
-          <FitnessHubChatSection userWorkouts={userWorkouts} userDiets={userDiets} toast={toast} />
-          <FitnessHubInsightsSection insights={[]} />
-          <FitnessHubPlansSection
-            sectionRef={recSectionRef}
-            recommendationsLoading={recommendationsLoading}
-            aiWorkouts={aiWorkouts}
-            aiGeneratedAt={aiGeneratedAt}
-            onViewDetails={handleViewDetails}
-            onGetRecommendations={handleGetRecommendations}
-          />
+          <SimpleGrid columns={{ base: 1, xl: 12 }} spacing={8}>
+            <Box gridColumn={{ base: 'auto', xl: 'span 7' }}>
+              <FitnessHubChatSection
+                userWorkouts={userWorkouts}
+                userDiets={userDiets}
+                toast={toast}
+                onGetRecommendations={handleGetRecommendations}
+                recommendationsLoading={recommendationsLoading}
+              />
+            </Box>
+            <Box gridColumn={{ base: 'auto', xl: 'span 5' }}>
+              <FitnessHubPlansSection
+                sectionRef={recSectionRef}
+                recommendationsLoading={recommendationsLoading}
+                aiWorkouts={aiWorkouts}
+                aiGeneratedAt={aiGeneratedAt}
+                onViewDetails={handleViewDetails}
+                onGetRecommendations={handleGetRecommendations}
+                compact
+              />
+            </Box>
+          </SimpleGrid>
+
+          <SimpleGrid columns={{ base: 1, xl: 12 }} spacing={8}>
+            <Box gridColumn={{ base: 'auto', xl: 'span 4' }}>
+              <FitnessHubInsightsSection insights={[]} />
+            </Box>
+            <Box gridColumn={{ base: 'auto', xl: 'span 8' }}>
+              <FitnessHubDiscoverySection
+                muscle={discoveryMuscle}
+                equipment={discoveryEquipment}
+                difficulty={discoveryDifficulty}
+                onMuscleChange={setDiscoveryMuscle}
+                onEquipmentChange={setDiscoveryEquipment}
+                onDifficultyChange={setDiscoveryDifficulty}
+                filteredExercises={filteredExercises}
+              />
+            </Box>
+          </SimpleGrid>
 
           <ExerciseDetailsModal
             isOpen={isOpen}
             onClose={handleCloseDetails}
             workout={activeWorkout}
-          />
-
-          <FitnessHubDiscoverySection
-            muscle={discoveryMuscle}
-            equipment={discoveryEquipment}
-            difficulty={discoveryDifficulty}
-            onMuscleChange={setDiscoveryMuscle}
-            onEquipmentChange={setDiscoveryEquipment}
-            onDifficultyChange={setDiscoveryDifficulty}
-            filteredExercises={filteredExercises}
           />
         </VStack>
       </Container>
