@@ -8,3 +8,4 @@ export { default as RecentActivityCard } from './RecentActivityCard';
 export { default as QuickActionsCard } from './QuickActionsCard';
 export { default as RecommendedActionsCard } from './RecommendedActionsCard';
 export { default as DailyReadinessCard } from './DailyReadinessCard';
+export { default as DailyActionsCard } from './DailyActionsCard';

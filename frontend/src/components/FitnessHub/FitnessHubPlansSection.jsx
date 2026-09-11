@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Box,
   Card,
@@ -16,8 +15,9 @@ import {
   IconButton,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { FiActivity, FiChevronLeft, FiChevronRight, FiTrash2 } from 'react-icons/fi';
+import { FiActivity, FiChevronLeft, FiChevronRight, FiCoffee, FiTrash2 } from 'react-icons/fi';
 import PlanCard from './PlanCard';
+import MealPlanCard from './MealPlanCard';
 import WorkoutCard from './WorkoutCard';
 
 const cardHoverStyles = {
@@ -38,6 +38,15 @@ export default function FitnessHubPlansSection({
   activePlanId = null,
   onSelectPlan,
   onDeletePlan,
+  onCompleteWorkout,
+  savedMealPlans = [],
+  activeMealPlanId = null,
+  onSelectMealPlan,
+  onDeleteMealPlan,
+  onCompleteMeal,
+  mealPlansLoading = false,
+  getWorkoutState,
+  getMealState,
   compact = false,
 }) {
   const cardBg = useColorModeValue('white', 'gray.800');
@@ -57,22 +66,25 @@ export default function FitnessHubPlansSection({
     return `Workout ${index + 1}`;
   });
   const activePlanIndex = savedPlans.findIndex((plan) => plan.id === activePlanId);
+  const activeMealPlanIndex = savedMealPlans.findIndex((plan) => plan.id === activeMealPlanId);
+  const activeMealPlan = savedMealPlans.find((plan) => plan.id === activeMealPlanId) || savedMealPlans[0] || null;
 
   return (
     <Box ref={sectionRef} id="ai-recommendations-section">
       <Text fontSize="sm" fontWeight="600" color={headingColor} letterSpacing="wider" mb={3}>
         AI GENERATED PLANS
       </Text>
-      <Card
-        bg={cardBg}
-        border="1px"
-        borderColor={borderColor}
-        borderRadius="xl"
-        boxShadow="sm"
-        {...cardHoverStyles}
-      >
-        <CardBody>
-          <VStack align="stretch" spacing={6}>
+      <VStack align="stretch" spacing={6}>
+        <Card
+          bg={cardBg}
+          border="1px"
+          borderColor={borderColor}
+          borderRadius="xl"
+          boxShadow="sm"
+          {...cardHoverStyles}
+        >
+          <CardBody>
+            <VStack align="stretch" spacing={6}>
             <Stack direction={{ base: 'column', md: compact ? 'column' : 'row' }} justify="space-between" gap={3}>
               <VStack align="start" spacing={2}>
                 <Heading size="sm" fontWeight="600" color={headingColor}>
@@ -161,6 +173,9 @@ export default function FitnessHubPlansSection({
                       workout={workout}
                       index={index}
                       onViewDetails={onViewDetails}
+                      onComplete={() => onCompleteWorkout?.(workout, index)}
+                      isCompleted={Boolean(getWorkoutState?.(index)?.completed)}
+                      isCompleting={Boolean(getWorkoutState?.(index)?.loading)}
                     />
                   ))}
                 </SimpleGrid>
@@ -177,9 +192,103 @@ export default function FitnessHubPlansSection({
                 </Text>
               </VStack>
             )}
-          </VStack>
-        </CardBody>
-      </Card>
+            </VStack>
+          </CardBody>
+        </Card>
+
+        <Card
+          bg={cardBg}
+          border="1px"
+          borderColor={borderColor}
+          borderRadius="xl"
+          boxShadow="sm"
+          {...cardHoverStyles}
+        >
+          <CardBody>
+            <VStack align="stretch" spacing={5}>
+              <Stack direction={{ base: 'column', md: compact ? 'column' : 'row' }} justify="space-between" gap={3}>
+                <VStack align="start" spacing={2}>
+                  <HStack spacing={2}>
+                    <Icon as={FiCoffee} color={badgeColor} />
+                    <Heading size="sm" fontWeight="600" color={headingColor}>
+                      Your AI Meal Plans
+                    </Heading>
+                  </HStack>
+                  <Text color={textColor} fontSize="sm">
+                    Meal plans generated in chat stay here so each meal can be logged in one click.
+                  </Text>
+                </VStack>
+                {savedMealPlans.length > 0 ? (
+                  <Stack direction={{ base: 'column', sm: 'row' }} spacing={2} align={{ base: 'stretch', sm: 'center' }}>
+                    <Select
+                      size="sm"
+                      value={activeMealPlanId || ''}
+                      onChange={(e) => onSelectMealPlan?.(e.target.value)}
+                      minW={{ base: '100%', sm: '220px' }}
+                      borderColor={borderColor}
+                    >
+                      {savedMealPlans.map((plan, index) => (
+                        <option key={plan.id} value={plan.id}>
+                          {index + 1}. {plan.title}
+                        </option>
+                      ))}
+                    </Select>
+                    <HStack spacing={1}>
+                      <IconButton
+                        aria-label="Previous meal plan"
+                        size="sm"
+                        icon={<FiChevronLeft />}
+                        variant="ghost"
+                        isDisabled={activeMealPlanIndex >= savedMealPlans.length - 1 || activeMealPlanIndex === -1}
+                        onClick={() => onSelectMealPlan?.(savedMealPlans[activeMealPlanIndex + 1].id)}
+                      />
+                      <IconButton
+                        aria-label="Next meal plan"
+                        size="sm"
+                        icon={<FiChevronRight />}
+                        variant="ghost"
+                        isDisabled={activeMealPlanIndex <= 0}
+                        onClick={() => onSelectMealPlan?.(savedMealPlans[activeMealPlanIndex - 1].id)}
+                      />
+                      <IconButton
+                        aria-label="Delete meal plan"
+                        size="sm"
+                        icon={<FiTrash2 />}
+                        variant="ghost"
+                        onClick={() => activeMealPlanId && onDeleteMealPlan?.(activeMealPlanId)}
+                      />
+                    </HStack>
+                  </Stack>
+                ) : null}
+              </Stack>
+
+              {mealPlansLoading ? (
+                <VStack spacing={4} py={8} w="100%">
+                  <Spinner size="lg" colorScheme="orange" thickness="3px" />
+                  <Text color={textColor} fontSize="sm">
+                    AI Coach is building your meal plan...
+                  </Text>
+                </VStack>
+              ) : activeMealPlan ? (
+                <MealPlanCard
+                  title={activeMealPlan.title}
+                  calories={activeMealPlan.calories}
+                  meals={activeMealPlan.meals}
+                  onCompleteMeal={onCompleteMeal}
+                  getMealState={getMealState}
+                />
+              ) : (
+                <VStack py={10} spacing={4} w="100%">
+                  <Icon as={FiCoffee} boxSize={12} color={textColor} opacity={0.6} />
+                  <Text color={textColor} fontSize="sm" textAlign="center" maxW="320px">
+                    No meal plans generated yet. Ask the AI coach for a meal plan to log meals faster.
+                  </Text>
+                </VStack>
+              )}
+            </VStack>
+          </CardBody>
+        </Card>
+      </VStack>
     </Box>
   );
 }

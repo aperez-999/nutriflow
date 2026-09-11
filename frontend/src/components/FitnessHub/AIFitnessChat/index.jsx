@@ -23,6 +23,7 @@ import { ChatHeader, ChatInput, ChatMessage, TypingDots } from './components';
 import { WELCOME_MESSAGE, CLEAR_MESSAGE, QUICK_ACTIONS, CHAT_ACTION_BUTTON_PROPS, TYPING_INDICATOR_TEXT } from './constants';
 import {
   parseAIRecommendations,
+  parseAIMealPlan,
   fallbackParseWorkoutPlan,
   createUserMessage,
   createAIMessage,
@@ -180,8 +181,12 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
   const generateAIResponse = useCallback(async (userMessage, historyMessages) => {
     setIsLoading(true);
     const isPlanRequest = /\[\[RETURN_JSON_WORKOUT_PLAN\]\]/i.test(userMessage);
+    const isMealPlanRequest = /meal plan/i.test(userMessage) && !isPlanRequest;
     if (isPlanRequest) {
       window.dispatchEvent(new CustomEvent('ai-recommendations-loading'));
+    }
+    if (isMealPlanRequest) {
+      window.dispatchEvent(new CustomEvent('ai-meal-plan-loading'));
     }
 
     try {
@@ -210,6 +215,15 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
           suggestions: data.suggestions,
           parsedRecommendations: false,
         };
+      }
+
+      if (isMealPlanRequest) {
+        const mealPlan = parseAIMealPlan(data.content);
+        if (mealPlan?.meals?.length) {
+          window.dispatchEvent(new CustomEvent('ai-meal-plan-updated', { detail: mealPlan }));
+        } else {
+          window.dispatchEvent(new CustomEvent('ai-meal-plan-updated', { detail: null }));
+        }
       }
 
       if (data?.source === 'fallback' || isGenericBackendFallback(data.content)) {
@@ -242,6 +256,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     } catch (error) {
       console.error('Error generating AI response:', error);
       window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: [] }));
+      window.dispatchEvent(new CustomEvent('ai-meal-plan-updated', { detail: null }));
       updateActiveConversation((currentMessages) => [...currentMessages, createErrorMessage()]);
     }
   }, [activeConversationId, generateAIResponse, messages, updateActiveConversation]);

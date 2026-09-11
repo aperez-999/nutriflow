@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   VStack,
   Box,
@@ -109,8 +109,10 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
           borderColor={borderColor}
           boxShadow="lg"
           flex="1"
+          display="flex"
+          minH={{ base: '300px', xl: '360px' }}
         >
-          <VStack spacing={4} align="stretch">
+          <VStack spacing={4} align="stretch" h="100%" w="100%">
             <HStack justify="space-between" align={{ base: 'start', md: 'center' }} flexWrap="wrap" gap={3}>
               <Box>
                 <Heading size="md" color={textColor} display="flex" alignItems="center" gap={2}>
@@ -127,7 +129,7 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
             </HStack>
             
             {workouts.length === 0 ? (
-              <VStack spacing={4} py={8} px={2} align="center">
+              <VStack spacing={4} py={8} px={2} align="center" justify="center" flex="1">
                 <Box as={FiActivity} boxSize="48px" color={subTextColor} />
                 <Text fontSize="lg" color={textColor} textAlign="center" fontWeight="medium">
                   No workout records yet
@@ -137,7 +139,7 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
                 </Text>
               </VStack>
             ) : (
-              <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={5}>
+              <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={5} alignItems="stretch">
                 {workouts
                   .sort((a, b) => new Date(b.date) - new Date(a.date))
                   .slice(0, 6)

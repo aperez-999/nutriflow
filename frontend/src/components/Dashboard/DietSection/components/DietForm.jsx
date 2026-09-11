@@ -93,13 +93,13 @@ const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
 
   return (
     <Box
-      p={{ base: 5, md: 5.5 }}
+      p={{ base: 5, md: 6 }}
       bg={bgColor}
       borderRadius="2xl"
       borderWidth="1px"
       borderColor={borderColor}
       boxShadow="lg"
-      minH={{ base: 'auto', xl: '732px' }}
+      minH={{ base: 'auto', xl: '760px' }}
     >
       <VStack spacing={5} align="stretch">
         <Box>

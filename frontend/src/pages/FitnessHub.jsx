@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef, useContext } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef, useContext } from 'react';
 import {
   Box,
   Container,
@@ -21,9 +21,10 @@ import FitnessHubInsightsSection from '../components/FitnessHub/FitnessHubInsigh
 import FitnessHubPlansSection from '../components/FitnessHub/FitnessHubPlansSection';
 import FitnessHubDiscoverySection from '../components/FitnessHub/FitnessHubDiscoverySection';
 import ExerciseDetailsModal from '../components/FitnessHub/ExerciseDetailsModal';
-import { getWorkouts, getDiets } from '../services/api';
+import { addDiet, addWorkout, getWorkouts, getDiets, searchFoods } from '../services/api';
 import { handleApiError } from '../utils/apiErrorHandler';
 import { AuthContext } from '../context/AuthContext';
+import { getTodayDayKey, toStoredIsoFromDayKey } from '../utils/dateUtils';
 
 const MotionBox = motion(Box);
 const AI_PLANS_STORAGE_KEY = 'nutriflow.fitnessHub.aiPlans';
@@ -37,6 +38,61 @@ const createStoredPlan = (workouts = []) => ({
   workouts,
   generatedAt: new Date().toISOString(),
 });
+
+const createStoredMealPlan = ({ title, meals = [], calories = null } = {}) => ({
+  id: `meal-plan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  title: title || `Meal Plan ${new Date().toLocaleDateString()}`,
+  meals,
+  calories,
+  generatedAt: new Date().toISOString(),
+});
+
+const getCompletionKey = (type, planId, index) => `${type}:${planId}:${index}`;
+
+const inferWorkoutType = (workout = {}) => {
+  const text = [
+    workout.title,
+    workout.description,
+    ...(Array.isArray(workout.focusAreas) ? workout.focusAreas : []),
+  ]
+    .join(' ')
+    .toLowerCase();
+
+  if (/(cardio|run|bike|conditioning|interval|hiit)/.test(text)) return 'Cardio';
+  if (/(mobility|stretch|flexibility|yoga|recovery)/.test(text)) return 'Flexibility';
+  if (/(sport|soccer|basketball|tennis)/.test(text)) return 'Sports';
+  return 'Strength';
+};
+
+const normalizeMealType = (mealType = 'Snack') => {
+  const normalized = String(mealType).trim().toLowerCase();
+  if (normalized.startsWith('breakfast')) return 'Breakfast';
+  if (normalized.startsWith('lunch')) return 'Lunch';
+  if (normalized.startsWith('dinner')) return 'Dinner';
+  return 'Snack';
+};
+
+const parseWorkoutCalories = (value, duration = 45) => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  const matches = String(value || '').match(/\d+/g);
+  if (!matches?.length) return Math.round((Number(duration) || 45) * 8);
+  const numbers = matches.map(Number).filter(Number.isFinite);
+  if (numbers.length === 1) return numbers[0];
+  return Math.round(numbers.reduce((sum, num) => sum + num, 0) / numbers.length);
+};
+
+const buildWorkoutEquipment = (workout = {}) => {
+  const equipment = Array.isArray(workout.exercises)
+    ? workout.exercises.map((exercise) => exercise?.equipment).filter(Boolean)
+    : [];
+  return Array.from(new Set(equipment)).join(', ');
+};
+
+const fallbackMealNutrition = (mealType) => {
+  if (mealType === 'Breakfast') return { calories: 350, protein: 20, carbs: 35, fats: 12 };
+  if (mealType === 'Lunch' || mealType === 'Dinner') return { calories: 520, protein: 32, carbs: 45, fats: 18 };
+  return { calories: 220, protein: 15, carbs: 22, fats: 8 };
+};
 
 const DISCOVERY_EXERCISES = [
   {
@@ -309,7 +365,11 @@ function FitnessHub() {
   const [userDiets, setUserDiets] = useState([]);
   const [savedPlans, setSavedPlans] = useState([]);
   const [activePlanId, setActivePlanId] = useState(null);
+  const [savedMealPlans, setSavedMealPlans] = useState([]);
+  const [activeMealPlanId, setActiveMealPlanId] = useState(null);
   const [recommendationsLoading, setRecommendationsLoading] = useState(false);
+  const [mealPlansLoading, setMealPlansLoading] = useState(false);
+  const [completingItems, setCompletingItems] = useState({});
   const recSectionRef = useRef(null);
   const [activeWorkout, setActiveWorkout] = useState(null);
   const [discoveryMuscle, setDiscoveryMuscle] = useState('');
@@ -323,6 +383,10 @@ function FitnessHub() {
   );
   const aiWorkouts = activePlan?.workouts || [];
   const aiGeneratedAt = activePlan?.generatedAt ? new Date(activePlan.generatedAt) : null;
+  const activeMealPlan = useMemo(
+    () => savedMealPlans.find((plan) => plan.id === activeMealPlanId) || savedMealPlans[0] || null,
+    [activeMealPlanId, savedMealPlans]
+  );
   const bgColor = useColorModeValue('gray.50', 'gray.900');
   const surfaceBg = useColorModeValue('white', 'gray.800');
   const heroBg = useColorModeValue('linear(to-br, white, teal.50, blue.50)', 'linear(to-br, gray.800, gray.800, blue.900)');
@@ -370,6 +434,10 @@ function FitnessHub() {
       if (Array.isArray(parsed?.plans) && parsed.plans.length > 0) {
         setSavedPlans(parsed.plans);
         setActivePlanId(parsed.activePlanId || parsed.plans[0].id);
+        if (Array.isArray(parsed?.mealPlans) && parsed.mealPlans.length > 0) {
+          setSavedMealPlans(parsed.mealPlans);
+          setActiveMealPlanId(parsed.activeMealPlanId || parsed.mealPlans[0].id);
+        }
       } else if (Array.isArray(parsed?.workouts)) {
         const migratedPlan = {
           ...createStoredPlan(parsed.workouts),
@@ -391,12 +459,14 @@ function FitnessHub() {
         JSON.stringify({
           plans: savedPlans,
           activePlanId,
+          mealPlans: savedMealPlans,
+          activeMealPlanId,
         })
       );
     } catch {
       // Ignore persistence failures in unsupported/private browsing contexts.
     }
-  }, [activePlanId, savedPlans, storageUserId]);
+  }, [activeMealPlanId, activePlanId, savedMealPlans, savedPlans, storageUserId]);
 
   useEffect(() => {
     const onUpdated = (e) => {
@@ -412,15 +482,152 @@ function FitnessHub() {
       }
     };
     const onLoading = () => setRecommendationsLoading(true);
+    const onMealPlanUpdated = (e) => {
+      const detail = e.detail;
+      if (detail?.meals?.length) {
+        const nextPlan = createStoredMealPlan(detail);
+        setSavedMealPlans((prev) => [nextPlan, ...prev]);
+        setActiveMealPlanId(nextPlan.id);
+      }
+      setMealPlansLoading(false);
+    };
+    const onMealPlanLoading = () => setMealPlansLoading(true);
 
     window.addEventListener('ai-recommendations-updated', onUpdated);
     window.addEventListener('ai-recommendations-loading', onLoading);
+    window.addEventListener('ai-meal-plan-updated', onMealPlanUpdated);
+    window.addEventListener('ai-meal-plan-loading', onMealPlanLoading);
 
     return () => {
       window.removeEventListener('ai-recommendations-updated', onUpdated);
       window.removeEventListener('ai-recommendations-loading', onLoading);
+      window.removeEventListener('ai-meal-plan-updated', onMealPlanUpdated);
+      window.removeEventListener('ai-meal-plan-loading', onMealPlanLoading);
     };
   }, []);
+
+  const setCompletionState = useCallback((key, value) => {
+    setCompletingItems((prev) => {
+      if (!value) {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      }
+      return { ...prev, [key]: value };
+    });
+  }, []);
+
+  const markWorkoutCompleted = useCallback((planId, workoutIndex, recordId) => {
+    setSavedPlans((prev) =>
+      prev.map((plan) => (
+        plan.id === planId
+          ? {
+              ...plan,
+              workouts: plan.workouts.map((workout, index) => (
+                index === workoutIndex
+                  ? { ...workout, completedRecordId: recordId, completedAt: new Date().toISOString() }
+                  : workout
+              )),
+            }
+          : plan
+      ))
+    );
+  }, []);
+
+  const markMealCompleted = useCallback((planId, mealIndex, recordId) => {
+    setSavedMealPlans((prev) =>
+      prev.map((plan) => (
+        plan.id === planId
+          ? {
+              ...plan,
+              meals: plan.meals.map((meal, index) => (
+                index === mealIndex
+                  ? { ...meal, completedRecordId: recordId, completedAt: new Date().toISOString() }
+                  : meal
+              )),
+            }
+          : plan
+      ))
+    );
+  }, []);
+
+  const handleCompleteWorkout = useCallback(async (workout, workoutIndex) => {
+    if (!activePlanId || !workout) return;
+    const key = getCompletionKey('workout', activePlanId, workoutIndex);
+    setCompletionState(key, true);
+
+    try {
+      const workoutPayload = {
+        date: toStoredIsoFromDayKey(getTodayDayKey()),
+        type: inferWorkoutType(workout),
+        workoutName: workout.title || `AI Workout ${workoutIndex + 1}`,
+        duration: Number(workout.duration) || 45,
+        caloriesBurned: parseWorkoutCalories(workout.calories, workout.duration),
+        intensity: workout.intensity || 'Medium',
+        equipment: buildWorkoutEquipment(workout),
+        notes: `Completed from AI plan${workout.description ? `: ${workout.description}` : ''}`,
+      };
+
+      const createdWorkout = await addWorkout(workoutPayload);
+      setUserWorkouts((prev) => [createdWorkout, ...prev]);
+      markWorkoutCompleted(activePlanId, workoutIndex, createdWorkout._id);
+      toast({
+        title: 'Workout logged',
+        description: 'The AI workout was added to your training log.',
+        status: 'success',
+        duration: 2500,
+      });
+    } catch (error) {
+      handleApiError(error, 'logging AI workout', toast);
+    } finally {
+      setCompletionState(key, false);
+    }
+  }, [activePlanId, markWorkoutCompleted, setCompletionState, toast]);
+
+  const handleCompleteMeal = useCallback(async (meal, mealIndex) => {
+    if (!activeMealPlanId || !meal) return;
+    const key = getCompletionKey('meal', activeMealPlanId, mealIndex);
+    setCompletionState(key, true);
+
+    try {
+      const mealType = normalizeMealType(meal.mealType);
+      let nutrition = fallbackMealNutrition(mealType);
+
+      try {
+        const foodResults = await searchFoods(meal.foodName);
+        if (Array.isArray(foodResults?.foods) && foodResults.foods[0]?.nutrition) {
+          nutrition = foodResults.foods[0].nutrition;
+        }
+      } catch {
+        // Fall back to meal-type defaults if search is unavailable.
+      }
+
+      const dietPayload = {
+        date: toStoredIsoFromDayKey(getTodayDayKey()),
+        mealType,
+        foodName: meal.foodName,
+        calories: Number(nutrition.calories) || fallbackMealNutrition(mealType).calories,
+        protein: Number(nutrition.protein) || 0,
+        carbs: Number(nutrition.carbs) || 0,
+        fats: Number(nutrition.fats) || 0,
+        notes: 'Logged from AI meal plan',
+      };
+
+      const createdDiet = await addDiet(dietPayload);
+      setUserDiets((prev) => [createdDiet, ...prev]);
+      markMealCompleted(activeMealPlanId, mealIndex, createdDiet._id);
+      toast({
+        title: 'Meal logged',
+        description: 'The AI meal was added to your nutrition log.',
+        status: 'success',
+        duration: 2500,
+      });
+    } catch (error) {
+      handleApiError(error, 'logging AI meal', toast);
+    } finally {
+      setCompletionState(key, false);
+    }
+  }, [activeMealPlanId, markMealCompleted, setCompletionState, toast]);
 
   const handleCloseDetails = useCallback(() => {
     onClose();
@@ -449,9 +656,13 @@ function FitnessHub() {
     () => [
       { label: 'Logged Workouts', value: userWorkouts.length, hint: 'Used to personalize AI plans' },
       { label: 'Meals Logged', value: userDiets.length, hint: 'Nutrition context for coaching' },
-      { label: 'AI Plans Saved', value: savedPlans.length, hint: savedPlans.length ? 'Previous plans stay available after refresh' : 'Generate your first weekly plan in chat' },
+      {
+        label: 'AI Plans Saved',
+        value: savedPlans.length + savedMealPlans.length,
+        hint: savedPlans.length + savedMealPlans.length ? 'Workout and meal plans stay available after refresh' : 'Generate your first plan in chat',
+      },
     ],
-    [savedPlans.length, userDiets.length, userWorkouts.length]
+    [savedMealPlans.length, savedPlans.length, userDiets.length, userWorkouts.length]
   );
 
   return (
@@ -544,6 +755,7 @@ function FitnessHub() {
                 savedPlans={savedPlans}
                 activePlanId={activePlanId}
                 onSelectPlan={setActivePlanId}
+                onCompleteWorkout={handleCompleteWorkout}
                 onDeletePlan={(planId) => {
                   setSavedPlans((prev) => {
                     const nextPlans = prev.filter((plan) => plan.id !== planId);
@@ -556,6 +768,38 @@ function FitnessHub() {
                     }
                     return nextPlans;
                   });
+                }}
+                savedMealPlans={savedMealPlans}
+                activeMealPlanId={activeMealPlanId}
+                onSelectMealPlan={setActiveMealPlanId}
+                onDeleteMealPlan={(planId) => {
+                  setSavedMealPlans((prev) => {
+                    const nextPlans = prev.filter((plan) => plan.id !== planId);
+                    if (nextPlans.length === 0) {
+                      setActiveMealPlanId(null);
+                      return [];
+                    }
+                    if (activeMealPlanId === planId) {
+                      setActiveMealPlanId(nextPlans[0].id);
+                    }
+                    return nextPlans;
+                  });
+                }}
+                onCompleteMeal={handleCompleteMeal}
+                mealPlansLoading={mealPlansLoading}
+                getWorkoutState={(index) => {
+                  const key = getCompletionKey('workout', activePlanId, index);
+                  return {
+                    loading: Boolean(completingItems[key]),
+                    completed: Boolean(activePlan?.workouts?.[index]?.completedRecordId),
+                  };
+                }}
+                getMealState={(index) => {
+                  const key = getCompletionKey('meal', activeMealPlanId, index);
+                  return {
+                    loading: Boolean(completingItems[key]),
+                    completed: Boolean(activeMealPlan?.meals?.[index]?.completedRecordId),
+                  };
                 }}
                 compact
               />

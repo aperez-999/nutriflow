@@ -193,6 +193,68 @@ export const fallbackParseWorkoutPlan = (content) => {
   return normalized.length > 0 ? normalized : false;
 };
 
+export const parseAIMealPlan = (content) => {
+  if (!content || typeof content !== 'string') return false;
+
+  const cleaned = content.replace(/```/g, '').trim();
+  const lines = cleaned.split('\n').map((line) => line.trim()).filter(Boolean);
+  if (lines.length === 0) return false;
+
+  const mealHeadingRegex = /^(?:#{1,3}\s*)?(Breakfast|Lunch|Dinner|Snack|Snacks)\s*:?\s*(.*)$/i;
+  const titleLine = lines.find((line) => /daily meal plan|meal plan/i.test(line));
+  const calorieLine = lines.find((line) => /^target\s*:/i.test(line));
+  const calorieMatch = calorieLine?.match(/(\d{3,4})/);
+
+  const meals = [];
+  let currentMealType = null;
+  let currentFood = [];
+
+  const pushMeal = () => {
+    const joined = currentFood
+      .join(' ')
+      .replace(/^[-•*]\s*/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (currentMealType && joined) {
+      meals.push({
+        mealType: currentMealType === 'Snacks' ? 'Snack' : currentMealType,
+        foodName: joined,
+      });
+    }
+  };
+
+  lines.forEach((line) => {
+    const mealMatch = line.match(mealHeadingRegex);
+    if (mealMatch) {
+      pushMeal();
+      currentMealType = mealMatch[1].charAt(0).toUpperCase() + mealMatch[1].slice(1).toLowerCase();
+      currentFood = mealMatch[2] ? [mealMatch[2]] : [];
+      return;
+    }
+
+    if (!currentMealType) return;
+    if (/^(overview|next steps|wins|watchouts|recommendation|why)\b/i.test(line)) {
+      pushMeal();
+      currentMealType = null;
+      currentFood = [];
+      return;
+    }
+
+    currentFood.push(line);
+  });
+
+  pushMeal();
+
+  if (meals.length === 0) return false;
+
+  return {
+    title: titleLine || `Meal Plan ${new Date().toLocaleDateString()}`,
+    calories: calorieMatch ? Number(calorieMatch[1]) : null,
+    meals,
+  };
+};
+
 const ACTION_PROMPT_MAP = {
   'Generate Weekly Plan': 'Can you generate a personalized weekly fitness plan for me based on my recent activity and fitness level? Include a short readable overview with headings for each workout day, and also include the machine-readable plan payload. [[RETURN_JSON_WORKOUT_PLAN]]',
   'Create Meal Plan': 'Create a personalized meal plan based on my recent activity and nutrition patterns. Use clear markdown headings like Overview, Breakfast, Lunch, Dinner, Snacks, and Next Steps. Respond in plain language, not JSON.',

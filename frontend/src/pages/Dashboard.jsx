@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -13,7 +13,6 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { AuthContext } from '../context/AuthContext';
 import { getDiets, addDiet, getWorkouts, addWorkout, deleteDiet, deleteWorkout, updateDiet, updateWorkout } from '../services/api';
 import DietSection from '../components/Dashboard/DietSection/index';
 import WorkoutSection from '../components/Dashboard/WorkoutSection/index';
@@ -23,6 +22,7 @@ import {
   QuickStatsStrip,
   TodayAISummary,
   DailyReadinessCard,
+  DailyActionsCard,
   WeeklyCaloriesChart,
   WeeklySummaryCard,
   RecentActivityCard,
@@ -42,12 +42,12 @@ import {
   handleApiSuccess,
   transformDietData,
   transformWorkoutData,
+  getDailyActionPlan,
 } from '../components/Dashboard/utils/dashboardUtils';
 
 const MotionBox = motion.div;
 
 function Dashboard() {
-  const { user } = useContext(AuthContext);
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const headingColor = useColorModeValue('gray.800', 'white');
@@ -82,7 +82,7 @@ function Dashboard() {
       }
     };
     fetchData();
-  }, []);
+  }, [toast]);
 
   const handleAddDiet = useCallback(async (dietData) => {
     try {
@@ -164,6 +164,7 @@ function Dashboard() {
   const recentActivity = getRecentActivity(diets, workouts, 6);
   const loggingStreak = getLoggingStreak(diets, workouts);
   const readiness = calculateDailyReadiness(workouts, diets);
+  const dailyActions = getDailyActionPlan(readiness, dailyCalories, goals.dailyCalories);
 
   const scrollToDiet = () => document.getElementById('diet-section')?.scrollIntoView({ behavior: 'smooth' });
   const scrollToWorkout = () => document.getElementById('workout-section')?.scrollIntoView({ behavior: 'smooth' });
@@ -190,7 +191,7 @@ function Dashboard() {
         </VStack>
 
         {/* Today's AI Summary */}
-        <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={6}>
+        <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={6}>
           <TodayAISummary
             dailyCalories={dailyCalories}
             dailyCalorieGoal={goals.dailyCalories}
@@ -198,6 +199,7 @@ function Dashboard() {
             weeklyWorkoutGoal={goals.weeklyWorkouts}
           />
           <DailyReadinessCard readiness={readiness} />
+          <DailyActionsCard actions={dailyActions} />
         </SimpleGrid>
 
         {/* At-a-glance stats */}

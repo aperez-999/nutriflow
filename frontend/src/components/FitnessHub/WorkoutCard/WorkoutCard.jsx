@@ -19,7 +19,14 @@ import { motion } from 'framer-motion';
 
 const MotionBox = motion(Box);
 
-const WorkoutCard = React.memo(function WorkoutCard({ workout, onViewDetails, index }) {
+const WorkoutCard = React.memo(function WorkoutCard({
+  workout,
+  onViewDetails,
+  onComplete,
+  isCompleted = false,
+  isCompleting = false,
+  index,
+}) {
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const hoverBorderColor = useColorModeValue('teal.300', 'teal.500');
@@ -135,6 +142,19 @@ const WorkoutCard = React.memo(function WorkoutCard({ workout, onViewDetails, in
             )}
 
             <Stack spacing={2} w="100%" mt="auto">
+              <Button
+                size="sm"
+                colorScheme={isCompleted ? 'green' : 'teal'}
+                variant={isCompleted ? 'solid' : 'outline'}
+                leftIcon={<FaDumbbell />}
+                isDisabled={isCompleted}
+                isLoading={isCompleting}
+                loadingText="Logging"
+                onClick={() => onComplete?.(workout)}
+                w="100%"
+              >
+                {isCompleted ? 'Completed' : 'Mark Complete'}
+              </Button>
               {workout.videoId && (
                 <Button
                   size="sm"

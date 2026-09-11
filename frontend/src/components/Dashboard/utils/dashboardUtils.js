@@ -285,3 +285,50 @@ export const calculateDailyReadiness = (workouts = [], diets = []) => {
     },
   };
 };
+
+export const getDailyActionPlan = (readiness, dailyCalories = 0, dailyCalorieGoal = 0) => {
+  const score = Number(readiness?.score) || 0;
+  const factors = readiness?.factors || {};
+  const averageProtein = Number(factors.averageProtein) || 0;
+  const averageCalories = Number(factors.averageCalories) || 0;
+  const todayMeals = Number(factors.todayMeals) || 0;
+  const workoutsLast7Days = Number(factors.workoutsLast7Days) || 0;
+
+  let workoutIntensity = 'Moderate';
+  let workoutDetail = 'Keep today focused on quality reps, steady pacing, and leaving a little in reserve.';
+
+  if (score >= 75) {
+    workoutIntensity = 'High';
+    workoutDetail = 'A harder session is a good fit today. Push your main lifts or intervals, then stop before form slips.';
+  } else if (score < 45) {
+    workoutIntensity = 'Low';
+    workoutDetail = 'Use today for light movement, mobility, or an easy walk so recovery keeps moving forward.';
+  }
+
+  let nutritionSuggestion = 'Keep meals balanced today with protein, carbs, and enough total intake to support training quality.';
+  if (todayMeals === 0) {
+    nutritionSuggestion = 'Eat before your main session today. A simple meal with protein and carbs will improve energy and output.';
+  } else if (averageProtein > 0 && averageProtein < 90) {
+    nutritionSuggestion = 'Anchor your next meal around 25-35g of protein to support recovery and make the day more productive.';
+  } else if (dailyCalorieGoal > 0 && dailyCalories < dailyCalorieGoal * 0.7) {
+    nutritionSuggestion = 'You are still light on calories today, so use the next meal to close the gap with a more substantial option.';
+  } else if (averageCalories > 0 && averageCalories < 1600) {
+    nutritionSuggestion = 'Recent intake looks low, so prioritize a more complete meal instead of another light snack.';
+  }
+
+  let recoverySuggestion = 'Protect recovery with hydration, a short walk after training, and a consistent bedtime tonight.';
+  if (score < 45) {
+    recoverySuggestion = 'Bias toward recovery today: easy movement, extra fluids, and a slightly earlier night will pay off quickly.';
+  } else if (workoutsLast7Days >= 5) {
+    recoverySuggestion = 'You have logged a solid week of work, so add cooldown time and keep sleep non-negotiable tonight.';
+  } else if (score >= 75) {
+    recoverySuggestion = 'You have room to train well today, but keep the cooldown and post-workout hydration in place so tomorrow stays strong.';
+  }
+
+  return {
+    workoutIntensity,
+    workoutDetail,
+    nutritionSuggestion,
+    recoverySuggestion,
+  };
+};
