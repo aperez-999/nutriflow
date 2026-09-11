@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import {
   VStack,
   Box,
@@ -89,6 +90,8 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
       h="100%"
+      display="flex"
+      flexDirection="column"
     >
       <VStack spacing={6} align="stretch" h="100%">
         <DailySummaryCard
@@ -109,12 +112,11 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
           p={{ base: 5, md: 6 }}
           bg={bgColor}
           borderRadius="2xl"
-          borderWidth="1px" 
+          borderWidth="1px"
           borderColor={borderColor}
           boxShadow="lg"
           flex="1"
           display="flex"
-          minH={{ base: '300px', xl: '360px' }}
         >
           <VStack spacing={4} align="stretch" h="100%" w="100%">
             <HStack justify="space-between" align={{ base: 'start', md: 'center' }} flexWrap="wrap" gap={3}>
@@ -166,5 +168,12 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
     </MotionBox>
   );
 }
+
+WorkoutSection.propTypes = {
+  workouts: PropTypes.arrayOf(PropTypes.object),
+  onAddWorkout: PropTypes.func,
+  onUpdateWorkout: PropTypes.func,
+  onDeleteWorkout: PropTypes.func,
+};
 
 export default WorkoutSection;

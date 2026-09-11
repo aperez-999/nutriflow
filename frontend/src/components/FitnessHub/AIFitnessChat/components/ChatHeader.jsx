@@ -4,75 +4,89 @@ import {
   HStack,
   VStack,
   Text,
-  Avatar,
+  Box,
   IconButton,
   Tooltip,
-  Badge,
   useColorModeValue,
 } from '@chakra-ui/react';
 import { FiCpu, FiRefreshCw } from 'react-icons/fi';
 
 const ChatHeader = ({ onClear }) => {
   const textColor = useColorModeValue('gray.800', 'white');
-  const subTextColor = useColorModeValue('gray.600', 'gray.400');
+  const subTextColor = useColorModeValue('gray.500', 'gray.400');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const headerBg = useColorModeValue('white', 'gray.700');
-  const statusBg = useColorModeValue('green.50', 'green.900');
+  const headerBg = useColorModeValue('white', 'gray.800');
 
   return (
     <Flex
       px={{ base: 4, md: 5 }}
-      py={4}
+      py={3.5}
       borderBottom="1px"
       borderColor={borderColor}
-      align={{ base: 'flex-start', md: 'center' }}
+      align="center"
       justify="space-between"
-      direction={{ base: 'column', md: 'row' }}
-      gap={3}
       bg={headerBg}
       borderTopRadius="xl"
     >
-      <HStack spacing={3} align="start">
-        <Avatar size="sm" bg="teal.500" color="white" icon={<FiCpu size={14} />} />
+      <HStack spacing={3} align="center">
+        {/* Gradient AI avatar */}
+        <Box
+          w={9}
+          h={9}
+          borderRadius="xl"
+          bgGradient="linear(135deg, teal.400, blue.500)"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          flexShrink={0}
+          boxShadow="0 2px 8px rgba(56,178,172,0.35)"
+        >
+          <Box as={FiCpu} color="white" style={{ width: 16, height: 16 }} />
+        </Box>
+
         <VStack spacing={0} align="start">
-          <HStack spacing={2} flexWrap="wrap">
-            <Text fontWeight="600" fontSize="sm" color={textColor}>AI Fitness Coach</Text>
-            <Badge colorScheme="green" variant="subtle" borderRadius="full">
-              Live
-            </Badge>
+          <HStack spacing={2}>
+            <Text fontWeight="700" fontSize="sm" color={textColor} letterSpacing="tight">
+              AI Fitness Coach
+            </Text>
+            {/* Live pulse dot */}
+            <HStack spacing={1} align="center">
+              <Box
+                w="7px"
+                h="7px"
+                borderRadius="full"
+                bg="green.400"
+                boxShadow="0 0 6px rgba(72,187,120,0.8)"
+                sx={{
+                  animation: 'aiPulse 2s ease-in-out infinite',
+                  '@keyframes aiPulse': {
+                    '0%, 100%': { opacity: 1 },
+                    '50%': { opacity: 0.35 },
+                  },
+                }}
+              />
+              <Text fontSize="xs" color="green.400" fontWeight="600">
+                Online
+              </Text>
+            </HStack>
           </HStack>
-          <Text fontSize="xs" color={subTextColor}>
-            Ask for plans, recovery ideas, nutrition support, or progress reviews
+          <Text fontSize="xs" color={subTextColor} lineHeight="1.4">
+            Plans · Recovery · Nutrition · Progress review
           </Text>
         </VStack>
       </HStack>
-      <HStack
-        spacing={3}
-        w={{ base: '100%', md: 'auto' }}
-        justify={{ base: 'space-between', md: 'flex-end' }}
-        flexShrink={0}
-      >
-        <Badge
-          display={{ base: 'none', md: 'inline-flex' }}
-          variant="subtle"
-          colorScheme="green"
-          borderRadius="full"
-          px={3}
-          py={1}
-          bg={statusBg}
-        >
-          Auto-scroll on
-        </Badge>
-        <Tooltip label="Clear chat" placement="bottom">
-          <IconButton
-            icon={<FiRefreshCw size={14} />}
-            size="sm"
-            variant="ghost"
-            onClick={onClear}
-            aria-label="Clear chat"
-          />
-        </Tooltip>
-      </HStack>
+
+      <Tooltip label="Clear conversation" placement="bottom">
+        <IconButton
+          icon={<FiRefreshCw size={14} />}
+          size="sm"
+          variant="ghost"
+          onClick={onClear}
+          aria-label="Clear chat"
+          borderRadius="lg"
+          color={subTextColor}
+        />
+      </Tooltip>
     </Flex>
   );
 };

@@ -49,7 +49,7 @@ const iconToneMap = {
   },
 };
 
-function DailyActionsCard({ actions }) {
+function DailyActionsCard({ actions = undefined }) {
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'white');
@@ -113,9 +113,10 @@ function DailyActionsCard({ actions }) {
                   }}
                 >
                   <Box
-                    display="grid"
-                    placeItems="center"
-                    boxSize={11}
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    boxSize={12}
                     flexShrink={0}
                     borderRadius="xl"
                     bg={iconBg}
@@ -123,7 +124,7 @@ function DailyActionsCard({ actions }) {
                     borderColor={iconBorder}
                     boxShadow={iconShadow}
                   >
-                    <Icon as={item.icon} boxSize={5.5} color={tone.color} />
+                    <Icon as={item.icon} boxSize={6} color={tone.color} />
                   </Box>
 
                   <Box flex="1" minW={0}>
@@ -151,10 +152,6 @@ DailyActionsCard.propTypes = {
     nutritionSuggestion: PropTypes.string,
     recoverySuggestion: PropTypes.string,
   }),
-};
-
-DailyActionsCard.defaultProps = {
-  actions: undefined,
 };
 
 export default React.memo(DailyActionsCard);

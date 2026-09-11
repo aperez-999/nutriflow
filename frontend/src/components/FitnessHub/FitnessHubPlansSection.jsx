@@ -48,6 +48,8 @@ export default function FitnessHubPlansSection({
   getWorkoutState,
   getMealState,
   compact = false,
+  mealPlansOnly = false,
+  workoutPlansOnly = false,
 }) {
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -71,10 +73,9 @@ export default function FitnessHubPlansSection({
 
   return (
     <Box ref={sectionRef} id="ai-recommendations-section">
-      <Text fontSize="sm" fontWeight="600" color={headingColor} letterSpacing="wider" mb={3}>
-        AI GENERATED PLANS
-      </Text>
       <VStack align="stretch" spacing={6}>
+        {/* Workout Plans card — hidden when mealPlansOnly */}
+        {!mealPlansOnly && (
         <Card
           bg={cardBg}
           border="1px"
@@ -195,7 +196,10 @@ export default function FitnessHubPlansSection({
             </VStack>
           </CardBody>
         </Card>
+        )}
 
+        {/* Meal Plans card — hidden when workoutPlansOnly */}
+        {!workoutPlansOnly && (
         <Card
           bg={cardBg}
           border="1px"
@@ -288,6 +292,7 @@ export default function FitnessHubPlansSection({
             </VStack>
           </CardBody>
         </Card>
+        )}
       </VStack>
     </Box>
   );

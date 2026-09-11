@@ -4,18 +4,23 @@ import {
   Container,
   VStack,
   SimpleGrid,
+  Badge,
+  Heading,
+  HStack,
+  Text,
   useToast,
   useDisclosure,
   Spinner,
   Center,
-  Heading,
-  Text,
   useColorModeValue,
 } from '@chakra-ui/react';
+import { FiAward, FiActivity, FiPackage, FiCoffee } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { getDiets, addDiet, getWorkouts, addWorkout, deleteDiet, deleteWorkout, updateDiet, updateWorkout } from '../services/api';
-import DietSection from '../components/Dashboard/DietSection/index';
-import WorkoutSection from '../components/Dashboard/WorkoutSection/index';
+// Diet sub-components
+import { DailySummaryCard as DietDailySummaryCard, DietForm, DietCard } from '../components/Dashboard/DietSection/components';
+// Workout sub-components
+import { DailySummaryCard as WorkoutDailySummaryCard, WorkoutForm, WorkoutCard } from '../components/Dashboard/WorkoutSection/components';
 import {
   GoalsSection,
   GoalsModal,
@@ -44,8 +49,31 @@ import {
   transformWorkoutData,
   getDailyActionPlan,
 } from '../components/Dashboard/utils/dashboardUtils';
+import { getTodayDayKey, toDayKey } from '../utils/dateUtils';
 
-const MotionBox = motion.div;
+const MotionBox = motion(Box);
+
+const initialDietForm = {
+  date: getTodayDayKey(),
+  mealType: '',
+  foodName: '',
+  calories: '',
+  protein: '',
+  carbs: '',
+  fats: '',
+  notes: ''
+};
+
+const initialWorkoutForm = {
+  date: getTodayDayKey(),
+  type: '',
+  workoutName: '',
+  duration: '',
+  caloriesBurned: '',
+  intensity: '',
+  equipment: '',
+  notes: ''
+};
 
 function Dashboard() {
   const toast = useToast();
@@ -62,6 +90,23 @@ function Dashboard() {
     weeklyWorkouts: 5
   });
   const [editingGoals, setEditingGoals] = useState({ ...goals });
+
+  // Diet form state (lifted for grid alignment)
+  const [dietFormData, setDietFormData] = useState(initialDietForm);
+  const [isDietEditing, setIsDietEditing] = useState(false);
+  const [dietEditingId, setDietEditingId] = useState(null);
+  const [dietSelectedDate, setDietSelectedDate] = useState(getTodayDayKey());
+
+  // Workout form state (lifted for grid alignment)
+  const [workoutFormData, setWorkoutFormData] = useState(initialWorkoutForm);
+  const [isWorkoutEditing, setIsWorkoutEditing] = useState(false);
+  const [workoutEditingId, setWorkoutEditingId] = useState(null);
+  const [workoutSelectedDate, setWorkoutSelectedDate] = useState(getTodayDayKey());
+
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const textColor = useColorModeValue('gray.800', 'white');
+  const subTextColor = useColorModeValue('gray.600', 'gray.400');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -256,20 +301,24 @@ function Dashboard() {
           </Box>
         </SimpleGrid>
 
-        {/* Diet and Workout sections */}
-        <SimpleGrid columns={{ base: 1, md: 2 }} spacing={8} alignItems="stretch">
+        {/* ─── Diet + Workout: 3-row CSS Grid for perfect alignment ─── */}
+        <Box
+          display="grid"
+          gridTemplateColumns={{ base: '1fr', md: '1fr 1fr' }}
+          gridTemplateRows={{ md: 'auto auto 1fr' }}
+          gap={8}
+        >
+          {/* ── Row 1: Daily Summary Cards ── */}
           <MotionBox
             id="diet-section"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            h="100%"
           >
-            <DietSection
+            <DietDailySummaryCard
               diets={diets}
-              onAddDiet={handleAddDiet}
-              onUpdateDiet={handleUpdateDiet}
-              onDeleteDiet={handleDeleteDiet}
+              selectedDate={dietSelectedDate}
+              setSelectedDate={setDietSelectedDate}
             />
           </MotionBox>
           <MotionBox
@@ -277,16 +326,159 @@ function Dashboard() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            h="100%"
           >
-            <WorkoutSection
+            <WorkoutDailySummaryCard
               workouts={workouts}
-              onAddWorkout={handleAddWorkout}
-              onUpdateWorkout={handleUpdateWorkout}
-              onDeleteWorkout={handleDeleteWorkout}
+              selectedDate={workoutSelectedDate}
+              setSelectedDate={setWorkoutSelectedDate}
             />
           </MotionBox>
-        </SimpleGrid>
+
+          {/* ── Row 2: Add Record Forms ── */}
+          <Box>
+            <DietForm
+              isEditing={isDietEditing}
+              onSubmit={async (data) => {
+                try {
+                  if (isDietEditing) {
+                    await handleUpdateDiet(dietEditingId, data);
+                    setIsDietEditing(false);
+                    setDietEditingId(null);
+                  } else {
+                    await handleAddDiet(data);
+                  }
+                  setDietFormData(initialDietForm);
+                } catch (e) { console.error(e); }
+              }}
+              onCancel={() => { setIsDietEditing(false); setDietEditingId(null); setDietFormData(initialDietForm); }}
+              initialData={dietFormData}
+            />
+          </Box>
+          <Box>
+            <WorkoutForm
+              isEditing={isWorkoutEditing}
+              onSubmit={async (data) => {
+                try {
+                  if (isWorkoutEditing) {
+                    await handleUpdateWorkout(workoutEditingId, data);
+                    setIsWorkoutEditing(false);
+                    setWorkoutEditingId(null);
+                  } else {
+                    await handleAddWorkout(data);
+                  }
+                  setWorkoutFormData(initialWorkoutForm);
+                } catch (e) { console.error(e); }
+              }}
+              onCancel={() => { setIsWorkoutEditing(false); setWorkoutEditingId(null); setWorkoutFormData(initialWorkoutForm); }}
+              initialData={workoutFormData}
+            />
+          </Box>
+
+          {/* ── Row 3: Log Sections (always aligned) ── */}
+          <Box
+            p={{ base: 5, md: 6 }}
+            bg={bgColor}
+            borderRadius="2xl"
+            borderWidth="1px"
+            borderColor={borderColor}
+            boxShadow="lg"
+            display="flex"
+            flexDirection="column"
+          >
+            <VStack spacing={4} align="stretch" h="100%">
+              <HStack justify="space-between" align={{ base: 'start', md: 'center' }} flexWrap="wrap" gap={3}>
+                <Box>
+                  <Heading size="md" color={textColor} display="flex" alignItems="center" gap={2}>
+                    <Box as={FiPackage} />
+                    Nutrition Log
+                  </Heading>
+                  <Text fontSize="sm" color={subTextColor} mt={1}>
+                    Recent meal entries with clearer macro detail and easier scanning.
+                  </Text>
+                </Box>
+                <Badge colorScheme="teal" borderRadius="full" px={3} py={1}>
+                  {diets.length} total record{diets.length === 1 ? '' : 's'}
+                </Badge>
+              </HStack>
+              {(() => {
+                const recentDiets = [...(Array.isArray(diets) ? diets : [])].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+                return recentDiets.length === 0 ? (
+                  <VStack spacing={4} py={8} px={2} align="center" justify="center" flex="1">
+                    <Box as={FiCoffee} boxSize="48px" color={subTextColor} />
+                    <Text fontSize="lg" color={textColor} textAlign="center" fontWeight="medium">No diet records yet</Text>
+                    <Text fontSize="sm" color={subTextColor} textAlign="center" maxW="320px">Start your nutrition journey. Log your first meal to begin tracking progress.</Text>
+                  </VStack>
+                ) : (
+                  <>
+                    <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={5} alignItems="stretch">
+                      {recentDiets.map((diet) => (
+                        <DietCard
+                          key={diet._id}
+                          diet={diet}
+                          onEdit={(d) => { setIsDietEditing(true); setDietEditingId(d._id); setDietFormData({ date: toDayKey(d.date), mealType: d.mealType || '', foodName: d.foodName || '', calories: d.calories?.toString() || '', protein: d.protein?.toString() || '', carbs: d.carbs?.toString() || '', fats: d.fats?.toString() || '', notes: d.notes || '' }); }}
+                          onDelete={handleDeleteDiet}
+                        />
+                      ))}
+                    </SimpleGrid>
+                    {diets.length > 6 && <Text fontSize="sm" color={subTextColor} textAlign="center" mt={4}>Showing the 6 most recent nutrition records.</Text>}
+                  </>
+                );
+              })()}
+            </VStack>
+          </Box>
+
+          <Box
+            p={{ base: 5, md: 6 }}
+            bg={bgColor}
+            borderRadius="2xl"
+            borderWidth="1px"
+            borderColor={borderColor}
+            boxShadow="lg"
+            display="flex"
+            flexDirection="column"
+          >
+            <VStack spacing={4} align="stretch" h="100%">
+              <HStack justify="space-between" align={{ base: 'start', md: 'center' }} flexWrap="wrap" gap={3}>
+                <Box>
+                  <Heading size="md" color={textColor} display="flex" alignItems="center" gap={2}>
+                    <Box as={FiAward} />
+                    Training Log
+                  </Heading>
+                  <Text fontSize="sm" color={subTextColor} mt={1}>
+                    Recent sessions with clearer performance and burn details.
+                  </Text>
+                </Box>
+                <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
+                  {workouts.length} total record{workouts.length === 1 ? '' : 's'}
+                </Badge>
+              </HStack>
+              {(() => {
+                const recentWorkouts = [...(Array.isArray(workouts) ? workouts : [])].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+                return recentWorkouts.length === 0 ? (
+                  <VStack spacing={4} py={8} px={2} align="center" justify="center" flex="1">
+                    <Box as={FiActivity} boxSize="48px" color={subTextColor} />
+                    <Text fontSize="lg" color={textColor} textAlign="center" fontWeight="medium">No workout records yet</Text>
+                    <Text fontSize="sm" color={subTextColor} textAlign="center" maxW="320px">Add your first workout to start building your fitness streak.</Text>
+                  </VStack>
+                ) : (
+                  <>
+                    <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={5} alignItems="stretch">
+                      {recentWorkouts.map((workout) => (
+                        <WorkoutCard
+                          key={workout._id}
+                          workout={workout}
+                          onEdit={(w) => { setIsWorkoutEditing(true); setWorkoutEditingId(w._id); setWorkoutFormData({ date: toDayKey(w.date), type: w.type || '', workoutName: w.workoutName || w.type || '', duration: w.duration?.toString() || '', caloriesBurned: w.caloriesBurned?.toString() || '', intensity: w.intensity || '', equipment: w.equipment || '', notes: w.notes || '' }); }}
+                          onDelete={handleDeleteWorkout}
+                        />
+                      ))}
+                    </SimpleGrid>
+                    {workouts.length > 6 && <Text fontSize="sm" color={subTextColor} textAlign="center" mt={4}>Showing the 6 most recent workout records.</Text>}
+                  </>
+                );
+              })()}
+            </VStack>
+          </Box>
+        </Box>
 
           <GoalsModal
             isOpen={isOpen}

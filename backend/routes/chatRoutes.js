@@ -6,19 +6,41 @@ const router = express.Router();
 const MAX_HISTORY_MESSAGES = 100;
 const MAX_MESSAGE_LENGTH = 4000;
 
-function isValidChatMessage(message) {
+function sanitizeChatMessage(message) {
   if (!message || typeof message !== 'object') {
-    return false;
+    return null;
   }
 
   const content = typeof message.content === 'string' ? message.content.trim() : '';
-  if (!content || content.length > MAX_MESSAGE_LENGTH) {
-    return false;
+  if (!content) {
+    return null;
   }
 
-  const type = message.type === 'user' || message.type === 'assistant' ? message.type : null;
-  const role = message.role === 'user' || message.role === 'assistant' ? message.role : null;
-  return Boolean(type || role);
+  const role = message.role === 'user' || message.role === 'assistant'
+    ? message.role
+    : message.type === 'user' || message.type === 'assistant'
+      ? message.type
+      : null;
+
+  if (!role) {
+    return null;
+  }
+
+  return {
+    role,
+    content: content.slice(0, MAX_MESSAGE_LENGTH),
+  };
+}
+
+function sanitizeChatHistory(messages) {
+  if (!Array.isArray(messages)) {
+    return null;
+  }
+
+  return messages
+    .map(sanitizeChatMessage)
+    .filter(Boolean)
+    .slice(0, MAX_HISTORY_MESSAGES);
 }
 
 // Save messages (bulk)
@@ -29,22 +51,30 @@ router.post('/history', protect, async (req, res) => {
       return res.status(400).json({ message: 'messages must be an array with at most 100 entries' });
     }
 
-    if (!messages.every(isValidChatMessage)) {
-      return res.status(400).json({ message: 'messages contain invalid entries' });
-    }
+    const sanitizedMessages = sanitizeChatHistory(messages);
+    const invalidCount = messages.length - sanitizedMessages.length;
 
     const userId = req.user._id;
     // Replace strategy: clear existing history and insert the new one
     await ChatMessage.deleteMany({ user: userId });
-    if (messages.length > 0) {
-      const docs = messages.map((m) => ({
+    if (sanitizedMessages.length > 0) {
+      const docs = sanitizedMessages.map((m) => ({
         user: userId,
-        role: m.role === 'user' || m.type === 'user' ? 'user' : 'assistant',
-        content: m.content.trim().slice(0, MAX_MESSAGE_LENGTH),
+        role: m.role,
+        content: m.content,
       }));
       await ChatMessage.insertMany(docs);
     }
-    res.json({ success: true });
+
+    if (invalidCount > 0) {
+      console.warn(`Ignored ${invalidCount} invalid chat history entr${invalidCount === 1 ? 'y' : 'ies'} for user ${userId}`);
+    }
+
+    res.json({
+      success: true,
+      saved: sanitizedMessages.length,
+      ignored: invalidCount,
+    });
   } catch (err) {
     console.error('Save history error:', err);
     res.status(500).json({ message: 'Failed to save history' });

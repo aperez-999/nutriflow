@@ -54,41 +54,75 @@ axios.interceptors.request.use(
     }
 );
 
+const MAX_CHAT_HISTORY_MESSAGES = 100;
+const MAX_CHAT_MESSAGE_LENGTH = 4000;
+
+const normalizeChatRole = (message) => {
+  const role = typeof message?.role === 'string' ? message.role.trim().toLowerCase() : '';
+  const type = typeof message?.type === 'string' ? message.type.trim().toLowerCase() : '';
+
+  if (role === 'user' || type === 'user') return 'user';
+  if (role === 'assistant' || type === 'assistant' || type === 'ai') return 'assistant';
+  return null;
+};
+
+export const normalizeChatMessage = (message, output = 'role') => {
+  if (!message || typeof message !== 'object') {
+    return null;
+  }
+
+  const role = normalizeChatRole(message);
+  const content = typeof message.content === 'string' ? message.content.trim() : '';
+
+  if (!role || !content) {
+    return null;
+  }
+
+  const normalizedContent = content.slice(0, MAX_CHAT_MESSAGE_LENGTH);
+
+  if (output === 'type') {
+    return {
+      type: role === 'user' ? 'user' : 'assistant',
+      content: normalizedContent,
+    };
+  }
+
+  return {
+    role,
+    content: normalizedContent,
+  };
+};
+
+export const sanitizeChatMessages = (messages, output = 'role') => {
+  if (!Array.isArray(messages)) {
+    return [];
+  }
+
+  return messages
+    .map((message) => normalizeChatMessage(message, output))
+    .filter(Boolean)
+    .slice(-MAX_CHAT_HISTORY_MESSAGES);
+};
+
 // Workout API functions
 export const getWorkouts = async () => {
-    try {
-        const response = await axios.get('/api/workouts');
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
+    const response = await axios.get('/api/workouts');
+    return response.data;
 };
 
 export const addWorkout = async (workoutData) => {
-    try {
-        const response = await axios.post('/api/workouts', workoutData);
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
+    const response = await axios.post('/api/workouts', workoutData);
+    return response.data;
 };
 
 export const updateWorkout = async (id, workoutData) => {
-    try {
-        const response = await axios.put(`/api/workouts/${id}`, workoutData);
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
+    const response = await axios.put(`/api/workouts/${id}`, workoutData);
+    return response.data;
 };
 
 export const deleteWorkout = async (id) => {
-    try {
-        const response = await axios.delete(`/api/workouts/${id}`);
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
+    const response = await axios.delete(`/api/workouts/${id}`);
+    return response.data;
 };
 
 // Auth API functions
@@ -142,39 +176,23 @@ export const changePassword = async ({ currentPassword, newPassword }) => {
 
 // Diet functions
 export const getDiets = async () => {
-    try {
-        const response = await axios.get('/api/diets');
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
+    const response = await axios.get('/api/diets');
+    return response.data;
 };
 
 export const addDiet = async (dietData) => {
-    try {
-        const response = await axios.post('/api/diets', dietData);
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
+    const response = await axios.post('/api/diets', dietData);
+    return response.data;
 };
 
 export const updateDiet = async (id, dietData) => {
-    try {
-        const response = await axios.put(`/api/diets/${id}`, dietData);
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
+    const response = await axios.put(`/api/diets/${id}`, dietData);
+    return response.data;
 };
 
 export const deleteDiet = async (id) => {
-    try {
-        const response = await axios.delete(`/api/diets/${id}`);
-        return response.data;
-    } catch (error) {
-        throw error;
-    }
+    const response = await axios.delete(`/api/diets/${id}`);
+    return response.data;
 };
 
 // Add error interceptor
@@ -217,7 +235,8 @@ export const resetPassword = async (token, password) => {
 // AI Fitness Chat & History
 export const aiChat = async (message, context, history = []) => {
   try {
-    const response = await axios.post('/api/ai/chat', { message, context, history }, { timeout: 65000 });
+    const safeHistory = sanitizeChatMessages(history, 'type');
+    const response = await axios.post('/api/ai/chat', { message, context, history: safeHistory }, { timeout: 65000 });
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: 'AI chat failed' };
@@ -226,7 +245,12 @@ export const aiChat = async (message, context, history = []) => {
 
 export const saveChatHistory = async (messages) => {
   try {
-    const response = await axios.post('/api/chat/history', { messages });
+    const safeMessages = sanitizeChatMessages(messages, 'role');
+    if (safeMessages.length === 0) {
+      return { success: true, saved: 0, ignored: Array.isArray(messages) ? messages.length : 0 };
+    }
+
+    const response = await axios.post('/api/chat/history', { messages: safeMessages });
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: 'Failed to save history' };

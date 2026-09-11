@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useContext, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useContext, forwardRef, useImperativeHandle, useCallback, useMemo } from 'react';
 import {
   Box,
   VStack,
@@ -16,9 +16,10 @@ import {
   Select,
   useColorModeValue,
 } from '@chakra-ui/react';
+import PropTypes from 'prop-types';
 import { FiCpu, FiPlus, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { AuthContext } from '../../../context/AuthContext';
-import { aiChat, saveChatHistory, loadChatHistory, clearChatHistory } from '../../../services/api';
+import { aiChat, saveChatHistory, loadChatHistory, clearChatHistory, normalizeChatMessage, sanitizeChatMessages } from '../../../services/api';
 import { ChatHeader, ChatInput, ChatMessage, TypingDots } from './components';
 import { WELCOME_MESSAGE, CLEAR_MESSAGE, QUICK_ACTIONS, CHAT_ACTION_BUTTON_PROPS, TYPING_INDICATOR_TEXT } from './constants';
 import {
@@ -49,6 +50,57 @@ const getConversationTitle = (messages = [], fallback = 'New chat') => {
   const firstUserMessage = messages.find((message) => message.type === 'user' && message.content?.trim());
   if (!firstUserMessage) return fallback;
   return firstUserMessage.content.trim().slice(0, 40) || fallback;
+};
+
+const normalizeStoredMessages = (messages = [], conversationKey = 'conversation') => {
+  if (!Array.isArray(messages)) {
+    return [];
+  }
+
+  return messages.reduce((acc, message, index) => {
+    const normalized = normalizeChatMessage(message, 'type');
+    if (!normalized) {
+      return acc;
+    }
+
+    acc.push({
+      id: typeof message?.id === 'string' && message.id.trim() ? message.id : `${conversationKey}-message-${index + 1}`,
+      type: normalized.type === 'assistant' ? 'ai' : 'user',
+      content: normalized.content,
+      timestamp: message?.timestamp ? new Date(message.timestamp) : new Date(),
+      suggestions: Array.isArray(message?.suggestions)
+        ? message.suggestions.filter((suggestion) => typeof suggestion === 'string' && suggestion.trim()).slice(0, 8)
+        : [],
+    });
+    return acc;
+  }, []);
+};
+
+const normalizeStoredConversations = (conversations = [], userKey = 'anonymous') => {
+  if (!Array.isArray(conversations)) {
+    return [];
+  }
+
+  return conversations.reduce((acc, conversation, index) => {
+    const normalizedMessages = normalizeStoredMessages(conversation?.messages, `${userKey}-${index + 1}`);
+    if (normalizedMessages.length === 0) {
+      return acc;
+    }
+
+    acc.push({
+      id: typeof conversation?.id === 'string' && conversation.id.trim()
+        ? conversation.id
+        : `conversation-${userKey}-${index + 1}`,
+      title: typeof conversation?.title === 'string' && conversation.title.trim()
+        ? conversation.title.trim()
+        : getConversationTitle(normalizedMessages, 'New chat'),
+      updatedAt: typeof conversation?.updatedAt === 'string' && conversation.updatedAt.trim()
+        ? conversation.updatedAt
+        : new Date().toISOString(),
+      messages: normalizedMessages,
+    });
+    return acc;
+  }, []);
 };
 
 const processChatHistoryQueue = async (state, toast) => {
@@ -101,7 +153,10 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     () => conversations.find((conversation) => conversation.id === activeConversationId) || conversations[0],
     [activeConversationId, conversations]
   );
-  const messages = activeConversation?.messages || [WELCOME_MESSAGE];
+  const messages = useMemo(
+    () => activeConversation?.messages || [WELCOME_MESSAGE],
+    [activeConversation?.messages]
+  );
 
   const updateActiveConversation = useCallback((updater) => {
     setConversations((prev) =>
@@ -157,14 +212,17 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
         if (localRaw) {
           const parsed = JSON.parse(localRaw);
           if (Array.isArray(parsed?.conversations) && parsed.conversations.length > 0) {
+            const normalizedConversations = normalizeStoredConversations(parsed.conversations, storageUserId);
             if (cancelled) return;
-            setConversations(parsed.conversations);
-            setActiveConversationId(
-              parsed.conversations.some((conversation) => conversation.id === parsed.activeConversationId)
-                ? parsed.activeConversationId
-                : parsed.conversations[0].id
-            );
-            return;
+            if (normalizedConversations.length > 0) {
+              setConversations(normalizedConversations);
+              setActiveConversationId(
+                normalizedConversations.some((conversation) => conversation.id === parsed.activeConversationId)
+                  ? parsed.activeConversationId
+                  : normalizedConversations[0].id
+              );
+              return;
+            }
           }
         }
 
@@ -173,13 +231,23 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
         suppressSaveRef.current = true;
 
         if (Array.isArray(serverHistory) && serverHistory.length) {
-          const hydrated = serverHistory.map((m, idx) => ({
-            id: `server-${idx + 1}`,
-            type: m.role === 'user' ? 'user' : 'ai',
-            content: m.content,
-            timestamp: new Date(m.createdAt || Date.now()),
-            suggestions: m.suggestions,
-          }));
+          const hydrated = serverHistory.reduce((acc, message, index) => {
+            const normalized = normalizeChatMessage(message, 'type');
+            if (!normalized) {
+              return acc;
+            }
+
+            acc.push({
+              id: `server-${index + 1}`,
+              type: normalized.type === 'assistant' ? 'ai' : 'user',
+              content: normalized.content,
+              timestamp: new Date(message?.createdAt || Date.now()),
+              suggestions: Array.isArray(message?.suggestions)
+                ? message.suggestions.filter((suggestion) => typeof suggestion === 'string' && suggestion.trim()).slice(0, 8)
+                : [],
+            });
+            return acc;
+          }, []);
           const importedConversation = createConversation('Imported chat', hydrated);
           setConversations([importedConversation]);
           setActiveConversationId(importedConversation.id);
@@ -195,8 +263,9 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
         setConversations([starterConversation]);
         setActiveConversationId(starterConversation.id);
       } finally {
-        if (cancelled) return;
-        suppressSaveRef.current = false;
+        if (!cancelled) {
+          suppressSaveRef.current = false;
+        }
       }
     };
 
@@ -226,13 +295,11 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
   useEffect(() => {
     if (suppressSaveRef.current || !activeConversationId) return;
 
-    const nonEmpty = messages.filter((m) => (m.type === 'user' || m.type === 'ai') && m.content?.trim());
-    if (nonEmpty.length === 0) return;
-
-    const onlyWelcome = nonEmpty.length === 1 && nonEmpty[0].id?.startsWith('welcome');
+    const onlyWelcome = messages.length === 1 && messages[0]?.id?.startsWith('welcome');
     if (onlyWelcome) return;
 
-    const toSave = nonEmpty.map((m) => ({ type: m.type, content: m.content }));
+    const toSave = sanitizeChatMessages(messages, 'role');
+    if (toSave.length === 0) return;
     queueChatHistorySave(toSave);
   }, [activeConversationId, messages, queueChatHistorySave]);
 
@@ -255,7 +322,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
         ...((user?.user?._id || user?._id) && { userId: user?.user?._id || user._id }),
       };
 
-      const history = historyMessages.map((m) => ({ type: m.type, content: m.content }));
+      const history = sanitizeChatMessages(historyMessages, 'type');
       const data = await aiChat(userMessage, userContext, history);
 
       if (isPlanRequest) {
@@ -527,5 +594,12 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     </Card>
   );
 });
+
+AIFitnessChat.displayName = 'AIFitnessChat';
+AIFitnessChat.propTypes = {
+  userWorkouts: PropTypes.array,
+  userDiets: PropTypes.array,
+  toast: PropTypes.func,
+};
 
 export default AIFitnessChat;

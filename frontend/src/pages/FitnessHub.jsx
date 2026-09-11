@@ -2,7 +2,6 @@ import { useState, useCallback, useEffect, useMemo, useRef, useContext } from 'r
 import {
   Box,
   Container,
-  Grid,
   Heading,
   Text,
   VStack,
@@ -46,6 +45,61 @@ const createStoredMealPlan = ({ title, meals = [], calories = null } = {}) => ({
   calories,
   generatedAt: new Date().toISOString(),
 });
+
+const normalizeStoredPlan = (plan) => {
+  if (!plan || !Array.isArray(plan.workouts) || plan.workouts.length === 0) return null;
+
+  const title = typeof plan.title === 'string' && plan.title.trim()
+    ? plan.title.trim()
+    : createStoredPlan(plan.workouts).title;
+
+  return {
+    ...plan,
+    id: typeof plan.id === 'string' && plan.id.trim()
+      ? plan.id
+      : `plan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    title,
+    generatedAt: plan.generatedAt || new Date().toISOString(),
+    workouts: plan.workouts.filter(Boolean),
+  };
+};
+
+const normalizeStoredMealPlan = (plan) => {
+  if (!plan) return null;
+
+  const meals = Array.isArray(plan.meals)
+    ? plan.meals
+      .map((meal) => {
+        if (!meal) return null;
+        const mealType = normalizeMealType(meal.mealType);
+        const foodName = typeof meal.foodName === 'string' ? meal.foodName.trim() : '';
+        if (!foodName) return null;
+        return {
+          ...meal,
+          mealType,
+          foodName,
+        };
+      })
+      .filter(Boolean)
+    : [];
+
+  if (meals.length === 0) return null;
+
+  const title = typeof plan.title === 'string' && plan.title.trim()
+    ? plan.title.trim()
+    : `Meal Plan ${new Date(plan.generatedAt || Date.now()).toLocaleDateString()}`;
+
+  return {
+    ...plan,
+    id: typeof plan.id === 'string' && plan.id.trim()
+      ? plan.id
+      : `meal-plan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    title,
+    calories: Number.isFinite(Number(plan.calories)) ? Number(plan.calories) : null,
+    meals,
+    generatedAt: plan.generatedAt || new Date().toISOString(),
+  };
+};
 
 const getCompletionKey = (type, planId, index) => `${type}:${planId}:${index}`;
 
@@ -433,13 +487,15 @@ function FitnessHub() {
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed?.plans) && parsed.plans.length > 0) {
-        const restoredPlans = parsed.plans;
-        setSavedPlans(restoredPlans);
-        setActivePlanId(
-          restoredPlans.some((plan) => plan.id === parsed.activePlanId)
-            ? parsed.activePlanId
-            : restoredPlans[0].id
-        );
+        const restoredPlans = parsed.plans.map(normalizeStoredPlan).filter(Boolean);
+        if (restoredPlans.length > 0) {
+          setSavedPlans(restoredPlans);
+          setActivePlanId(
+            restoredPlans.some((plan) => plan.id === parsed.activePlanId)
+              ? parsed.activePlanId
+              : restoredPlans[0].id
+          );
+        }
       } else if (Array.isArray(parsed?.workouts)) {
         const migratedPlan = {
           ...createStoredPlan(parsed.workouts),
@@ -450,13 +506,15 @@ function FitnessHub() {
       }
 
       if (Array.isArray(parsed?.mealPlans) && parsed.mealPlans.length > 0) {
-        const restoredMealPlans = parsed.mealPlans;
-        setSavedMealPlans(restoredMealPlans);
-        setActiveMealPlanId(
-          restoredMealPlans.some((plan) => plan.id === parsed.activeMealPlanId)
-            ? parsed.activeMealPlanId
-            : restoredMealPlans[0].id
-        );
+        const restoredMealPlans = parsed.mealPlans.map(normalizeStoredMealPlan).filter(Boolean);
+        if (restoredMealPlans.length > 0) {
+          setSavedMealPlans(restoredMealPlans);
+          setActiveMealPlanId(
+            restoredMealPlans.some((plan) => plan.id === parsed.activeMealPlanId)
+              ? parsed.activeMealPlanId
+              : restoredMealPlans[0].id
+          );
+        }
       }
     } catch {
       // Ignore invalid persisted data and let the page recover cleanly.
@@ -500,10 +558,13 @@ function FitnessHub() {
     const onLoading = () => setRecommendationsLoading(true);
     const onMealPlanUpdated = (e) => {
       const detail = e.detail;
-      if (detail?.meals?.length) {
-        const nextPlan = createStoredMealPlan(detail);
-        setSavedMealPlans((prev) => [nextPlan, ...prev]);
+      const nextPlan = normalizeStoredMealPlan(createStoredMealPlan(detail));
+      if (nextPlan) {
+        setSavedMealPlans((prev) => [nextPlan, ...prev.filter((plan) => plan.id !== nextPlan.id)]);
         setActiveMealPlanId(nextPlan.id);
+        if (recSectionRef.current) {
+          recSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
       }
       setMealPlansLoading(false);
     };
@@ -767,84 +828,71 @@ function FitnessHub() {
             </Card>
           </MotionBox>
 
-          <Grid
-            templateColumns={{ base: '1fr', xl: 'minmax(0, 1.55fr) minmax(360px, 1fr)' }}
+          {/* ─── Top Row: AI Chat (left) + Insights + Meal Plans (right) ─── */}
+          <Box
+            display="grid"
+            gridTemplateColumns={{ base: '1fr', xl: '1.15fr 0.85fr' }}
             gap={8}
-            alignItems="stretch"
+            alignItems="start"
           >
-            <Box minW={0} display="flex" h="100%">
+            {/* AI Chat */}
+            <Box minW={0}>
               <FitnessHubChatSection userWorkouts={userWorkouts} userDiets={userDiets} toast={toast} />
             </Box>
-            <Box minW={0} display="flex" h="100%">
-              <FitnessHubPlansSection
-                sectionRef={recSectionRef}
-                recommendationsLoading={recommendationsLoading}
-                aiWorkouts={aiWorkouts}
-                aiGeneratedAt={aiGeneratedAt}
-                onViewDetails={handleViewDetails}
-                savedPlans={savedPlans}
-                activePlanId={activePlanId}
-                onSelectPlan={setActivePlanId}
-                onCompleteWorkout={handleCompleteWorkout}
-                onDeletePlan={(planId) => {
-                  setSavedPlans((prev) => {
-                    const nextPlans = prev.filter((plan) => plan.id !== planId);
-                    if (nextPlans.length === 0) {
-                      setActivePlanId(null);
-                      return [];
-                    }
-                    if (activePlanId === planId) {
-                      setActivePlanId(nextPlans[0].id);
-                    }
-                    return nextPlans;
-                  });
-                }}
-                savedMealPlans={savedMealPlans}
-                activeMealPlanId={activeMealPlanId}
-                onSelectMealPlan={setActiveMealPlanId}
-                onDeleteMealPlan={(planId) => {
-                  setSavedMealPlans((prev) => {
-                    const nextPlans = prev.filter((plan) => plan.id !== planId);
-                    if (nextPlans.length === 0) {
-                      setActiveMealPlanId(null);
-                      return [];
-                    }
-                    if (activeMealPlanId === planId) {
-                      setActiveMealPlanId(nextPlans[0].id);
-                    }
-                    return nextPlans;
-                  });
-                }}
-                onCompleteMeal={handleCompleteMeal}
-                mealPlansLoading={mealPlansLoading}
-                getWorkoutState={(index) => {
-                  const key = getCompletionKey('workout', activePlanId, index);
-                  return {
-                    loading: Boolean(completingItems[key]),
-                    completed: Boolean(activePlan?.workouts?.[index]?.completedRecordId),
-                  };
-                }}
-                getMealState={(index) => {
-                  const key = getCompletionKey('meal', activeMealPlanId, index);
-                  return {
-                    loading: Boolean(completingItems[key]),
-                    completed: Boolean(activeMealPlan?.meals?.[index]?.completedRecordId),
-                  };
-                }}
-                compact
-              />
-            </Box>
-          </Grid>
 
-          <Grid
-            templateColumns={{ base: '1fr', xl: 'minmax(320px, 0.95fr) minmax(0, 1.35fr)' }}
-            gap={8}
-            alignItems="stretch"
-          >
-            <Box minW={0} display="flex" h="100%">
+            {/* Right column: Insights + Meal Plans stacked */}
+            <Box minW={0} display="flex" flexDirection="column" gap={6}>
               <FitnessHubInsightsSection insights={insights} />
+
+              {/* Meal Plans — compact, under insights */}
+              <Box ref={recSectionRef} id="meal-plans-section">
+                <FitnessHubPlansSection
+                  sectionRef={null}
+                  recommendationsLoading={false}
+                  aiWorkouts={[]}
+                  aiGeneratedAt={null}
+                  onViewDetails={() => {}}
+                  savedPlans={[]}
+                  activePlanId={null}
+                  onSelectPlan={() => {}}
+                  onCompleteWorkout={() => {}}
+                  onDeletePlan={() => {}}
+                  savedMealPlans={savedMealPlans}
+                  activeMealPlanId={activeMealPlanId}
+                  onSelectMealPlan={setActiveMealPlanId}
+                  onDeleteMealPlan={(planId) => {
+                    setSavedMealPlans((prev) => {
+                      const nextPlans = prev.filter((plan) => plan.id !== planId);
+                      if (nextPlans.length === 0) { setActiveMealPlanId(null); return []; }
+                      if (activeMealPlanId === planId) { setActiveMealPlanId(nextPlans[0].id); }
+                      return nextPlans;
+                    });
+                  }}
+                  onCompleteMeal={handleCompleteMeal}
+                  mealPlansLoading={mealPlansLoading}
+                  getWorkoutState={() => ({ loading: false, completed: false })}
+                  getMealState={(index) => {
+                    const key = getCompletionKey('meal', activeMealPlanId, index);
+                    return {
+                      loading: Boolean(completingItems[key]),
+                      completed: Boolean(activeMealPlan?.meals?.[index]?.completedRecordId),
+                    };
+                  }}
+                  compact
+                  mealPlansOnly
+                />
+              </Box>
             </Box>
-            <Box minW={0} display="flex" h="100%">
+          </Box>
+
+          {/* ─── Bottom Row: Exercise Library + AI Workout Plans ─── */}
+          <SimpleGrid
+            columns={{ base: 1, xl: 2 }}
+            spacing={8}
+            alignItems="start"
+          >
+            {/* Exercise Library */}
+            <Box minW={0}>
               <FitnessHubDiscoverySection
                 muscle={discoveryMuscle}
                 equipment={discoveryEquipment}
@@ -861,7 +909,46 @@ function FitnessHub() {
                 }}
               />
             </Box>
-          </Grid>
+
+            {/* AI Workout Plans only */}
+            <Box minW={0}>
+              <FitnessHubPlansSection
+                sectionRef={null}
+                recommendationsLoading={recommendationsLoading}
+                aiWorkouts={aiWorkouts}
+                aiGeneratedAt={aiGeneratedAt}
+                onViewDetails={handleViewDetails}
+                savedPlans={savedPlans}
+                activePlanId={activePlanId}
+                onSelectPlan={setActivePlanId}
+                onCompleteWorkout={handleCompleteWorkout}
+                onDeletePlan={(planId) => {
+                  setSavedPlans((prev) => {
+                    const nextPlans = prev.filter((plan) => plan.id !== planId);
+                    if (nextPlans.length === 0) { setActivePlanId(null); return []; }
+                    if (activePlanId === planId) { setActivePlanId(nextPlans[0].id); }
+                    return nextPlans;
+                  });
+                }}
+                savedMealPlans={[]}
+                activeMealPlanId={null}
+                onSelectMealPlan={() => {}}
+                onDeleteMealPlan={() => {}}
+                onCompleteMeal={() => {}}
+                mealPlansLoading={false}
+                getWorkoutState={(index) => {
+                  const key = getCompletionKey('workout', activePlanId, index);
+                  return {
+                    loading: Boolean(completingItems[key]),
+                    completed: Boolean(activePlan?.workouts?.[index]?.completedRecordId),
+                  };
+                }}
+                getMealState={() => ({ loading: false, completed: false })}
+                compact
+                workoutPlansOnly
+              />
+            </Box>
+          </SimpleGrid>
 
           <ExerciseDetailsModal
             isOpen={isOpen}

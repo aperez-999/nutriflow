@@ -197,12 +197,16 @@ export const parseAIMealPlan = (content) => {
   if (!content || typeof content !== 'string') return false;
 
   const cleaned = content.replace(/```/g, '').trim();
-  const lines = cleaned.split('\n').map((line) => line.trim()).filter(Boolean);
+  const lines = cleaned
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => line.replace(/\*\*/g, '').trim());
   if (lines.length === 0) return false;
 
-  const mealHeadingRegex = /^(?:#{1,3}\s*)?(Breakfast|Lunch|Dinner|Snack|Snacks)\s*:?\s*(.*)$/i;
+  const mealHeadingRegex = /^(?:#{1,3}\s*)?(?:[-*•]|\d+[.)])?\s*(Breakfast|Lunch|Dinner|Snack|Snacks)\s*:?\s*(.*)$/i;
   const titleLine = lines.find((line) => /daily meal plan|meal plan/i.test(line));
-  const calorieLine = lines.find((line) => /^target\s*:/i.test(line));
+  const calorieLine = lines.find((line) => /^(?:target|daily target|calorie target|calories)\s*:/i.test(line));
   const calorieMatch = calorieLine?.match(/(\d{3,4})/);
 
   const meals = [];
@@ -212,7 +216,7 @@ export const parseAIMealPlan = (content) => {
   const pushMeal = () => {
     const joined = currentFood
       .join(' ')
-      .replace(/^[-•*]\s*/, '')
+      .replace(/^[-•*\d.\s]+/, '')
       .replace(/\s+/g, ' ')
       .trim();
 
@@ -234,7 +238,7 @@ export const parseAIMealPlan = (content) => {
     }
 
     if (!currentMealType) return;
-    if (/^(overview|next steps|wins|watchouts|recommendation|why)\b/i.test(line)) {
+    if (/^(overview|next steps|wins|watchouts|recommendation|why|notes?)\b/i.test(line)) {
       pushMeal();
       currentMealType = null;
       currentFood = [];
