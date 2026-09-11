@@ -371,6 +371,7 @@ function FitnessHub() {
   const [mealPlansLoading, setMealPlansLoading] = useState(false);
   const [completingItems, setCompletingItems] = useState({});
   const recSectionRef = useRef(null);
+  const completionLocksRef = useRef(new Set());
   const [activeWorkout, setActiveWorkout] = useState(null);
   const [discoveryMuscle, setDiscoveryMuscle] = useState('');
   const [discoveryEquipment, setDiscoveryEquipment] = useState('');
@@ -432,12 +433,13 @@ function FitnessHub() {
       if (!raw) return;
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed?.plans) && parsed.plans.length > 0) {
-        setSavedPlans(parsed.plans);
-        setActivePlanId(parsed.activePlanId || parsed.plans[0].id);
-        if (Array.isArray(parsed?.mealPlans) && parsed.mealPlans.length > 0) {
-          setSavedMealPlans(parsed.mealPlans);
-          setActiveMealPlanId(parsed.activeMealPlanId || parsed.mealPlans[0].id);
-        }
+        const restoredPlans = parsed.plans;
+        setSavedPlans(restoredPlans);
+        setActivePlanId(
+          restoredPlans.some((plan) => plan.id === parsed.activePlanId)
+            ? parsed.activePlanId
+            : restoredPlans[0].id
+        );
       } else if (Array.isArray(parsed?.workouts)) {
         const migratedPlan = {
           ...createStoredPlan(parsed.workouts),
@@ -446,6 +448,16 @@ function FitnessHub() {
         setSavedPlans([migratedPlan]);
         setActivePlanId(migratedPlan.id);
       }
+
+      if (Array.isArray(parsed?.mealPlans) && parsed.mealPlans.length > 0) {
+        const restoredMealPlans = parsed.mealPlans;
+        setSavedMealPlans(restoredMealPlans);
+        setActiveMealPlanId(
+          restoredMealPlans.some((plan) => plan.id === parsed.activeMealPlanId)
+            ? parsed.activeMealPlanId
+            : restoredMealPlans[0].id
+        );
+      }
     } catch {
       // Ignore invalid persisted data and let the page recover cleanly.
     }
@@ -453,19 +465,23 @@ function FitnessHub() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(
-        `${AI_PLANS_STORAGE_KEY}.${storageUserId}`,
-        JSON.stringify({
-          plans: savedPlans,
-          activePlanId,
-          mealPlans: savedMealPlans,
-          activeMealPlanId,
-        })
-      );
-    } catch {
-      // Ignore persistence failures in unsupported/private browsing contexts.
-    }
+    const timeoutId = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(
+          `${AI_PLANS_STORAGE_KEY}.${storageUserId}`,
+          JSON.stringify({
+            plans: savedPlans,
+            activePlanId,
+            mealPlans: savedMealPlans,
+            activeMealPlanId,
+          })
+        );
+      } catch {
+        // Ignore persistence failures in unsupported/private browsing contexts.
+      }
+    }, 150);
+
+    return () => window.clearTimeout(timeoutId);
   }, [activeMealPlanId, activePlanId, savedMealPlans, savedPlans, storageUserId]);
 
   useEffect(() => {
@@ -517,6 +533,18 @@ function FitnessHub() {
     });
   }, []);
 
+  const beginCompletion = useCallback((key) => {
+    if (completionLocksRef.current.has(key)) return false;
+    completionLocksRef.current.add(key);
+    setCompletionState(key, true);
+    return true;
+  }, [setCompletionState]);
+
+  const endCompletion = useCallback((key) => {
+    completionLocksRef.current.delete(key);
+    setCompletionState(key, false);
+  }, [setCompletionState]);
+
   const markWorkoutCompleted = useCallback((planId, workoutIndex, recordId) => {
     setSavedPlans((prev) =>
       prev.map((plan) => (
@@ -552,9 +580,10 @@ function FitnessHub() {
   }, []);
 
   const handleCompleteWorkout = useCallback(async (workout, workoutIndex) => {
-    if (!activePlanId || !workout) return;
-    const key = getCompletionKey('workout', activePlanId, workoutIndex);
-    setCompletionState(key, true);
+    const planId = activePlanId;
+    if (!planId || !workout) return;
+    const key = getCompletionKey('workout', planId, workoutIndex);
+    if (!beginCompletion(key)) return;
 
     try {
       const workoutPayload = {
@@ -570,7 +599,7 @@ function FitnessHub() {
 
       const createdWorkout = await addWorkout(workoutPayload);
       setUserWorkouts((prev) => [createdWorkout, ...prev]);
-      markWorkoutCompleted(activePlanId, workoutIndex, createdWorkout._id);
+      markWorkoutCompleted(planId, workoutIndex, createdWorkout._id);
       toast({
         title: 'Workout logged',
         description: 'The AI workout was added to your training log.',
@@ -580,14 +609,15 @@ function FitnessHub() {
     } catch (error) {
       handleApiError(error, 'logging AI workout', toast);
     } finally {
-      setCompletionState(key, false);
+      endCompletion(key);
     }
-  }, [activePlanId, markWorkoutCompleted, setCompletionState, toast]);
+  }, [activePlanId, beginCompletion, endCompletion, markWorkoutCompleted, toast]);
 
   const handleCompleteMeal = useCallback(async (meal, mealIndex) => {
-    if (!activeMealPlanId || !meal) return;
-    const key = getCompletionKey('meal', activeMealPlanId, mealIndex);
-    setCompletionState(key, true);
+    const mealPlanId = activeMealPlanId;
+    if (!mealPlanId || !meal) return;
+    const key = getCompletionKey('meal', mealPlanId, mealIndex);
+    if (!beginCompletion(key)) return;
 
     try {
       const mealType = normalizeMealType(meal.mealType);
@@ -615,7 +645,7 @@ function FitnessHub() {
 
       const createdDiet = await addDiet(dietPayload);
       setUserDiets((prev) => [createdDiet, ...prev]);
-      markMealCompleted(activeMealPlanId, mealIndex, createdDiet._id);
+      markMealCompleted(mealPlanId, mealIndex, createdDiet._id);
       toast({
         title: 'Meal logged',
         description: 'The AI meal was added to your nutrition log.',
@@ -625,9 +655,9 @@ function FitnessHub() {
     } catch (error) {
       handleApiError(error, 'logging AI meal', toast);
     } finally {
-      setCompletionState(key, false);
+      endCompletion(key);
     }
-  }, [activeMealPlanId, markMealCompleted, setCompletionState, toast]);
+  }, [activeMealPlanId, beginCompletion, endCompletion, markMealCompleted, toast]);
 
   const handleCloseDetails = useCallback(() => {
     onClose();

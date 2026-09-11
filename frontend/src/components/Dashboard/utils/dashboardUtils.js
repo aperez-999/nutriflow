@@ -2,12 +2,14 @@ import { getTodayDayKey, parseDayKey, toDayKey, toStoredIsoFromDayKey } from '..
 
 // Progress Calculations
 export const calculateDailyCalories = (diets) => {
+  if (!Array.isArray(diets) || diets.length === 0) {
+    return 0;
+  }
   const today = getTodayDayKey();
-  const todaysDiets = diets.filter(diet => {
-    const dietDate = toDayKey(diet.date);
-    return dietDate === today;
-  });
-  return todaysDiets.reduce((sum, diet) => sum + (Number(diet.calories) || 0), 0);
+  return diets.reduce((sum, diet) => {
+    if (toDayKey(diet.date) !== today) return sum;
+    return sum + (Number(diet.calories) || 0);
+  }, 0);
 };
 
 export const calculateWeeklyWorkouts = (workouts) => {
@@ -16,7 +18,9 @@ export const calculateWeeklyWorkouts = (workouts) => {
   }
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
-  return workouts.filter(workout => new Date(workout.date) >= weekAgo).length;
+  return workouts.reduce((count, workout) => (
+    new Date(workout.date) >= weekAgo ? count + 1 : count
+  ), 0);
 };
 
 export const calculateProgress = (current, goal) => {
@@ -26,6 +30,12 @@ export const calculateProgress = (current, goal) => {
 
 /** Calories per day for the last 7 days (for charts). Returns [{ dayName, date, calories }, ...]. */
 export const getWeeklyCaloriesByDay = (diets) => {
+  const caloriesByDay = new Map();
+  for (const diet of diets || []) {
+    const dayKey = toDayKey(diet.date);
+    caloriesByDay.set(dayKey, (caloriesByDay.get(dayKey) || 0) + (Number(diet.calories) || 0));
+  }
+
   const result = [];
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   for (let i = 6; i >= 0; i--) {
@@ -33,11 +43,7 @@ export const getWeeklyCaloriesByDay = (diets) => {
     d.setDate(d.getDate() - i);
     const dateStr = toDayKey(d);
     const dayName = dayNames[parseDayKey(dateStr).getDay()];
-    const dayDiets = (diets || []).filter(
-      (diet) => toDayKey(diet.date) === dateStr
-    );
-    const calories = dayDiets.reduce((sum, diet) => sum + (Number(diet.calories) || 0), 0);
-    result.push({ dayName, date: dateStr, calories });
+    result.push({ dayName, date: dateStr, calories: caloriesByDay.get(dateStr) || 0 });
   }
   return result;
 };
@@ -47,11 +53,14 @@ export const getWeeklyCaloriesAverage = (diets) => {
   if (!Array.isArray(diets) || diets.length === 0) return 0;
   const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
-  const inWeek = diets.filter((d) => new Date(d.date) >= weekAgo);
-  if (inWeek.length === 0) return 0;
-  const total = inWeek.reduce((sum, d) => sum + (Number(d.calories) || 0), 0);
-  const daysWithData = new Set(inWeek.map((d) => toDayKey(d.date))).size;
-  return daysWithData > 0 ? Math.round(total / daysWithData) : 0;
+  let total = 0;
+  const daysWithData = new Set();
+  for (const diet of diets) {
+    if (new Date(diet.date) < weekAgo) continue;
+    total += Number(diet.calories) || 0;
+    daysWithData.add(toDayKey(diet.date));
+  }
+  return daysWithData.size > 0 ? Math.round(total / daysWithData.size) : 0;
 };
 
 /**
@@ -172,8 +181,15 @@ const getHoursAgo = (date, now = new Date()) => {
 export const calculateDailyReadiness = (workouts = [], diets = []) => {
   const now = new Date();
   const sortedWorkouts = [...(workouts || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
-  const recentWorkouts7d = sortedWorkouts.filter((workout) => workout?.date && getDaysAgo(workout.date, now) < 7);
-  const recentWorkouts3d = sortedWorkouts.filter((workout) => workout?.date && getDaysAgo(workout.date, now) < 3);
+  const recentWorkouts7d = [];
+  const recentWorkouts3d = [];
+  for (const workout of sortedWorkouts) {
+    if (!workout?.date) continue;
+    const daysAgo = getDaysAgo(workout.date, now);
+    if (daysAgo >= 7) break;
+    recentWorkouts7d.push(workout);
+    if (daysAgo < 3) recentWorkouts3d.push(workout);
+  }
   const latestWorkout = sortedWorkouts.find((workout) => workout?.date) || null;
   const latestWorkoutHours = latestWorkout ? getHoursAgo(latestWorkout.date, now) : null;
   const highLoadCount = recentWorkouts3d.filter((workout) => {
@@ -193,9 +209,12 @@ export const calculateDailyReadiness = (workouts = [], diets = []) => {
   });
 
   const today = dailyNutrition.get(getDayKey(now)) || { calories: 0, protein: 0, meals: 0 };
-  const recentNutritionDays = Array.from(dailyNutrition.entries())
-    .filter(([key]) => getDaysAgo(dateFromDayKey(key), now) < 3)
-    .map(([, value]) => value);
+  const recentNutritionDays = [];
+  for (const [key, value] of dailyNutrition.entries()) {
+    if (getDaysAgo(dateFromDayKey(key), now) < 3) {
+      recentNutritionDays.push(value);
+    }
+  }
   const averageCalories = recentNutritionDays.length
     ? Math.round(recentNutritionDays.reduce((sum, day) => sum + toNumber(day.calories), 0) / recentNutritionDays.length)
     : 0;

@@ -134,4 +134,4 @@ const DietCard = ({ diet, onEdit, onDelete }) => {
   );
 };
 
-export default DietCard;
+export default React.memo(DietCard);

@@ -5,7 +5,7 @@ import { FiZap, FiActivity } from 'react-icons/fi';
 /**
  * Compact strip showing today's calories and this week's workouts at a glance.
  */
-export default function QuickStatsStrip({ dailyCalories, dailyCalorieGoal, weeklyWorkouts, weeklyWorkoutGoal }) {
+function QuickStatsStrip({ dailyCalories, dailyCalorieGoal, weeklyWorkouts, weeklyWorkoutGoal }) {
   const bg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const textColor = useColorModeValue('gray.800', 'white');
@@ -60,3 +60,5 @@ export default function QuickStatsStrip({ dailyCalories, dailyCalorieGoal, weekl
     </HStack>
   );
 }
+
+export default React.memo(QuickStatsStrip);

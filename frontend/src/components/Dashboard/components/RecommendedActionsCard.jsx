@@ -25,7 +25,7 @@ const cardStyles = {
 /**
  * Suggested next steps as interactive buttons.
  */
-export default function RecommendedActionsCard({
+function RecommendedActionsCard({
   onScrollToDiet,
   onScrollToWorkout,
 }) {
@@ -83,3 +83,5 @@ export default function RecommendedActionsCard({
     </Card>
   );
 }
+
+export default React.memo(RecommendedActionsCard);

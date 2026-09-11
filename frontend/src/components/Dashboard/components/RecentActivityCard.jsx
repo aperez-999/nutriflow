@@ -6,22 +6,22 @@ import { getTodayDayKey, toDayKey } from '../../../utils/dateUtils';
 /**
  * List of recent diet and workout entries (mixed, by date).
  */
-export default function RecentActivityCard({ items }) {
+function RecentActivityCard({ items }) {
   const bg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const textColor = useColorModeValue('gray.800', 'white');
   const subColor = useColorModeValue('gray.600', 'gray.400');
   const dividerColor = useColorModeValue('gray.100', 'gray.600');
   const iconMuted = useColorModeValue('gray.500', 'gray.400');
-
+  const todayKey = getTodayDayKey();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayKey = toDayKey(yesterday);
   const formatTime = (date) => {
     const d = new Date(date);
-    const today = getTodayDayKey();
     const dateStr = toDayKey(d);
-    if (dateStr === today) return 'Today';
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    if (dateStr === toDayKey(yesterday)) return 'Yesterday';
+    if (dateStr === todayKey) return 'Today';
+    if (dateStr === yesterdayKey) return 'Yesterday';
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
   };
 
@@ -107,3 +107,5 @@ export default function RecentActivityCard({ items }) {
     </Box>
   );
 }
+
+export default React.memo(RecentActivityCard);

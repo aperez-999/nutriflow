@@ -100,4 +100,4 @@ const GoalsSection = ({
   );
 };
 
-export default GoalsSection;
+export default React.memo(GoalsSection);

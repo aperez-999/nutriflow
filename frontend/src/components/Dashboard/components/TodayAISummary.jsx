@@ -39,7 +39,7 @@ function getSuggestion(dailyCalories, dailyCalorieGoal, weeklyWorkouts, weeklyWo
   return 'Log meals and workouts to get personalized suggestions.';
 }
 
-export default function TodayAISummary({
+function TodayAISummary({
   dailyCalories = 0,
   dailyCalorieGoal = 2000,
   weeklyWorkouts = 0,
@@ -90,3 +90,5 @@ export default function TodayAISummary({
     </Card>
   );
 }
+
+export default React.memo(TodayAISummary);

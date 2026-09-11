@@ -16,6 +16,7 @@ import exerciseRoutes from './routes/exerciseRoutes.js';
 import { selectProvider } from './ai/config/aiProvider.js';
 
 const app = express();
+app.set('trust proxy', 1);
 
 const aiChatLimiter = rateLimit({
   windowMs: 60 * 1000,
@@ -40,8 +41,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false, limit: '1mb' }));
 app.use(express.static(path.join(__dirname, 'dist')));
 
 app.use('/api/diets', dietRoutes);
@@ -81,16 +82,21 @@ app.get('/api/health', (req, res) => {
   const model = provider === 'groq' ? 
     process.env.GROQ_MODEL || 'llama3-8b-8192' : 
     process.env.OLLAMA_MODEL || 'llama3:latest';
-  
-  res.json({ 
-    ok: true, 
+
+  const payload = {
+    ok: true,
     provider,
     model,
-    env: process.env.NODE_ENV || 'development',
-    baseUrl: provider === 'groq' ? 
-      'https://api.groq.com/openai/v1/chat/completions' : 
-      `${process.env.OLLAMA_URL || 'http://localhost:11434'}/api/chat`
-  });
+  };
+
+  if (process.env.NODE_ENV !== 'production') {
+    payload.env = process.env.NODE_ENV || 'development';
+    payload.baseUrl = provider === 'groq'
+      ? 'https://api.groq.com/openai/v1/chat/completions'
+      : `${process.env.OLLAMA_URL || 'http://localhost:11434'}/api/chat`;
+  }
+
+  res.json(payload);
 });
 
 // Error handler middleware

@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
 
+const JWT_SECRET = process.env.JWT_SECRET;
+
 function buildUserPayload(user) {
   return {
     _id: user._id,
@@ -14,16 +16,32 @@ function buildUserPayload(user) {
   };
 }
 
+function signAuthToken(userId, expiresIn = '1d') {
+  if (!JWT_SECRET) {
+    throw new Error('Authentication is not configured');
+  }
+
+  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn });
+}
+
 export const register = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(400).json({ errors: errors.array() });
   }
 
-  const { username, email, password } = req.body;
+  const username = String(req.body.username || '').trim();
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const password = String(req.body.password || '');
+
+  if (!username || !email || !password) {
+    return res.status(400).json({ message: 'Username, email and password are required' });
+  }
 
   try {
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({
+      $or: [{ email }, { username }],
+    });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
@@ -33,38 +51,43 @@ export const register = async (req, res) => {
 
     await newUser.save();
 
-    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+    const token = signAuthToken(newUser._id, '1h');
 
     return res.status(201).json({ result: buildUserPayload(newUser), token });
   } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
     console.error('Register error:', error);
     return res.status(500).json({ message: 'Something went wrong' });
   }
 };
 
 export const login = async (req, res) => {
-  if (process.env.NODE_ENV !== 'production') console.log('Login route hit');
-  try {
-    const { email, password } = req.body;
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid login input' });
+  }
 
-    // Find user by email
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
+
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Create token
-    const token = jwt.sign(
-      { id: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '1d' }
-    );
+    const token = signAuthToken(user._id, '1d');
 
     return res.status(200).json({
       user: buildUserPayload(user),
@@ -138,7 +161,8 @@ export const changePassword = async (req, res) => {
       return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid password input' });
     }
 
-    const { currentPassword, newPassword } = req.body;
+    const currentPassword = String(req.body.currentPassword || '');
+    const newPassword = String(req.body.newPassword || '');
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ message: 'Current password and new password are required' });
     }

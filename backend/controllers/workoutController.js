@@ -1,5 +1,6 @@
 import fetch from 'node-fetch';
 import Workout from '../models/Workout.js';
+import { validationResult } from 'express-validator';
 
 const WORKOUT_STOP_WORDS = new Set(['and', '&', 'with', 'the', 'a', 'an', 'for']);
 const WORKOUT_FALLBACKS = [
@@ -76,10 +77,110 @@ function buildFallbackWorkouts(query) {
     .slice(0, 5);
 }
 
+function normalizeWorkoutType(value) {
+  const type = String(value || '').trim().toLowerCase();
+  const map = {
+    cardio: 'Cardio',
+    strength: 'Strength',
+    flexibility: 'Flexibility',
+    sports: 'Sports',
+    other: 'Other',
+  };
+
+  return map[type] || null;
+}
+
+function normalizeWorkoutIntensity(value) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  const intensity = String(value).trim().toLowerCase();
+  const map = {
+    low: 'Low',
+    medium: 'Medium',
+    high: 'High',
+  };
+
+  return map[intensity] || null;
+}
+
+function parseWorkoutNumber(value, fieldName) {
+  if (value === undefined || value === null || value === '') {
+    return undefined;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    throw new Error(`Please provide a valid ${fieldName}`);
+  }
+
+  return parsed;
+}
+
+function buildWorkoutInput(body, { partial = false } = {}) {
+  const next = {};
+
+  if (body.date !== undefined) {
+    const parsedDate = new Date(body.date);
+    if (Number.isNaN(parsedDate.getTime())) {
+      throw new Error('Please provide a valid date');
+    }
+    next.date = parsedDate;
+  } else if (!partial) {
+    throw new Error('Please provide a valid date');
+  }
+
+  if (body.type !== undefined) {
+    const type = normalizeWorkoutType(body.type);
+    if (!type) {
+      throw new Error('Please provide a valid workout type');
+    }
+    next.type = type;
+  } else if (!partial) {
+    throw new Error('Please provide a valid workout type');
+  }
+
+  if (body.duration !== undefined) {
+    next.duration = parseWorkoutNumber(body.duration, 'duration');
+  } else if (!partial) {
+    throw new Error('Please provide a valid duration');
+  }
+
+  if (body.caloriesBurned !== undefined) {
+    next.caloriesBurned = parseWorkoutNumber(body.caloriesBurned, 'calories burned');
+  }
+
+  if (body.intensity !== undefined) {
+    const intensity = normalizeWorkoutIntensity(body.intensity);
+    if (body.intensity !== '' && !intensity) {
+      throw new Error('Please provide a valid intensity');
+    }
+    next.intensity = intensity;
+  }
+
+  if (body.workoutName !== undefined) {
+    const workoutName = String(body.workoutName || '').trim();
+    next.workoutName = workoutName || undefined;
+  }
+
+  if (body.equipment !== undefined) {
+    const equipment = String(body.equipment || '').trim();
+    next.equipment = equipment || undefined;
+  }
+
+  if (body.notes !== undefined) {
+    const notes = String(body.notes || '').trim();
+    next.notes = notes || undefined;
+  }
+
+  return next;
+}
+
 // Get all workouts for a user
 export const getWorkouts = async (req, res) => {
   try {
-    const workouts = await Workout.find({ user: req.user.id });
+    const workouts = await Workout.find({ user: req.user._id }).sort({ date: -1, createdAt: -1 });
     res.json(workouts);
   } catch (error) {
     res.status(500).json({ message: 'Error fetching workouts', error: error.message });
@@ -89,9 +190,21 @@ export const getWorkouts = async (req, res) => {
 // Create a new workout
 export const createWorkout = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid workout input' });
+    }
+
+    let workoutInput;
+    try {
+      workoutInput = buildWorkoutInput(req.body);
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
     const workout = new Workout({
-      user: req.user.id,
-      ...req.body
+      user: req.user._id,
+      ...workoutInput,
     });
     const savedWorkout = await workout.save();
     res.status(201).json(savedWorkout);
@@ -103,17 +216,30 @@ export const createWorkout = async (req, res) => {
 // Update a workout
 export const updateWorkout = async (req, res) => {
   try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid workout input' });
+    }
+
     const workout = await Workout.findById(req.params.id);
     if (!workout) {
       return res.status(404).json({ message: 'Workout not found' });
     }
-    if (workout.user.toString() !== req.user.id) {
+    if (workout.user.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized' });
     }
+
+    let updates;
+    try {
+      updates = buildWorkoutInput(req.body, { partial: true });
+    } catch (error) {
+      return res.status(400).json({ message: error.message });
+    }
+
     const updatedWorkout = await Workout.findByIdAndUpdate(
       req.params.id,
-      req.body,
-      { new: true }
+      updates,
+      { new: true, runValidators: true }
     );
     res.json(updatedWorkout);
   } catch (error) {
@@ -128,7 +254,7 @@ export const deleteWorkout = async (req, res) => {
     if (!workout) {
       return res.status(404).json({ message: 'Workout not found' });
     }
-    if (workout.user.toString() !== req.user.id) {
+    if (workout.user.toString() !== req.user._id.toString()) {
       return res.status(401).json({ message: 'Not authorized' });
     }
     await workout.deleteOne();

@@ -51,6 +51,29 @@ const getConversationTitle = (messages = [], fallback = 'New chat') => {
   return firstUserMessage.content.trim().slice(0, 40) || fallback;
 };
 
+const processChatHistoryQueue = async (state, toast) => {
+  if (state.inFlight) return;
+
+  state.inFlight = true;
+  try {
+    while (state.queued) {
+      const payload = state.queued;
+      state.queued = null;
+
+      try {
+        await saveChatHistory(payload);
+      } catch (err) {
+        handleApiError(err, 'saving chat history', toast);
+      }
+    }
+  } finally {
+    state.inFlight = false;
+    if (state.queued) {
+      void processChatHistoryQueue(state, toast);
+    }
+  }
+};
+
 const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, ref) => {
   const [conversations, setConversations] = useState([createConversation()]);
   const [activeConversationId, setActiveConversationId] = useState(null);
@@ -61,6 +84,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
   const messagesContainerRef = useRef(null);
   const didInitRef = useRef(false);
   const suppressSaveRef = useRef(false);
+  const chatHistorySaveRef = useRef({ inFlight: false, queued: null });
 
   const { user } = useContext(AuthContext);
   const storageUserId = user?.user?._id || user?._id || user?.result?._id || 'anonymous';
@@ -94,6 +118,21 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     );
   }, [activeConversationId]);
 
+  const updateConversationById = useCallback((conversationId, updater) => {
+    setConversations((prev) =>
+      prev.map((conversation) => {
+        if (conversation.id !== conversationId) return conversation;
+        const nextMessages = typeof updater === 'function' ? updater(conversation.messages) : updater;
+        return {
+          ...conversation,
+          messages: nextMessages,
+          updatedAt: new Date().toISOString(),
+          title: getConversationTitle(nextMessages, conversation.title),
+        };
+      })
+    );
+  }, []);
+
   const scrollToBottom = useCallback((behavior = 'smooth') => {
     const el = messagesContainerRef.current;
     if (!el) return;
@@ -110,19 +149,27 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     if (didInitRef.current) return;
     didInitRef.current = true;
 
+    let cancelled = false;
+
     const loadInitialState = async () => {
       try {
         const localRaw = window.localStorage.getItem(`${CHAT_THREADS_STORAGE_KEY}.${storageUserId}`);
         if (localRaw) {
           const parsed = JSON.parse(localRaw);
           if (Array.isArray(parsed?.conversations) && parsed.conversations.length > 0) {
+            if (cancelled) return;
             setConversations(parsed.conversations);
-            setActiveConversationId(parsed.activeConversationId || parsed.conversations[0].id);
+            setActiveConversationId(
+              parsed.conversations.some((conversation) => conversation.id === parsed.activeConversationId)
+                ? parsed.activeConversationId
+                : parsed.conversations[0].id
+            );
             return;
           }
         }
 
         const serverHistory = await loadChatHistory(40);
+        if (cancelled) return;
         suppressSaveRef.current = true;
 
         if (Array.isArray(serverHistory) && serverHistory.length) {
@@ -142,16 +189,22 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
           setActiveConversationId(starterConversation.id);
         }
       } catch (err) {
+        if (cancelled) return;
         handleApiError(err, 'loading chat history', toast);
         const starterConversation = createConversation();
         setConversations([starterConversation]);
         setActiveConversationId(starterConversation.id);
       } finally {
+        if (cancelled) return;
         suppressSaveRef.current = false;
       }
     };
 
     loadInitialState();
+
+    return () => {
+      cancelled = true;
+    };
   }, [storageUserId, toast]);
 
   useEffect(() => {
@@ -165,6 +218,11 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     );
   }, [activeConversationId, conversations, storageUserId]);
 
+  const queueChatHistorySave = useCallback((payload) => {
+    chatHistorySaveRef.current.queued = payload;
+    void processChatHistoryQueue(chatHistorySaveRef.current, toast);
+  }, [toast]);
+
   useEffect(() => {
     if (suppressSaveRef.current || !activeConversationId) return;
 
@@ -175,8 +233,8 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     if (onlyWelcome) return;
 
     const toSave = nonEmpty.map((m) => ({ type: m.type, content: m.content }));
-    saveChatHistory(toSave).catch((err) => handleApiError(err, 'saving chat history', toast));
-  }, [activeConversationId, messages, toast]);
+    queueChatHistorySave(toSave);
+  }, [activeConversationId, messages, queueChatHistorySave]);
 
   const generateAIResponse = useCallback(async (userMessage, historyMessages) => {
     setIsLoading(true);
@@ -244,6 +302,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
   const sendMessage = useCallback(async (promptText, displayText = promptText) => {
     if (!promptText.trim() || !activeConversationId) return;
 
+    const sourceConversationId = activeConversationId;
     const userMessage = createUserMessage(displayText);
     const nextMessages = [...messages, userMessage];
     updateActiveConversation(nextMessages);
@@ -252,14 +311,14 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     try {
       const aiResponse = await generateAIResponse(promptText, nextMessages);
       const aiMessage = createAIMessage(aiResponse.content, aiResponse.suggestions);
-      updateActiveConversation((currentMessages) => [...currentMessages, aiMessage]);
+      updateConversationById(sourceConversationId, (currentMessages) => [...currentMessages, aiMessage]);
     } catch (error) {
       console.error('Error generating AI response:', error);
       window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: [] }));
       window.dispatchEvent(new CustomEvent('ai-meal-plan-updated', { detail: null }));
-      updateActiveConversation((currentMessages) => [...currentMessages, createErrorMessage()]);
+      updateConversationById(sourceConversationId, (currentMessages) => [...currentMessages, createErrorMessage()]);
     }
-  }, [activeConversationId, generateAIResponse, messages, updateActiveConversation]);
+  }, [activeConversationId, generateAIResponse, messages, updateActiveConversation, updateConversationById]);
 
   const handleActionClick = useCallback((label) => {
     sendMessage(resolveAssistantActionPrompt(label), label);

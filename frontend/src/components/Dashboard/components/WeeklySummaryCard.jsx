@@ -6,7 +6,7 @@ import { FaFire } from 'react-icons/fa';
 /**
  * Weekly snapshot: average calories, workout count, and logging streak.
  */
-export default function WeeklySummaryCard({ weeklyWorkouts, weeklyWorkoutGoal, avgCaloriesThisWeek, loggingStreak }) {
+function WeeklySummaryCard({ weeklyWorkouts, weeklyWorkoutGoal, avgCaloriesThisWeek, loggingStreak }) {
   const bg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const textColor = useColorModeValue('gray.800', 'white');
@@ -61,3 +61,5 @@ export default function WeeklySummaryCard({ weeklyWorkouts, weeklyWorkoutGoal, a
     </Box>
   );
 }
+
+export default React.memo(WeeklySummaryCard);

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   VStack,
   Box,
@@ -37,7 +37,7 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
   const [editingId, setEditingId] = useState(null);
   const [selectedDate, setSelectedDate] = useState(getTodayDayKey());
 
-  const handleSubmit = async (formattedData) => {
+  const handleSubmit = useCallback(async (formattedData) => {
     try {
       if (isEditing) {
         await onUpdateWorkout(editingId, formattedData);
@@ -50,9 +50,9 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
     } catch (error) {
       console.error('Error in workout operation:', error);
     }
-  };
+  }, [editingId, isEditing, onAddWorkout, onUpdateWorkout]);
 
-  const handleEdit = (workout) => {
+  const handleEdit = useCallback((workout) => {
     setIsEditing(true);
     setEditingId(workout._id);
     setFormData({
@@ -65,19 +65,23 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
       equipment: workout.equipment || '',
       notes: workout.notes || ''
     });
-  };
+  }, []);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setIsEditing(false);
     setEditingId(null);
     setFormData(initialFormState);
-  };
+  }, []);
 
   // Color mode values
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.400');
+  const recentWorkouts = useMemo(
+    () => [...(Array.isArray(workouts) ? workouts : [])].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6),
+    [workouts]
+  );
 
   return (
     <MotionBox
@@ -128,7 +132,7 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
               </Badge>
             </HStack>
             
-            {workouts.length === 0 ? (
+            {recentWorkouts.length === 0 ? (
               <VStack spacing={4} py={8} px={2} align="center" justify="center" flex="1">
                 <Box as={FiActivity} boxSize="48px" color={subTextColor} />
                 <Text fontSize="lg" color={textColor} textAlign="center" fontWeight="medium">
@@ -140,21 +144,18 @@ function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorko
               </VStack>
             ) : (
               <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={5} alignItems="stretch">
-                {workouts
-                  .sort((a, b) => new Date(b.date) - new Date(a.date))
-                  .slice(0, 6)
-                  .map((workout) => (
+                {recentWorkouts.map((workout) => (
                     <WorkoutCard
                       key={workout._id}
                       workout={workout}
                       onEdit={handleEdit}
                       onDelete={onDeleteWorkout}
                     />
-                  ))}
+                ))}
               </SimpleGrid>
             )}
             
-            {workouts.length > 6 && (
+            {recentWorkouts.length > 0 && workouts.length > 6 && (
               <Text fontSize="sm" color={subTextColor} textAlign="center" mt={4}>
                 Showing the 6 most recent workout records.
               </Text>

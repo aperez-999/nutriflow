@@ -162,4 +162,4 @@ const WorkoutCard = ({ workout, onEdit, onDelete }) => {
   );
 };
 
-export default WorkoutCard;
+export default React.memo(WorkoutCard);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Container,
@@ -148,26 +148,40 @@ function Dashboard() {
     }
   }, [toast]);
 
-  // Goals handling
-  const handleSaveGoals = () => {
+  const handleSaveGoals = useCallback(() => {
     setGoals(editingGoals);
     onClose();
     handleApiSuccess(toast, 'Goals updated successfully');
-  };
+  }, [editingGoals, onClose, toast]);
 
-  // Progress calculations
-  const dailyCalories = calculateDailyCalories(diets);
-  const weeklyWorkoutCount = calculateWeeklyWorkouts(workouts);
-  const calorieProgress = calculateProgress(dailyCalories, goals.dailyCalories);
-  const workoutProgress = calculateProgress(weeklyWorkoutCount, goals.weeklyWorkouts);
-  const avgCaloriesThisWeek = getWeeklyCaloriesAverage(diets);
-  const recentActivity = getRecentActivity(diets, workouts, 6);
-  const loggingStreak = getLoggingStreak(diets, workouts);
-  const readiness = calculateDailyReadiness(workouts, diets);
-  const dailyActions = getDailyActionPlan(readiness, dailyCalories, goals.dailyCalories);
+  const dailyCalories = useMemo(() => calculateDailyCalories(diets), [diets]);
+  const weeklyWorkoutCount = useMemo(() => calculateWeeklyWorkouts(workouts), [workouts]);
+  const calorieProgress = useMemo(
+    () => calculateProgress(dailyCalories, goals.dailyCalories),
+    [dailyCalories, goals.dailyCalories]
+  );
+  const workoutProgress = useMemo(
+    () => calculateProgress(weeklyWorkoutCount, goals.weeklyWorkouts),
+    [goals.weeklyWorkouts, weeklyWorkoutCount]
+  );
+  const avgCaloriesThisWeek = useMemo(() => getWeeklyCaloriesAverage(diets), [diets]);
+  const weeklyCaloriesByDay = useMemo(() => getWeeklyCaloriesByDay(diets), [diets]);
+  const recentActivity = useMemo(() => getRecentActivity(diets, workouts, 6), [diets, workouts]);
+  const loggingStreak = useMemo(() => getLoggingStreak(diets, workouts), [diets, workouts]);
+  const readiness = useMemo(() => calculateDailyReadiness(workouts, diets), [diets, workouts]);
+  const dailyActions = useMemo(
+    () => getDailyActionPlan(readiness, dailyCalories, goals.dailyCalories),
+    [dailyCalories, goals.dailyCalories, readiness]
+  );
 
-  const scrollToDiet = () => document.getElementById('diet-section')?.scrollIntoView({ behavior: 'smooth' });
-  const scrollToWorkout = () => document.getElementById('workout-section')?.scrollIntoView({ behavior: 'smooth' });
+  const scrollToDiet = useCallback(
+    () => document.getElementById('diet-section')?.scrollIntoView({ behavior: 'smooth' }),
+    []
+  );
+  const scrollToWorkout = useCallback(
+    () => document.getElementById('workout-section')?.scrollIntoView({ behavior: 'smooth' }),
+    []
+  );
 
   if (isLoading) {
     return (
@@ -210,7 +224,7 @@ function Dashboard() {
           weeklyWorkoutGoal={goals.weeklyWorkouts}
         />
 
-        <WeeklyCaloriesChart data={getWeeklyCaloriesByDay(diets)} />
+        <WeeklyCaloriesChart data={weeklyCaloriesByDay} />
 
         <GoalsSection
           goals={goals}
@@ -274,13 +288,13 @@ function Dashboard() {
           </MotionBox>
         </SimpleGrid>
 
-        <GoalsModal
-          isOpen={isOpen}
-          onClose={onClose}
-          editingGoals={editingGoals}
-          onEditingGoalsChange={setEditingGoals}
-          onSave={handleSaveGoals}
-        />
+          <GoalsModal
+            isOpen={isOpen}
+            onClose={onClose}
+            editingGoals={editingGoals}
+            onEditingGoalsChange={setEditingGoals}
+            onSave={handleSaveGoals}
+          />
       </VStack>
     </Container>
   );

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   VStack,
   Box,
@@ -37,7 +37,7 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
   const [editingId, setEditingId] = useState(null);
   const [selectedDate, setSelectedDate] = useState(getTodayDayKey());
 
-  const handleSubmit = async (formattedData) => {
+  const handleSubmit = useCallback(async (formattedData) => {
     try {
       if (isEditing) {
         await onUpdateDiet(editingId, formattedData);
@@ -50,9 +50,9 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
     } catch (error) {
       console.error('Error in diet operation:', error);
     }
-  };
+  }, [editingId, isEditing, onAddDiet, onUpdateDiet]);
 
-  const handleEdit = (diet) => {
+  const handleEdit = useCallback((diet) => {
     setIsEditing(true);
     setEditingId(diet._id);
     setFormData({
@@ -65,19 +65,23 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
       fats: diet.fats?.toString() || '',
       notes: diet.notes || ''
     });
-  };
+  }, []);
 
-  const handleCancel = () => {
+  const handleCancel = useCallback(() => {
     setIsEditing(false);
     setEditingId(null);
     setFormData(initialFormState);
-  };
+  }, []);
 
   // Color mode values
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.400');
+  const recentDiets = useMemo(
+    () => [...(Array.isArray(diets) ? diets : [])].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6),
+    [diets]
+  );
 
   return (
     <MotionBox
@@ -128,7 +132,7 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
               </Badge>
             </HStack>
             
-            {diets.length === 0 ? (
+            {recentDiets.length === 0 ? (
               <VStack spacing={4} py={8} px={2} align="center" justify="center" flex="1">
                 <Box as={FiCoffee} boxSize="48px" color={subTextColor} />
                 <Text fontSize="lg" color={textColor} textAlign="center" fontWeight="medium">
@@ -140,21 +144,18 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
               </VStack>
             ) : (
               <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={5} alignItems="stretch">
-                {diets
-                  .sort((a, b) => new Date(b.date) - new Date(a.date))
-                  .slice(0, 6)
-                  .map((diet) => (
+                {recentDiets.map((diet) => (
                     <DietCard
                       key={diet._id}
                       diet={diet}
                       onEdit={handleEdit}
                       onDelete={onDeleteDiet}
                     />
-                  ))}
+                ))}
               </SimpleGrid>
             )}
             
-            {diets.length > 6 && (
+            {recentDiets.length > 0 && diets.length > 6 && (
               <Text fontSize="sm" color={subTextColor} textAlign="center" mt={4}>
                 Showing the 6 most recent nutrition records.
               </Text>

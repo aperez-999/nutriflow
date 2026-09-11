@@ -44,7 +44,7 @@ const getToken = () => {
 axios.interceptors.request.use(
     (config) => {
         const token = getToken();
-        if (token) {
+        if (token && !config.headers?.Authorization) {
             config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
@@ -183,8 +183,10 @@ axios.interceptors.response.use(
     (error) => {
         const status = error.response?.status;
         const url = error.config?.url || '';
+        const token = getToken();
         // Do not redirect on 401 for login attempts; let the caller handle the error
-        if (status === 401 && !url.includes('/api/auth/login')) {
+        if (status === 401 && token && !url.includes('/api/auth/login')) {
+            localStorage.removeItem('token');
             localStorage.removeItem('user');
             window.location.href = '/login';
             return Promise.reject(error);

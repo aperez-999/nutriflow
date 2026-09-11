@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
   VStack,
@@ -21,8 +21,8 @@ const DailySummaryCard = ({ workouts, selectedDate, setSelectedDate }) => {
   const subTextColor = useColorModeValue('gray.600', 'gray.400');
   const panelBg = useColorModeValue('blue.50', 'whiteAlpha.50');
 
-  const dailyTotals = getDailyTotals(workouts, selectedDate);
-  const { getPreviousDay, getNextDay, getToday } = getNavigationDates(selectedDate);
+  const dailyTotals = useMemo(() => getDailyTotals(workouts, selectedDate), [selectedDate, workouts]);
+  const { getPreviousDay, getNextDay, getToday } = useMemo(() => getNavigationDates(selectedDate), [selectedDate]);
   const averageBurnRate = dailyTotals.duration ? Math.round((dailyTotals.caloriesBurned / dailyTotals.duration) * 10) / 10 : 0;
 
   return (
@@ -128,4 +128,4 @@ const DailySummaryCard = ({ workouts, selectedDate, setSelectedDate }) => {
   );
 };
 
-export default DailySummaryCard;
+export default React.memo(DailySummaryCard);

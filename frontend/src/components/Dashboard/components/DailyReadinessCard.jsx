@@ -37,7 +37,7 @@ const LEVEL_META = {
   },
 };
 
-export default function DailyReadinessCard({ readiness }) {
+function DailyReadinessCard({ readiness = {} }) {
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'white');
@@ -86,3 +86,5 @@ export default function DailyReadinessCard({ readiness }) {
     </Card>
   );
 }
+
+export default React.memo(DailyReadinessCard);

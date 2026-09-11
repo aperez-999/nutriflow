@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   Box,
   VStack,
@@ -28,8 +28,8 @@ const DailySummaryCard = ({ diets, selectedDate, setSelectedDate }) => {
   const subTextColor = useColorModeValue('gray.600', 'gray.400');
   const panelBg = useColorModeValue('teal.50', 'whiteAlpha.50');
 
-  const dailyTotals = getDailyTotals(diets, selectedDate);
-  const { getPreviousDay, getNextDay, getToday } = getNavigationDates(selectedDate);
+  const dailyTotals = useMemo(() => getDailyTotals(diets, selectedDate), [diets, selectedDate]);
+  const { getPreviousDay, getNextDay, getToday } = useMemo(() => getNavigationDates(selectedDate), [selectedDate]);
 
   return (
     <Box
@@ -114,4 +114,4 @@ const DailySummaryCard = ({ diets, selectedDate, setSelectedDate }) => {
   );
 };
 
-export default DailySummaryCard;
+export default React.memo(DailySummaryCard);

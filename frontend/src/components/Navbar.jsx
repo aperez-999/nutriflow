@@ -1,7 +1,6 @@
-import React, { useContext } from 'react';
+import { useContext } from 'react';
 import {
   Avatar,
-  Badge,
   Box,
   Button,
   Container,
@@ -25,6 +24,7 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiGrid, FiLogOut, FiUser, FiZap } from 'react-icons/fi';
 import { AuthContext } from '../context/AuthContext';
+import { usePreAuthPalette } from './Marketing/PreAuthSurface';
 
 const MotionBox = motion(Box);
 
@@ -42,16 +42,26 @@ function Navbar() {
   const toast = useToast();
   const { colorMode, toggleColorMode } = useColorMode();
   const account = getAccount(user);
+  const preAuthPalette = usePreAuthPalette();
 
   const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname) || location.pathname.startsWith('/reset-password/');
   const isLoggedIn = Boolean(user);
-  const bgColor = useColorModeValue('rgba(255,255,255,0.88)', 'rgba(26,32,44,0.88)');
-  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
-  const mutedColor = useColorModeValue('gray.600', 'gray.400');
+  const loggedInBgColor = useColorModeValue('rgba(255,255,255,0.88)', 'rgba(26,32,44,0.88)');
+  const loggedInBorderColor = useColorModeValue('gray.200', 'whiteAlpha.200');
+  const loggedInMutedColor = useColorModeValue('gray.600', 'gray.400');
+  const loggedInLogoBg = useColorModeValue('teal.50', 'whiteAlpha.100');
+  const publicBgColor = preAuthPalette.surfaceBg;
+  const publicBorderColor = preAuthPalette.surfaceBorder;
+  const publicMutedColor = preAuthPalette.shellText;
+  const publicLogoBg = preAuthPalette.mutedSurface;
+  const bgColor = isLoggedIn ? loggedInBgColor : publicBgColor;
+  const borderColor = isLoggedIn ? loggedInBorderColor : publicBorderColor;
+  const mutedColor = isLoggedIn ? loggedInMutedColor : publicMutedColor;
   const activeBg = useColorModeValue('teal.50', 'whiteAlpha.100');
   const activeColor = useColorModeValue('teal.700', 'teal.200');
   const ghostHoverBg = useColorModeValue('gray.100', 'whiteAlpha.100');
-  const logoBg = useColorModeValue('teal.50', 'whiteAlpha.100');
+  const logoBg = isLoggedIn ? loggedInLogoBg : publicLogoBg;
+  const navTextColor = isLoggedIn ? undefined : preAuthPalette.headingColor;
 
   const handleLogout = () => {
     try {
@@ -104,6 +114,7 @@ function Navbar() {
         borderBottom="1px solid"
         borderColor={borderColor}
         boxShadow="sm"
+        transition="background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease"
       >
         <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={3}>
           <Flex align="center" justify="space-between" gap={4}>
@@ -123,7 +134,7 @@ function Navbar() {
                 <Image src="/images/nutriflowlogo.webp" alt="NutriFlow Logo" height="28px" />
               </Box>
               <VStack spacing={0} align="start">
-                <Text fontSize="lg" fontWeight="800" lineHeight="1">
+                <Text fontSize="lg" fontWeight="800" lineHeight="1" color={navTextColor}>
                   NutriFlow
                 </Text>
                 <Text fontSize="xs" color={mutedColor} letterSpacing="widest" textTransform="uppercase">
@@ -141,7 +152,7 @@ function Navbar() {
             <HStack spacing={2}>
               {!isLoggedIn && !isAuthPage && (
                 <HStack spacing={2} display={{ base: 'none', md: 'flex' }}>
-                  <Button as={RouterLink} to="/login" variant="ghost" borderRadius="full">
+                  <Button as={RouterLink} to="/login" variant="ghost" borderRadius="full" color={navTextColor}>
                     Login
                   </Button>
                   <Button as={RouterLink} to="/register" colorScheme="teal" borderRadius="full">
@@ -156,6 +167,7 @@ function Navbar() {
                 onClick={toggleColorMode}
                 variant="ghost"
                 borderRadius="full"
+                color={navTextColor}
               />
 
               {isLoggedIn && !isAuthPage ? (

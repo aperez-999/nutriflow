@@ -6,7 +6,7 @@ import { Link as RouterLink } from 'react-router-dom';
 /**
  * Shortcuts: AI Coach (Fitness Hub) and prompt to log meal/workout (scroll or just copy).
  */
-export default function QuickActionsCard({ onScrollToDiet, onScrollToWorkout }) {
+function QuickActionsCard({ onScrollToDiet, onScrollToWorkout }) {
   const bg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const textColor = useColorModeValue('gray.800', 'white');
@@ -59,3 +59,5 @@ export default function QuickActionsCard({ onScrollToDiet, onScrollToWorkout }) 
     </Box>
   );
 }
+
+export default React.memo(QuickActionsCard);
