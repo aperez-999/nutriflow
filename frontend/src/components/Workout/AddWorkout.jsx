@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { addWorkout } from '../../services/api';
 import { Box, Button, Input, VStack, Heading } from '@chakra-ui/react';
 

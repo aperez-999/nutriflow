@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { getDiets } from '../../services/api';
 import { AuthContext } from '../../context/AuthContext';
 import { Box, VStack, Heading, Text } from '@chakra-ui/react';

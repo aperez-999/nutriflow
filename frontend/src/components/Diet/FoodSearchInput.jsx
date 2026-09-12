@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Input,
@@ -168,7 +168,7 @@ const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = 'Search 
       </InputGroup>
 
       <Text fontSize="xs" color={helperColor} mt={2}>
-        Search whole foods or mixed meals like "chicken and rice" for smarter USDA matches.
+        Search whole foods or mixed meals like &ldquo;chicken and rice&rdquo; for smarter USDA matches.
       </Text>
 
       {selectedFood && (
@@ -232,7 +232,7 @@ const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = 'Search 
                 No close food matches yet
               </Text>
               <Text fontSize="sm" color={subTextColor}>
-                Try a simpler term like "salmon", "greek yogurt", or "chicken rice bowl".
+                Try a simpler term like &ldquo;salmon&rdquo;, &ldquo;greek yogurt&rdquo;, or &ldquo;chicken rice bowl&rdquo;.
               </Text>
             </VStack>
           ) : (

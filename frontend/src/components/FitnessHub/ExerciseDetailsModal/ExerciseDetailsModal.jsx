@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -227,6 +226,7 @@ const DetailSection = ({ title, colorScheme, content, isList, variations, benefi
   const borderColor = useColorModeValue(`${colorScheme}.200`, `${colorScheme}.700`);
   const titleColor = useColorModeValue(`${colorScheme}.700`, `${colorScheme}.300`);
   const textColor = useColorModeValue('gray.600', 'gray.400');
+  const chipBg = useColorModeValue(`${colorScheme}.100`, `${colorScheme}.800`);
 
   return (
     <Box p={4} bg={bgColor} borderRadius="lg" border="1px" borderColor={borderColor}>
@@ -269,7 +269,7 @@ const DetailSection = ({ title, colorScheme, content, isList, variations, benefi
                 {section.phases && (
                   <VStack spacing={2} align="stretch">
                     {section.phases.map((phase, j) => (
-                      <HStack key={j} spacing={3} p={2} bg={useColorModeValue(`${colorScheme}.100`, `${colorScheme}.800`)} borderRadius="md">
+                      <HStack key={j} spacing={3} p={2} bg={chipBg} borderRadius="md">
                         <Badge colorScheme={phase.color} variant="solid">{phase.label}</Badge>
                         <Text fontSize="sm">{phase.value}</Text>
                       </HStack>
@@ -301,7 +301,7 @@ const DetailSection = ({ title, colorScheme, content, isList, variations, benefi
         {benefits && (
           <VStack align="start" spacing={2} width="100%">
             {content.map((benefit, i) => (
-              <HStack key={i} spacing={3} p={2} bg={useColorModeValue(`${colorScheme}.100`, `${colorScheme}.800`)} borderRadius="md">
+              <HStack key={i} spacing={3} p={2} bg={chipBg} borderRadius="md">
                 <Icon as={benefit.icon} color={`${benefit.color}.500`} />
                 <Text fontSize="sm">{benefit.text}</Text>
               </HStack>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   Box,
   Container,
@@ -76,8 +76,8 @@ function Contact() {
           <Heading size="2xl">Contact Us</Heading>
           
           <Text fontSize="lg">
-            Have questions or feedback? We'd love to hear from you. Send us a
-            message and we'll respond as soon as possible.
+            Have questions or feedback? We&apos;d love to hear from you. Send us a
+            message and we&apos;ll respond as soon as possible.
           </Text>
 
           <MotionBox

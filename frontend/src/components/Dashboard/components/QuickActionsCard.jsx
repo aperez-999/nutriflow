@@ -10,7 +10,6 @@ function QuickActionsCard({ onScrollToDiet, onScrollToWorkout }) {
   const bg = useColorModeValue('white', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const textColor = useColorModeValue('gray.800', 'white');
-  const subColor = useColorModeValue('gray.600', 'gray.400');
   const accentColor = useColorModeValue('teal.500', 'teal.300');
 
   return (

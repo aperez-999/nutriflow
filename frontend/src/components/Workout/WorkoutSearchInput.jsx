@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Input,
@@ -16,7 +16,7 @@ import {
   Divider,
 } from '@chakra-ui/react';
 import { CloseIcon, SearchIcon } from '@chakra-ui/icons';
-import { FiActivity, FiZap, FiTarget, FiClock, FiTool } from 'react-icons/fi';
+import { FiZap, FiTarget, FiClock, FiTool } from 'react-icons/fi';
 import { searchExercises } from '../../services/api';
 
 const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'Search for workout...' }) => {
@@ -172,7 +172,7 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'S
       </InputGroup>
 
       <Text fontSize="xs" color={helperColor} mt={2}>
-        Search moves, equipment, or muscle groups like "dumbbell chest" or "hamstring stretch".
+        Search moves, equipment, or muscle groups like &ldquo;dumbbell chest&rdquo; or &ldquo;hamstring stretch&rdquo;.
       </Text>
 
       {selectedWorkout && (
@@ -236,7 +236,7 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'S
                 No workout matches yet
               </Text>
               <Text fontSize="sm" color={subTextColor}>
-                Try broader terms like "rowing", "chest press", or "mobility".
+                Try broader terms like &ldquo;rowing&rdquo;, &ldquo;chest press&rdquo;, or &ldquo;mobility&rdquo;.
               </Text>
             </VStack>
           ) : (

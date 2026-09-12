@@ -90,7 +90,7 @@ const theme = extendTheme({
         },
       }),
       variants: {
-        flat: (props) => ({
+        flat: () => ({
           container: {
             _hover: { transform: 'none', boxShadow: 'md' },
           },

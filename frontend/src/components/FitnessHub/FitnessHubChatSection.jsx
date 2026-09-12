@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, VStack, Text, HStack, Badge, useColorModeValue } from '@chakra-ui/react';
 import AIFitnessChat from './AIFitnessChat/index.jsx';
 
