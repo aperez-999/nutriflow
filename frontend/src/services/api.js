@@ -165,6 +165,15 @@ export const updateProfile = async (profileData) => {
   }
 };
 
+export const updateGoals = async (goals) => {
+  try {
+    const response = await axios.put('/api/auth/me/goals', goals);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to update goals' };
+  }
+};
+
 export const changePassword = async ({ currentPassword, newPassword }) => {
   try {
     const response = await axios.put('/api/auth/me/password', { currentPassword, newPassword });

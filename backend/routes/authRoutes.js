@@ -1,6 +1,6 @@
 import express from 'express';
 import { check, validationResult } from 'express-validator';
-import { register, login, updateProfile, changePassword } from '../controllers/authController.js';
+import { register, login, updateProfile, changePassword, updateGoals } from '../controllers/authController.js';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import User from '../models/User.js';
@@ -46,6 +46,17 @@ router.put(
     check('newPassword', 'New password must be 6 or more characters').isLength({ min: 6 }),
   ],
   changePassword
+);
+
+router.put(
+  '/me/goals',
+  protect,
+  [
+    check('dailyCalories', 'Daily calories must be between 800 and 6000').isInt({ min: 800, max: 6000 }),
+    check('dailyProtein', 'Daily protein must be between 20 and 400 grams').isInt({ min: 20, max: 400 }),
+    check('weeklyWorkouts', 'Weekly workouts must be between 0 and 14').isInt({ min: 0, max: 14 }),
+  ],
+  updateGoals
 );
 
 // New forgot password route

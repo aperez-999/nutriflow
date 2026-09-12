@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useContext } from 'react';
 import {
   Box,
   Container,
@@ -16,7 +16,8 @@ import {
 } from '@chakra-ui/react';
 import { FiAward, FiActivity, FiPackage, FiCoffee } from 'react-icons/fi';
 import { motion } from 'framer-motion';
-import { getDiets, addDiet, getWorkouts, addWorkout, deleteDiet, deleteWorkout, updateDiet, updateWorkout } from '../services/api';
+import { getDiets, addDiet, getWorkouts, addWorkout, deleteDiet, deleteWorkout, updateDiet, updateWorkout, updateGoals } from '../services/api';
+import { AuthContext } from '../context/AuthContext';
 // Diet sub-components
 import { DailySummaryCard as DietDailySummaryCard, DietForm, DietCard } from '../components/Dashboard/DietSection/components';
 // Workout sub-components
@@ -53,6 +54,8 @@ import { getTodayDayKey, toDayKey } from '../utils/dateUtils';
 
 const MotionBox = motion(Box);
 
+const DEFAULT_GOALS = { dailyCalories: 2000, dailyProtein: 150, weeklyWorkouts: 5 };
+
 const initialDietForm = {
   date: getTodayDayKey(),
   mealType: '',
@@ -84,12 +87,9 @@ function Dashboard() {
   const [diets, setDiets] = useState([]);
   const [workouts, setWorkouts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [goals, setGoals] = useState({
-    dailyCalories: 2000,
-    dailyProtein: 150,
-    weeklyWorkouts: 5
-  });
-  const [editingGoals, setEditingGoals] = useState({ ...goals });
+  const { user, updateUser } = useContext(AuthContext);
+  const goals = useMemo(() => ({ ...DEFAULT_GOALS, ...user?.user?.goals }), [user]);
+  const [editingGoals, setEditingGoals] = useState(goals);
 
   // Diet form state (lifted for grid alignment)
   const [dietFormData, setDietFormData] = useState(initialDietForm);
@@ -193,11 +193,21 @@ function Dashboard() {
     }
   }, [toast]);
 
-  const handleSaveGoals = useCallback(() => {
-    setGoals(editingGoals);
-    onClose();
-    handleApiSuccess(toast, 'Goals updated successfully');
-  }, [editingGoals, onClose, toast]);
+  const openGoalsEditor = useCallback(() => {
+    setEditingGoals(goals);
+    onOpen();
+  }, [goals, onOpen]);
+
+  const handleSaveGoals = useCallback(async () => {
+    try {
+      const response = await updateGoals(editingGoals);
+      updateUser({ ...user, user: response.user });
+      onClose();
+      handleApiSuccess(toast, 'Goals updated successfully');
+    } catch (error) {
+      handleApiError(error, toast, 'updating goals');
+    }
+  }, [editingGoals, onClose, toast, updateUser, user]);
 
   const dailyCalories = useMemo(() => calculateDailyCalories(diets), [diets]);
   const weeklyWorkoutCount = useMemo(() => calculateWeeklyWorkouts(workouts), [workouts]);
@@ -277,7 +287,7 @@ function Dashboard() {
           workoutProgress={workoutProgress}
           dailyCalories={dailyCalories}
           weeklyWorkouts={weeklyWorkoutCount}
-          onEditGoals={onOpen}
+          onEditGoals={openGoalsEditor}
         />
 
         {/* Widget row: equal-height cards, stretch on desktop */}

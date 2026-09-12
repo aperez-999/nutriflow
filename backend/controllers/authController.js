@@ -13,6 +13,11 @@ function buildUserPayload(user) {
     preferences: {
       notificationsEnabled: user.preferences?.notificationsEnabled ?? true,
     },
+    goals: {
+      dailyCalories: user.goals?.dailyCalories ?? 2000,
+      dailyProtein: user.goals?.dailyProtein ?? 150,
+      weeklyWorkouts: user.goals?.weeklyWorkouts ?? 5,
+    },
   };
 }
 
@@ -188,5 +193,31 @@ export const changePassword = async (req, res) => {
   } catch (error) {
     console.error('Change password error:', error);
     return res.status(500).json({ message: 'Unable to update password right now' });
+  }
+};
+
+export const updateGoals = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid goals input' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.goals = {
+      dailyCalories: Number(req.body.dailyCalories),
+      dailyProtein: Number(req.body.dailyProtein),
+      weeklyWorkouts: Number(req.body.weeklyWorkouts),
+    };
+    await user.save();
+
+    return res.status(200).json({ message: 'Goals updated', user: buildUserPayload(user) });
+  } catch (error) {
+    console.error('Update goals error:', error);
+    return res.status(500).json({ message: 'Unable to update goals right now' });
   }
 };
