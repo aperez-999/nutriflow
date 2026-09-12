@@ -7,7 +7,10 @@
   "scripts": {
     "dev": "cd frontend && npm run dev",
     "build": "cd frontend && npm run build",
-    "start": "cd frontend && npm run preview"
+    "start": "cd frontend && npm run preview",
+    "test": "npm --prefix backend test && npm --prefix frontend test",
+    "lint": "npm --prefix frontend run lint",
+    "check": "npm run lint && npm test && npm run build"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -20,7 +23,11 @@
     "nodemailer": "^6.10.0",
     "serverless-http": "^4.0.0"
   },
-  "keywords": ["fitness", "nutrition", "vercel"],
+  "keywords": [
+    "fitness",
+    "nutrition",
+    "vercel"
+  ],
   "author": "",
   "license": "ISC"
 }
