@@ -1,17 +1,21 @@
 import { calculateReadinessScore } from '@shared/readinessScore';
-import { getTodayDayKey, parseDayKey, toDayKey, toStoredIsoFromDayKey } from '../../../utils/dateUtils';
+import { getTodayDayKey, parseDayKey, shiftDayKey, toDayKey, toStoredIsoFromDayKey } from '../../../utils/dateUtils';
 
 // Progress Calculations
-export const calculateDailyCalories = (diets) => {
+const sumToday = (diets, field) => {
   if (!Array.isArray(diets) || diets.length === 0) {
     return 0;
   }
   const today = getTodayDayKey();
   return diets.reduce((sum, diet) => {
     if (toDayKey(diet.date) !== today) return sum;
-    return sum + (Number(diet.calories) || 0);
+    return sum + (Number(diet[field]) || 0);
   }, 0);
 };
+
+export const calculateDailyCalories = (diets) => sumToday(diets, 'calories');
+
+export const calculateDailyProtein = (diets) => sumToday(diets, 'protein');
 
 export const calculateWeeklyWorkouts = (workouts) => {
   if (!Array.isArray(workouts)) {
@@ -22,11 +26,6 @@ export const calculateWeeklyWorkouts = (workouts) => {
   return workouts.reduce((count, workout) => (
     new Date(workout.date) >= weekAgo ? count + 1 : count
   ), 0);
-};
-
-export const calculateProgress = (current, goal) => {
-  if (!goal || goal === 0) return 0;
-  return Math.min((current / goal) * 100, 100);
 };
 
 /** Calories per day for the last 7 days (for charts). Returns [{ dayName, date, calories }, ...]. */
@@ -49,62 +48,57 @@ export const getWeeklyCaloriesByDay = (diets) => {
   return result;
 };
 
-/** Average daily calories over the last 7 days (from diet entries). */
-export const getWeeklyCaloriesAverage = (diets) => {
-  if (!Array.isArray(diets) || diets.length === 0) return 0;
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
-  let total = 0;
-  const daysWithData = new Set();
-  for (const diet of diets) {
-    if (new Date(diet.date) < weekAgo) continue;
-    total += Number(diet.calories) || 0;
-    daysWithData.add(toDayKey(diet.date));
-  }
-  return daysWithData.size > 0 ? Math.round(total / daysWithData.size) : 0;
-};
-
 /**
- * Consecutive days (including today) with at least one diet or workout log.
- * Counts backward from today until a day has no logs.
+ * Rhythm: which of the three flows (fuel = meal, train = workout, recover = check-in)
+ * were logged on each day of the last `weeks` weeks, aligned to Monday-start columns.
+ *
+ * The rhythm streak is deliberately forgiving: a single missed day is a grace day,
+ * two missed days in a row end it. Today does not break the streak until it is over.
  */
-export const getLoggingStreak = (diets, workouts) => {
-  const datesWithLogs = new Set();
-  (diets || []).forEach((d) => datesWithLogs.add(toDayKey(d.date)));
-  (workouts || []).forEach((w) => datesWithLogs.add(toDayKey(w.date)));
-  let streak = 0;
-  const d = new Date();
-  for (let i = 0; i < 365; i++) {
-    const dateStr = toDayKey(d);
-    if (datesWithLogs.has(dateStr)) streak++;
-    else break;
-    d.setDate(d.getDate() - 1);
-  }
-  return streak;
-};
+export const getRhythm = (diets = [], workouts = [], checkIns = [], weeks = 12) => {
+  const flowsByDay = new Map();
+  const mark = (key, flow) => {
+    const entry = flowsByDay.get(key) || { fuel: false, train: false, recover: false };
+    entry[flow] = true;
+    flowsByDay.set(key, entry);
+  };
+  diets.forEach((d) => d?.date && mark(toDayKey(d.date), 'fuel'));
+  workouts.forEach((w) => w?.date && mark(toDayKey(w.date), 'train'));
+  checkIns.forEach((c) => c?.dayKey && mark(c.dayKey, 'recover'));
 
-/** Mixed recent activity: diets and workouts sorted by date desc, with type. */
-export const getRecentActivity = (diets, workouts, limit = 8) => {
-  const dietItems = (diets || []).map((d) => ({
-    id: d._id,
-    type: 'diet',
-    date: new Date(d.date),
-    label: d.foodName || 'Meal',
-    sub: d.mealType,
-    value: `${d.calories} cal`,
-  }));
-  const workoutItems = (workouts || []).map((w) => ({
-    id: w._id,
-    type: 'workout',
-    date: new Date(w.date),
-    label: w.workoutName || w.type || 'Workout',
-    sub: `${w.duration} min`,
-    value: w.caloriesBurned ? `${w.caloriesBurned} cal` : null,
-  }));
-  const combined = [...dietItems, ...workoutItems]
-    .sort((a, b) => b.date - a.date)
-    .slice(0, limit);
-  return combined;
+  const today = getTodayDayKey();
+  const mondayOffset = (parseDayKey(today).getDay() + 6) % 7;
+  const start = shiftDayKey(today, -(mondayOffset + (weeks - 1) * 7));
+  const columns = [];
+  for (let w = 0; w < weeks; w++) {
+    const column = [];
+    for (let d = 0; d < 7; d++) {
+      const dayKey = shiftDayKey(start, w * 7 + d);
+      const flows = flowsByDay.get(dayKey) || { fuel: false, train: false, recover: false };
+      const count = Number(flows.fuel) + Number(flows.train) + Number(flows.recover);
+      column.push({ dayKey, flows, count, isFuture: dayKey > today });
+    }
+    columns.push(column);
+  }
+
+  const isActive = (key) => flowsByDay.has(key);
+  let activeDays28 = 0;
+  for (let i = 0; i < 28; i++) if (isActive(shiftDayKey(today, -i))) activeDays28++;
+
+  let streak = 0;
+  let cursor = isActive(today) ? today : shiftDayKey(today, -1);
+  let missedInRow = 0;
+  for (let i = 0; i < 365; i++) {
+    if (isActive(cursor)) {
+      streak++;
+      missedInRow = 0;
+    } else if (++missedInRow >= 2 || streak === 0) {
+      break;
+    }
+    cursor = shiftDayKey(cursor, -1);
+  }
+
+  return { columns, activeDays28, streak };
 };
 
 // Error Handling

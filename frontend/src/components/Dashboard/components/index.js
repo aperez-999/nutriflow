@@ -1,11 +1,5 @@
-export { default as GoalsSection } from './GoalsSection';
 export { default as GoalsModal } from './GoalsModal';
-export { default as QuickStatsStrip } from './QuickStatsStrip';
-export { default as TodayAISummary } from './TodayAISummary';
+export { default as ReadinessCheckInCard } from './ReadinessCheckInCard';
+export { default as RhythmCard } from './RhythmCard';
+export { default as TodayFlowsCard } from './TodayFlowsCard';
 export { default as WeeklyCaloriesChart } from './WeeklyCaloriesChart';
-export { default as WeeklySummaryCard } from './WeeklySummaryCard';
-export { default as RecentActivityCard } from './RecentActivityCard';
-export { default as QuickActionsCard } from './QuickActionsCard';
-export { default as RecommendedActionsCard } from './RecommendedActionsCard';
-export { default as DailyReadinessCard } from './DailyReadinessCard';
-export { default as DailyActionsCard } from './DailyActionsCard';

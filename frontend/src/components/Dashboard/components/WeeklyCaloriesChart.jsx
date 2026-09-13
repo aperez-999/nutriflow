@@ -1,10 +1,4 @@
-import {
-  Box,
-  Card,
-  CardBody,
-  Text,
-  useColorModeValue,
-} from '@chakra-ui/react';
+import { Box, Card, CardBody, Flex, Heading, Text } from '@chakra-ui/react';
 import {
   BarChart,
   Bar,
@@ -13,53 +7,66 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  ReferenceLine,
 } from 'recharts';
 
-const cardStyles = {
-  borderRadius: 'xl',
-  boxShadow: 'sm',
-  borderWidth: '1px',
-  _hover: {
-    transform: 'translateY(-2px)',
-    boxShadow: 'lg',
-  },
-  transition: 'all 0.2s ease',
-};
+const AXIS_TICK = { fontSize: 12, fill: 'var(--chakra-colors-text-muted)' };
+
+function ChartTooltip({ active, payload }) {
+  if (!active || !payload?.length) return null;
+  const { dayName, calories } = payload[0].payload;
+  return (
+    <Box bg="bg.surface" borderWidth="1px" borderColor="border.subtle" borderRadius="md" px={3} py={2} boxShadow="cardHover">
+      <Text fontSize="xs" color="text.muted">{dayName}</Text>
+      <Text fontSize="sm" fontWeight="700">{calories.toLocaleString()} kcal</Text>
+    </Box>
+  );
+}
 
 /**
- * Bar chart of calories logged for the last 7 days.
+ * Bar chart of calories logged for the last 7 days against the daily goal.
  */
-export default function WeeklyCaloriesChart({ data = [] }) {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const axisStroke = useColorModeValue('#718096', '#A0AEC0');
+export default function WeeklyCaloriesChart({ data = [], goal = 0 }) {
+  const loggedDays = data.filter((d) => d.calories > 0);
+  const average = loggedDays.length
+    ? Math.round(loggedDays.reduce((sum, d) => sum + d.calories, 0) / loggedDays.length)
+    : 0;
+  // Keep the goal line in view even on light days, with round 500 kcal ticks.
+  const yMax = Math.max(500, Math.ceil(Math.max(...data.map((d) => d.calories), goal * 1.1) / 500) * 500);
+  const yTicks = Array.from({ length: yMax / 500 + 1 }, (_, i) => i * 500);
 
   return (
-    <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} {...cardStyles}>
-      <CardBody>
-        <Text fontSize="sm" fontWeight="600" color={textColor} letterSpacing="wider" mb={4}>
-          WEEKLY NUTRITION
-        </Text>
-        <Box width="100%" height="260px">
+    <Card variant="flat" h="100%">
+      <CardBody display="flex" flexDirection="column">
+        <Flex justify="space-between" align="flex-start" mb={4} gap={4}>
+          <Box>
+            <Heading as="h2" size="md">Fuel this week</Heading>
+            <Text fontSize="sm" color="text.muted" mt={1}>Calories per day, dashed line is your goal.</Text>
+          </Box>
+          <Box textAlign="right">
+            <Text fontFamily="heading" fontSize="2xl" fontWeight="700" lineHeight="1">{average.toLocaleString()}</Text>
+            <Text fontSize="xs" color="text.muted">avg on logged days</Text>
+          </Box>
+        </Flex>
+        <Box width="100%" flex="1" minH="220px">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" strokeOpacity={0.1} vertical={false} />
-              <XAxis dataKey="dayName" tick={{ fontSize: 12 }} stroke={axisStroke} />
-              <YAxis tick={{ fontSize: 12 }} stroke={axisStroke} allowDecimals={false} />
-              <Tooltip
-                contentStyle={{
-                  borderRadius: 'md',
-                  padding: '8px 12px',
-                  border: '1px solid',
-                  borderColor,
-                  background: cardBg,
-                }}
-                labelStyle={{ color: textColor }}
-                formatter={(value) => [`${value} cal`, 'Calories']}
-                labelFormatter={(label) => `Day: ${label}`}
+            <BarChart data={data} margin={{ top: 8, right: 4, left: -12, bottom: 0 }} barCategoryGap="28%">
+              <CartesianGrid stroke="var(--chakra-colors-border-subtle)" vertical={false} />
+              <XAxis dataKey="dayName" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+              <YAxis
+                tick={AXIS_TICK}
+                axisLine={false}
+                tickLine={false}
+                allowDecimals={false}
+                width={48}
+                domain={[0, yMax]}
+                ticks={yTicks}
               />
-              <Bar dataKey="calories" radius={[6, 6, 0, 0]} maxBarSize={48} fill="#38B2AC" />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--chakra-colors-bg-subtle)' }} />
+              {goal > 0 && (
+                <ReferenceLine y={goal} stroke="var(--chakra-colors-text-muted)" strokeDasharray="4 4" strokeWidth={1.5} />
+              )}
+              <Bar dataKey="calories" radius={[4, 4, 0, 0]} maxBarSize={36} fill="var(--chakra-colors-data-fuel)" />
             </BarChart>
           </ResponsiveContainer>
         </Box>

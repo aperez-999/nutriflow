@@ -284,6 +284,25 @@ export const clearChatHistory = async () => {
   }
 };
 
+// Daily check-ins (sleep, energy, soreness, water)
+export const getCheckIns = async (limit = 90) => {
+  try {
+    const response = await axios.get('/api/checkins', { params: { limit } });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to load check-ins' };
+  }
+};
+
+export const saveCheckIn = async (dayKey, checkIn) => {
+  try {
+    const response = await axios.put(`/api/checkins/${dayKey}`, checkIn);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to save check-in' };
+  }
+};
+
 // Food search functions
 export const searchFoods = async (query) => {
   try {
