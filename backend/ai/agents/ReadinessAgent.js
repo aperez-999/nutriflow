@@ -1,5 +1,5 @@
 import { get_user_stats } from '../tools/get_user_stats.js';
-import { calculateReadinessScore } from '../utils/readinessScore.js';
+import { calculateReadinessScore } from '../../../shared/readinessScore.js';
 
 const READINESS_SUGGESTIONS = [
   'How can I improve my readiness?',
@@ -54,6 +54,7 @@ export async function runReadinessAgent({ context = {} }) {
   const readiness = calculateReadinessScore({
     workouts: stats.recentWorkouts,
     diets: stats.recentDiets,
+    checkIn: stats.latestCheckIn || context.checkIn || null,
   });
 
   return {

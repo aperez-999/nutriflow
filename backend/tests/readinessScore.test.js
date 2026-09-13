@@ -1,6 +1,6 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { calculateReadinessScore } from '../ai/utils/readinessScore.js';
+import { calculateBodyScore, calculateReadinessScore } from '../../shared/readinessScore.js';
 
 const NOW = new Date(2026, 9, 24, 15, 0);
 const hoursAgo = (h) => new Date(NOW.getTime() - h * 3600000).toISOString();
@@ -32,5 +32,33 @@ describe('calculateReadinessScore', () => {
       diets: [],
     });
     assert.ok(rested.score > fatigued.score, `${rested.score} should beat ${fatigued.score}`);
+  });
+
+  it('is unchanged when no check-in is provided', () => {
+    const base = calculateReadinessScore({ now: NOW });
+    assert.equal(calculateReadinessScore({ now: NOW, checkIn: null }).score, base.score);
+    assert.equal(base.factors.bodyScore, null);
+  });
+
+  it('raises the score after a great night and lowers it after a rough one', () => {
+    const base = calculateReadinessScore({ now: NOW }).score;
+    const great = calculateReadinessScore({
+      now: NOW,
+      checkIn: { sleepHours: 8, energy: 5, soreness: 1, waterCups: 8 },
+    });
+    const rough = calculateReadinessScore({
+      now: NOW,
+      checkIn: { sleepHours: 4.5, energy: 1, soreness: 5, waterCups: 1 },
+    });
+    assert.ok(great.score > base && base > rough.score, `${great.score} > ${base} > ${rough.score}`);
+    assert.match(rough.shortRecommendation, /Sleep ran short/);
+  });
+});
+
+describe('calculateBodyScore', () => {
+  it('maps an ideal check-in to 100 and the worst to a low score', () => {
+    assert.equal(calculateBodyScore({ sleepHours: 8, energy: 5, soreness: 1, waterCups: 10 }), 100);
+    assert.equal(calculateBodyScore({ sleepHours: 3, energy: 1, soreness: 5, waterCups: 0 }), 8);
+    assert.equal(calculateBodyScore(null), null);
   });
 });

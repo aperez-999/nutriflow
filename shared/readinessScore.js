@@ -1,3 +1,8 @@
+/**
+ * Daily readiness scoring shared by the backend AI agents and the frontend dashboard.
+ * Pure functions only: no Node or browser APIs, so both runtimes can import it.
+ */
+
 function toNumber(value) {
   const num = Number(value);
   return Number.isFinite(num) ? num : 0;
@@ -97,6 +102,41 @@ function getWorkoutLoadSnapshot(workouts = [], now = new Date()) {
   };
 }
 
+/**
+ * Converts a subjective daily check-in into a 0-100 body score.
+ * Sleep matters most, then perceived energy, soreness, and hydration.
+ */
+export function calculateBodyScore(checkIn) {
+  if (!checkIn) return null;
+  const sleepHours = toNumber(checkIn.sleepHours);
+  let sleep = 0.2;
+  if (sleepHours >= 7 && sleepHours <= 9) sleep = 1;
+  else if (sleepHours > 9) sleep = 0.85;
+  else if (sleepHours >= 6) sleep = 0.75;
+  else if (sleepHours >= 5) sleep = 0.5;
+
+  const energy = (clamp(toNumber(checkIn.energy), 1, 5) - 1) / 4;
+  const soreness = (5 - clamp(toNumber(checkIn.soreness), 1, 5)) / 4;
+  const water = clamp(toNumber(checkIn.waterCups) / 8, 0, 1);
+
+  return Math.round(sleep * 40 + energy * 30 + soreness * 20 + water * 10);
+}
+
+function buildCheckInRecommendations(checkIn) {
+  if (!checkIn) return [];
+  const notes = [];
+  if (toNumber(checkIn.sleepHours) < 6) {
+    notes.push('Sleep ran short last night, so keep intensity moderate and aim for an earlier night.');
+  }
+  if (toNumber(checkIn.soreness) >= 4) {
+    notes.push('Soreness is high today. Favor mobility or train a different muscle group.');
+  }
+  if (toNumber(checkIn.energy) <= 2) {
+    notes.push('Energy is low. A walk and a solid meal may do more for you than a hard session.');
+  }
+  return notes;
+}
+
 function buildRecommendationBundle({
   score,
   level,
@@ -156,7 +196,7 @@ function buildRecommendationBundle({
   };
 }
 
-export function calculateReadinessScore({ workouts = [], diets = [], now = new Date() } = {}) {
+export function calculateReadinessScore({ workouts = [], diets = [], checkIn = null, now = new Date() } = {}) {
   const sortedWorkouts = [...workouts].sort((a, b) => new Date(b.date) - new Date(a.date));
   const sortedDiets = [...diets].sort((a, b) => new Date(b.date) - new Date(a.date));
   const { latestWorkout, workouts7d, workouts3d, highLoadCount } = getWorkoutLoadSnapshot(sortedWorkouts, now);
@@ -221,9 +261,13 @@ export function calculateReadinessScore({ workouts = [], diets = [], now = new D
   else activityScore += 2;
   activityScore = clamp(activityScore, 0, 30);
 
-  const score = clamp(Math.round(recoveryScore + nutritionScore + activityScore), 0, 100);
+  // A same-day check-in blends how the body feels with what the logs imply.
+  const logScore = recoveryScore + nutritionScore + activityScore;
+  const bodyScore = calculateBodyScore(checkIn);
+  const blended = bodyScore === null ? logScore : logScore * 0.65 + bodyScore * 0.35;
+  const score = clamp(Math.round(blended), 0, 100);
   const level = score >= 75 ? 'high' : score >= 45 ? 'moderate' : 'low';
-  const { shortRecommendation, recommendations } = buildRecommendationBundle({
+  const bundle = buildRecommendationBundle({
     score,
     level,
     todayMeals: today.meals,
@@ -234,6 +278,8 @@ export function calculateReadinessScore({ workouts = [], diets = [], now = new D
     workouts7d: workouts7d.length,
     loggingStreak,
   });
+  const recommendations = [...buildCheckInRecommendations(checkIn), ...bundle.recommendations].slice(0, 3);
+  const shortRecommendation = recommendations[0] || bundle.shortRecommendation;
 
   return {
     score,
@@ -253,6 +299,7 @@ export function calculateReadinessScore({ workouts = [], diets = [], now = new D
       averageCalories,
       averageProtein,
       loggingStreak,
+      bodyScore,
     },
   };
 }
