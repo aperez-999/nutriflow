@@ -6,7 +6,8 @@ import { AuthContext } from '../../context/AuthContext';
 
 /**
  * Floating button to open the AI Coach (Fitness Hub). Only visible when the user is signed in.
- * Hidden on Fitness Hub page and on public pages (home, login, register).
+ * Hidden on Fitness Hub page, on public pages (home, login, register), and on phones,
+ * where the Coach tab in MobileTabBar takes its place.
  */
 export default function FloatingAICoachButton() {
   const { user } = useContext(AuthContext);
@@ -19,6 +20,7 @@ export default function FloatingAICoachButton() {
     <Button
       as={RouterLink}
       to="/fitness-hub"
+      display={{ base: 'none', md: 'inline-flex' }}
       position="fixed"
       bottom="24px"
       right="24px"

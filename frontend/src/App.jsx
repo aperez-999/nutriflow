@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useContext, useEffect } from 'react'
 import { Box, Flex } from '@chakra-ui/react'
 import { useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
@@ -6,6 +6,8 @@ import AppRoutes from './routes'
 import Footer from './components/Footer'
 import ErrorBoundary from './components/ErrorBoundary'
 import FloatingAICoachButton from './components/Global/FloatingAICoachButton'
+import MobileTabBar, { TAB_BAR_HEIGHT } from './components/Global/MobileTabBar'
+import { AuthContext } from './context/AuthContext'
 
 const DEFAULT_META = {
   title: 'NutriFlow | AI Fitness, Nutrition & Readiness Tracking',
@@ -47,6 +49,7 @@ const ROUTE_META = [
 
 function App() {
   const location = useLocation();
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const meta = ROUTE_META.find((entry) => entry.match(location.pathname)) || DEFAULT_META;
@@ -79,7 +82,12 @@ function App() {
   }, [location.pathname]);
 
   return (
-    <Flex flexDirection="column" minH="100vh">
+    <Flex
+      flexDirection="column"
+      minH="100vh"
+      // Leave room for the fixed tab bar on phones.
+      pb={user ? { base: `calc(${TAB_BAR_HEIGHT} + env(safe-area-inset-bottom))`, md: 0 } : 0}
+    >
       <Navbar />
       <Box flex="1">
         <ErrorBoundary>
@@ -88,6 +96,7 @@ function App() {
       </Box>
       <Footer />
       <FloatingAICoachButton />
+      <MobileTabBar />
     </Flex>
   )
 }
