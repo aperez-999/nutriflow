@@ -14,6 +14,7 @@ import chatRoutes from './routes/chatRoutes.js';
 import foodRoutes from './routes/foodRoutes.js';
 import exerciseRoutes from './routes/exerciseRoutes.js';
 import { selectProvider } from './ai/config/aiProvider.js';
+import { identifyUser } from './middleware/authMiddleware.js';
 
 const app = express();
 app.set('trust proxy', 1);
@@ -65,7 +66,9 @@ const handleAIChat = async (req, res) => {
       return res.status(400).json({ message: 'Message is required' });
     }
 
-    const result = await orchestrateAI({ message, context, history });
+    // Only a verified token may select whose data the agents read; never trust a client-sent userId.
+    const safeContext = { ...context, userId: req.user ? String(req.user._id) : undefined };
+    const result = await orchestrateAI({ message, context: safeContext, history });
     return res.status(200).json(result);
   } catch (error) {
     console.error('AI chat error:', error);
@@ -73,8 +76,8 @@ const handleAIChat = async (req, res) => {
   }
 };
 
-app.post('/api/ai/chat', aiChatLimiter, handleAIChat);
-app.post('/api/chat', aiChatLimiter, handleAIChat);
+app.post('/api/ai/chat', aiChatLimiter, identifyUser, handleAIChat);
+app.post('/api/chat', aiChatLimiter, identifyUser, handleAIChat);
 
 // Health check and not-found helpers
 app.get('/api/health', (req, res) => {

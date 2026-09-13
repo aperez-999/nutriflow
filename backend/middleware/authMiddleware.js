@@ -37,3 +37,23 @@ export const protect = asyncHandler(async (req, res, next) => {
     throw new Error('Not authorized');
   }
 });
+
+/**
+ * Attaches req.user when a valid bearer token is present, but never rejects.
+ * For endpoints that work anonymously and personalize when signed in.
+ */
+export const identifyUser = asyncHandler(async (req, res, next) => {
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+
+  if (token && process.env.JWT_SECRET) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = await User.findById(decoded.id).select('-password');
+    } catch (error) {
+      console.warn('Optional JWT verification failed:', error.message);
+    }
+  }
+
+  return next();
+});
