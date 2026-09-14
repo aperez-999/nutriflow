@@ -118,7 +118,7 @@ function LandingStepCard({ step, title, description, media, accent, borderColor,
             letterSpacing="0.16em"
             textTransform="uppercase"
           >
-            Step {step}
+            Step {Number(step)}
           </Box>
           <Box
             position="absolute"
@@ -138,9 +138,6 @@ function LandingStepCard({ step, title, description, media, accent, borderColor,
       </AspectRatio>
       <Box p={6}>
         <VStack align="start" spacing={3}>
-          <Text fontSize="xs" fontWeight="700" letterSpacing="0.16em" textTransform="uppercase" color={textColor}>
-            How it works
-          </Text>
           <Heading as="h3" size="md" color={headingColor} letterSpacing="-0.02em">
             {title}
           </Heading>
@@ -224,10 +221,7 @@ function LandingFeatureCard({
               <Box as={Icon} boxSize={5} />
             </Box>
             <Box>
-              <Text fontSize="xs" fontWeight="700" letterSpacing="0.16em" textTransform="uppercase" color={textColor}>
-                Smart workflow
-              </Text>
-              <Heading as="h3" size="md" color={headingColor} mt={1}>
+              <Heading as="h3" size="md" color={headingColor}>
                 {title}
               </Heading>
             </Box>
@@ -280,16 +274,16 @@ function Home() {
   const panelShadow = useColorModeValue('0 20px 45px rgba(15, 23, 42, 0.08)', '0 20px 60px rgba(2, 6, 23, 0.35)');
 
   const heroMetrics = [
-    { label: 'Ready in', value: '12 weeks', detail: 'Build a reliable training rhythm.' },
-    { label: 'Tracks', value: 'Meals + workouts', detail: 'Keep nutrition and movement in one flow.' },
-    { label: 'Guidance', value: 'AI-first', detail: 'Turn daily activity into next-step coaching.' },
+    { label: 'Fuel', value: 'Meals that match the day', detail: 'USDA-backed logging with protein and calorie targets.' },
+    { label: 'Train', value: 'Effort that fits you', detail: 'Session intensity guided by your readiness.' },
+    { label: 'Recover', value: '20-second check-in', detail: 'Sleep, energy, soreness and water shape your score.' },
   ];
 
   const howItWorks = [
     {
       step: '01',
-      title: 'Set your training direction',
-      description: 'Pick the goal, target, or block you want to follow so the workspace can stay focused on the right outcome.',
+      title: 'Check in each morning',
+      description: 'Four quick taps for sleep, energy, soreness and water. Your readiness score updates instantly.',
       media: {
         src: '/images/running.jpg',
         alt: 'Athlete running outdoors with a focused training posture',
@@ -299,8 +293,8 @@ function Home() {
     },
     {
       step: '02',
-      title: 'Capture the day without friction',
-      description: 'Log meals, workouts, and quick check-ins in a layout that keeps the next step obvious instead of buried.',
+      title: 'Log meals and sessions',
+      description: 'Search real USDA foods and exercises. Every entry fills in your Fuel and Train flows for the day.',
       media: {
         src: '/images/core-workout.jpg',
         alt: 'Core workout training scene with focused movement',
@@ -309,8 +303,8 @@ function Home() {
     },
     {
       step: '03',
-      title: 'Let AI steer the next move',
-      description: 'Use readiness, progress, and habit signals to decide what to push, repeat, or recover from next.',
+      title: 'Follow one clear next step',
+      description: 'Your coach reads the whole day and tells you whether to push, hold steady, or recover.',
       media: {
         src: '/images/monitor-bg.webp',
         alt: 'Nutrition and training dashboard on a monitor',
@@ -322,9 +316,9 @@ function Home() {
   const featureCards = [
     {
       icon: FiZap,
-      title: 'AI coaching that stays concise',
-      description: 'Turn messy daily activity into a short, useful recommendation that tells you what matters right now.',
-      bullets: ['Action-oriented guidance instead of long explanations.', 'Built to keep the next step obvious.', 'Works alongside your workouts, meals, and recovery data.'],
+      title: 'A coach that knows your day',
+      description: 'Ask anything. Answers draw on your own meals, sessions and check-ins, not generic advice.',
+      bullets: ['Workout and meal plans built from your logs.', 'Short, direct answers you can act on.', 'Your data stays yours: only your signed-in account can read it.'],
       accent: 'teal.400',
       media: {
         src: '/images/hiit.jpg',
@@ -334,9 +328,9 @@ function Home() {
     },
     {
       icon: FiActivity,
-      title: 'Readiness and recovery in one loop',
-      description: 'See how training load and recovery fit together before you decide whether to push hard or hold back.',
-      bullets: ['Daily signals that guide your effort.', 'Recovery cues paired with workload.', 'Less guesswork, more consistent training.'],
+      title: 'Readiness without a wearable',
+      description: 'Training load, fuel and a 20-second check-in combine into one honest score for today.',
+      bullets: ['Short sleep or high soreness? It tells you to ease off.', 'Fully rested? It tells you to push.', 'No watch, ring or subscription needed.'],
       accent: 'cyan.400',
       media: {
         src: '/images/full-body.jpg',
@@ -346,21 +340,21 @@ function Home() {
     },
     {
       icon: FiCoffee,
-      title: 'Nutrition logging that stays fast',
-      description: 'Capture meals quickly, review patterns at a glance, and stay aligned with your calorie and macro targets.',
-      bullets: ['Simple meal capture with less friction.', 'Clear visibility into daily nutrition trends.', 'Built for frequent, low-effort check-ins.'],
+      title: 'Fuel for the session ahead',
+      description: 'Meals are judged against your training, not a diet. Under-fueled before a hard day? You will know.',
+      bullets: ['Protein and calorie targets you set.', 'Real foods from the USDA database.', 'No food is labeled good or bad.'],
       accent: 'emerald.400',
       media: {
-        src: '/images/arnold.jpg',
-        alt: 'Athletic nutrition and bodybuilding inspiration image',
+        src: '/images/trackingdiet-bg.jpeg',
+        alt: 'Fresh whole foods laid out for a day of meals',
         objectPosition: 'center center',
       },
     },
     {
       icon: FiBarChart2,
-      title: 'Progress views that feel actionable',
-      description: 'Charts, scores, and summaries are arranged to help you make a decision, not just inspect data.',
-      bullets: ['Clean summary of what changed today.', 'Trend visibility for long-term progress.', 'Easy to read on mobile and desktop.'],
+      title: 'Consistency that forgives',
+      description: 'Your rhythm map shows twelve weeks of fuel, training and recovery. One missed day never resets your streak.',
+      bullets: ['Grace days instead of guilt.', 'See your patterns, not just today.', 'Built for real life, not perfect weeks.'],
       accent: 'sky.400',
       media: {
         src: '/images/ppl.webp',
@@ -392,7 +386,7 @@ function Home() {
                   textColor={eyebrowColor}
                   accentColor="teal.400"
                 >
-                  Fitness workspace
+                  Readiness without a wearable
                 </LandingEyebrow>
                 <Box maxW="3xl">
                   <Heading
@@ -402,16 +396,15 @@ function Home() {
                     color={headingColor}
                     letterSpacing="-0.04em"
                   >
-                    Train with structure.
-                    <Box as="span" display="block" bgGradient="linear(to-r, teal.300, cyan.300)" bgClip="text">
-                      Track nutrition with context.
-                    </Box>
-                    Know what to do next.
+                    <Box as="span" color="fuel.fg">Fuel. </Box>
+                    <Box as="span" color="train.fg">Train. </Box>
+                    <Box as="span" color="recover.fg">Recover.</Box>
+                    <Box as="span" display="block">In rhythm.</Box>
                   </Heading>
                 </Box>
                 <Text fontSize={{ base: 'lg', md: 'xl' }} lineHeight="tall" color={shellText} maxW="2xl">
-                  NutriFlow brings workouts, meals, readiness, and AI coaching into one dark, focused workspace so every
-                  day has a clear next step without the clutter of a template-style landing page.
+                  NutriFlow connects what you eat, how you train, and how you actually feel into one daily readiness
+                  score, then coaches you toward consistency instead of perfection.
                 </Text>
                 <HStack spacing={3} flexWrap="wrap">
                   <Button
@@ -657,20 +650,11 @@ function Home() {
 
           <Reveal delay={0.12}>
             <VStack spacing={4} textAlign="center" maxW="3xl" mx="auto">
-              <LandingEyebrow
-                borderColor={surfaceBorder}
-                backgroundColor={eyebrowBg}
-                textColor={eyebrowColor}
-                accentColor="teal.400"
-              >
-                How it works
-              </LandingEyebrow>
               <Heading as="h2" size="xl" color={headingColor} letterSpacing="-0.03em">
-                A simple loop from plan to progress.
+                Less than a minute of input, a clear plan back.
               </Heading>
               <Text color={shellText} fontSize={{ base: 'md', md: 'lg' }} lineHeight="tall">
-                Each section is designed to keep the workflow clear: set direction, log the day, then let AI help you
-                choose the next move.
+                Check in, log as you go, then follow the one recommendation that matters for today.
               </Text>
             </VStack>
           </Reveal>
@@ -691,20 +675,12 @@ function Home() {
 
           <Reveal delay={0.14}>
             <VStack spacing={4} textAlign="center" maxW="3xl" mx="auto">
-              <LandingEyebrow
-                borderColor={surfaceBorder}
-                backgroundColor={eyebrowBg}
-                textColor={eyebrowColor}
-                accentColor="cyan.400"
-              >
-                Features
-              </LandingEyebrow>
               <Heading as="h2" size="xl" color={headingColor} letterSpacing="-0.03em">
-                Built for the parts of training that actually repeat.
+                Built for real people, not perfect weeks.
               </Heading>
               <Text color={shellText} fontSize={{ base: 'md', md: 'lg' }} lineHeight="tall">
-                The landing now shows the product surface more clearly: AI coaching, readiness, training, and nutrition
-                all presented in a way that feels closer to the dashboard experience.
+                Most trackers count calories and judge you for missing a day. NutriFlow connects eating, training and
+                recovery so every log helps you decide what to do next.
               </Text>
             </VStack>
           </Reveal>
@@ -737,11 +713,11 @@ function Home() {
                     Start in minutes
                   </Badge>
                   <Heading as="h2" size="lg" color={headingColor} letterSpacing="-0.03em">
-                    Ready to make nutrition and training feel coordinated?
+                    Start your rhythm today.
                   </Heading>
                   <Text color={shellText} lineHeight="tall">
-                    Create your account, sign in, and begin with a cleaner daily workflow that keeps your workouts,
-                    meals, and coaching recommendations aligned.
+                    Make an account, do your first check-in, and get today&apos;s recommendation in under a
+                    minute.
                   </Text>
                 </VStack>
                 <HStack spacing={3} justify={{ base: 'start', lg: 'end' }} flexWrap="wrap">

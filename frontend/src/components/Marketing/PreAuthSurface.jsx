@@ -119,7 +119,7 @@ export function PreAuthShell({ children }) {
         inset={0}
         bgImage={`linear-gradient(${gridLineColor} 1px, transparent 1px), linear-gradient(90deg, ${gridLineColor} 1px, transparent 1px)`}
         bgSize="72px 72px"
-        maskImage="linear-gradient(to bottom, rgba(0,0,0,0.75), transparent 88%)"
+        sx={{ maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.75), transparent 88%)' }}
         opacity={gridOpacity}
       />
       <Box position="relative" zIndex={1}>
@@ -158,13 +158,15 @@ export function PreAuthCard({ children, ...props }) {
   );
 }
 
+// Transform-only reveal: content is never hidden, so it still renders for print,
+// link previews, headless capture, or if the in-view observer never fires.
 export function Reveal({ children, delay = 0, ...props }) {
   const reducedMotion = usePrefersReducedMotion();
 
   return (
     <MotionBox
-      initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 18 }}
-      whileInView={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+      initial={reducedMotion ? false : { y: 24 }}
+      whileInView={reducedMotion ? undefined : { y: 0 }}
       viewport={{ once: true, amount: 0.22 }}
       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1], delay }}
       {...props}
