@@ -56,7 +56,7 @@ export const register = async (req, res) => {
 
     await newUser.save();
 
-    const token = signAuthToken(newUser._id, '1h');
+    const token = signAuthToken(newUser._id, '1d');
 
     return res.status(201).json({ result: buildUserPayload(newUser), token });
   } catch (error) {
