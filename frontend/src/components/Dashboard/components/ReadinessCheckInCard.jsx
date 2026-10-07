@@ -28,13 +28,13 @@ function ScoreRing({ score, level }) {
   return (
     <Box position="relative" w="128px" h="128px" flexShrink={0}>
       <svg width="128" height="128" viewBox="0 0 128 128" aria-hidden="true">
-        <circle cx="64" cy="64" r={RING_RADIUS} fill="none" stroke="var(--chakra-colors-data-empty)" strokeWidth="10" />
+        <circle cx="64" cy="64" r={RING_RADIUS} fill="none" stroke="var(--chakra-colors-bg-muted)" strokeWidth="10" />
         <circle
           cx="64"
           cy="64"
           r={RING_RADIUS}
           fill="none"
-          stroke="var(--chakra-colors-data-recover)"
+          stroke="var(--chakra-colors-recover-solid)"
           strokeWidth="10"
           strokeLinecap="round"
           strokeDasharray={RING_CIRCUMFERENCE}
@@ -44,8 +44,8 @@ function ScoreRing({ score, level }) {
         />
       </svg>
       <Flex position="absolute" inset={0} direction="column" align="center" justify="center">
-        <Text fontFamily="heading" fontSize="4xl" fontWeight="700" lineHeight="1">{score}</Text>
-        <Text fontSize="xs" color="text.muted">{LEVEL_LABEL[level] || 'Readiness'}</Text>
+        <Text textStyle="figure" fontSize="5xl">{score}</Text>
+        <Text fontSize="xs" color="fg.muted">{LEVEL_LABEL[level] || 'Readiness'}</Text>
       </Flex>
     </Box>
   );
@@ -57,7 +57,7 @@ function RatingScale({ label, value, onChange, lowLabel, highLabel }) {
     <Box role="radiogroup" aria-label={label}>
       <Flex justify="space-between" mb={1.5}>
         <Text fontSize="sm" fontWeight="600">{label}</Text>
-        <Text fontSize="xs" color="text.muted">{lowLabel} → {highLabel}</Text>
+        <Text fontSize="xs" color="fg.muted">{lowLabel} → {highLabel}</Text>
       </Flex>
       <ButtonGroup isAttached size="sm" w="100%" variant="outline">
         {[1, 2, 3, 4, 5].map((n) => (
@@ -68,11 +68,11 @@ function RatingScale({ label, value, onChange, lowLabel, highLabel }) {
             aria-checked={value === n}
             aria-label={`${label} ${n} of 5`}
             onClick={() => onChange(n)}
-            borderColor="border.subtle"
-            bg={value === n ? 'recover.bg' : 'bg.surface'}
-            color={value === n ? 'recover.fg' : 'text.muted'}
+            borderColor="border"
+            bg={value === n ? 'recover.subtle' : 'bg.surface'}
+            color={value === n ? 'recover.fg' : 'fg.muted'}
             fontWeight={value === n ? 700 : 500}
-            _hover={{ bg: 'recover.bg', transform: 'none' }}
+            _hover={{ bg: 'recover.subtle', transform: 'none' }}
           >
             {n}
           </Button>
@@ -93,12 +93,12 @@ function CheckInSummary({ checkIn, onEdit }) {
     <Box>
       <Flex justify="space-between" align="center" mb={2}>
         <Text fontSize="sm" fontWeight="600">Today&apos;s check-in</Text>
-        <Button size="xs" variant="ghost" color="recover.fg" onClick={onEdit}>Edit</Button>
+        <Button size="xs" variant="outline" onClick={onEdit}>Edit</Button>
       </Flex>
       <Box display="grid" gridTemplateColumns="repeat(4, 1fr)" gap={2}>
         {items.map(([label, value]) => (
-          <Box key={label} bg="recover.bg" borderRadius="lg" px={2.5} py={2}>
-            <Text fontSize="xs" color="text.muted">{label}</Text>
+          <Box key={label} bg="bg.muted" borderRadius="control" px={2.5} py={2}>
+            <Text fontSize="xs" color="fg.muted">{label}</Text>
             <Text fontSize="sm" fontWeight="700">{value}</Text>
           </Box>
         ))}
@@ -125,7 +125,7 @@ function ReadinessCheckInCard({ readiness, checkIn, onSaveCheckIn, isSaving }) {
   };
 
   return (
-    <Card variant="flat" h="100%">
+    <Card h="100%">
       <CardBody display="flex" flexDirection="column" gap={5}>
         <Flex gap={5} align="center">
           <ScoreRing score={readiness.score} level={readiness.level} />
@@ -133,7 +133,7 @@ function ReadinessCheckInCard({ readiness, checkIn, onSaveCheckIn, isSaving }) {
             <Heading as="h2" size="md">Readiness</Heading>
             <Text fontSize="sm" mt={1.5}>{readiness.shortRecommendation}</Text>
             {readiness.factors.bodyScore === null && (
-              <Text fontSize="xs" color="text.muted" mt={2}>
+              <Text fontSize="xs" color="fg.muted" mt={2}>
                 Based on your logs only. Check in below to factor in how you actually feel.
               </Text>
             )}
@@ -156,8 +156,8 @@ function ReadinessCheckInCard({ readiness, checkIn, onSaveCheckIn, isSaving }) {
                 onChange={update('sleepHours')}
                 focusThumbOnChange={false}
               >
-                <SliderTrack bg="data.empty"><SliderFilledTrack bg="data.recover" /></SliderTrack>
-                <SliderThumb boxSize={5} borderWidth="2px" borderColor="data.recover" />
+                <SliderTrack bg="bg.muted"><SliderFilledTrack bg="recover.solid" /></SliderTrack>
+                <SliderThumb boxSize={5} borderWidth="2px" borderColor="recover.solid" />
               </Slider>
             </Box>
             <RatingScale label="Energy" value={draft.energy} onChange={update('energy')} lowLabel="drained" highLabel="charged" />
@@ -185,7 +185,7 @@ function ReadinessCheckInCard({ readiness, checkIn, onSaveCheckIn, isSaving }) {
               </HStack>
             </Flex>
             <HStack>
-              <Button type="submit" colorScheme="purple" bg="recover.600" _hover={{ bg: 'recover.700' }} isLoading={isSaving} flex="1">
+              <Button type="submit" isLoading={isSaving} flex="1">
                 {checkIn ? 'Update check-in' : 'Save check-in'}
               </Button>
               {checkIn && <Button variant="ghost" onClick={() => setIsEditing(false)}>Cancel</Button>}

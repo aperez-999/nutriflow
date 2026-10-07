@@ -95,12 +95,12 @@ function MarkdownBlock({ content, inlineCodeBg }) {
 
 const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick }) {
   const userBubbleColor = useColorModeValue('blue.500', 'blue.400');
-  const aiBubbleColor = useColorModeValue('gray.100', 'gray.700');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subTextColor = useColorModeValue('gray.600', 'gray.400');
-  const bubbleBorderColor = useColorModeValue('gray.200', 'gray.600');
-  const inlineCodeBg = useColorModeValue('gray.100', 'whiteAlpha.200');
-  const structuredSectionBg = useColorModeValue('white', 'whiteAlpha.50');
+  const aiBubbleColor = 'border';
+  const textColor = 'fg';
+  const subTextColor = 'fg.muted';
+  const bubbleBorderColor = 'border';
+  const inlineCodeBg = 'border';
+  const structuredSectionBg = 'bg.surface';
 
   const { primary, secondary } = useMemo(
     () => splitSuggestions(message.suggestions),

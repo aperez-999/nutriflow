@@ -1,10 +1,10 @@
 import React from 'react';
-import { Box, Button, Heading, Text, VStack, useColorModeValue } from '@chakra-ui/react';
+import { Box, Button, Heading, Text, VStack } from '@chakra-ui/react';
 
 function ErrorFallback({ onRetry }) {
-  const bg = useColorModeValue('gray.50', 'gray.800');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subColor = useColorModeValue('gray.600', 'gray.400');
+  const bg = 'bg.muted';
+  const textColor = 'fg';
+  const subColor = 'fg.muted';
   return (
     <Box p={8} bg={bg} minH="40vh" display="flex" alignItems="center" justifyContent="center">
       <VStack spacing={4} textAlign="center" maxW="md">

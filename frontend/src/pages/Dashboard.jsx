@@ -1,13 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useContext } from 'react';
 import {
-  Badge,
   Box,
   Card,
   CardBody,
   Container,
   Flex,
   Heading,
-  Icon,
   SimpleGrid,
   Skeleton,
   Tab,
@@ -20,7 +18,6 @@ import {
   useDisclosure,
   useToast,
 } from '@chakra-ui/react';
-import { FiActivity, FiCoffee } from 'react-icons/fi';
 import { useLocation } from 'react-router-dom';
 import {
   getDiets,
@@ -103,29 +100,22 @@ const scrollToForm = (id) =>
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
 /** Recent entries for one flow, with an empty state that tells the user what to do next. */
-function RecentLog({ title, flow, icon, records, total, emptyText, renderItem }) {
+function RecentLog({ title, records, total, emptyText, renderItem }) {
   return (
-    <Card variant="flat">
-      <CardBody display="flex" flexDirection="column" gap={4}>
-        <Flex justify="space-between" align="center" gap={3}>
+    <Card>
+      <CardBody py={4}>
+        <Flex justify="space-between" align="baseline" gap={3} pb={1}>
           <Heading as="h3" size="sm">{title}</Heading>
-          <Badge bg={`${flow}.bg`} color={`${flow}.fg`} borderRadius="full" px={3} py={1} textTransform="none">
-            {total} total
-          </Badge>
+          <Text fontSize="sm" color="fg.muted">{total} logged</Text>
         </Flex>
         {records.length === 0 ? (
-          <VStack spacing={3} py={8} px={2}>
-            <Icon as={icon} boxSize="40px" color={`${flow}.fg`} />
-            <Text fontSize="sm" color="text.muted" textAlign="center" maxW="320px">{emptyText}</Text>
-          </VStack>
+          <Text fontSize="sm" color="fg.muted" py={6}>{emptyText}</Text>
         ) : (
           <>
-            <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={4} alignItems="stretch">
-              {records.map(renderItem)}
-            </SimpleGrid>
+            <Box>{records.map(renderItem)}</Box>
             {total > RECENT_LOG_LIMIT && (
-              <Text fontSize="sm" color="text.muted" textAlign="center">
-                Showing the {RECENT_LOG_LIMIT} most recent entries.
+              <Text fontSize="sm" color="fg.muted" pt={2}>
+                Showing the {RECENT_LOG_LIMIT} most recent.
               </Text>
             )}
           </>
@@ -334,7 +324,7 @@ function Dashboard() {
     <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
       <VStack spacing={{ base: 6, md: 8 }} align="stretch">
         <Box>
-          <Text fontSize="sm" color="text.muted" fontWeight="500">
+          <Text fontSize="sm" color="fg.muted" fontWeight="500">
             {formatDayKey(todayKey, { weekday: 'long', month: 'long', day: 'numeric' })}
           </Text>
           <Heading as="h1" size="xl" mt={1}>
@@ -366,14 +356,10 @@ function Dashboard() {
 
         <Box id="log" scrollMarginTop="88px">
           <Heading as="h2" size="lg" mb={4}>Log</Heading>
-          <Tabs index={logTab} onChange={setLogTab} variant="soft-rounded">
-            <TabList gap={2} mb={5}>
-              <Tab _selected={{ bg: 'fuel.bg', color: 'fuel.fg' }} color="text.muted" gap={2}>
-                <Icon as={FiCoffee} /> Fuel
-              </Tab>
-              <Tab _selected={{ bg: 'train.bg', color: 'train.fg' }} color="text.muted" gap={2}>
-                <Icon as={FiActivity} /> Train
-              </Tab>
+          <Tabs index={logTab} onChange={setLogTab} variant="line">
+            <TabList mb={5}>
+              <Tab>Meals</Tab>
+              <Tab>Workouts</Tab>
             </TabList>
             <TabPanels>
               <TabPanel p={0}>
@@ -404,11 +390,9 @@ function Dashboard() {
                   </VStack>
                   <RecentLog
                     title="Recent meals"
-                    flow="fuel"
-                    icon={FiCoffee}
                     records={recentDiets}
                     total={diets.length}
-                    emptyText="Log your first meal and your Fuel flow starts filling in."
+                    emptyText="No meals yet. Add one with the form and it will show up here."
                     renderItem={(diet) => (
                       <DietCard
                         key={diet._id}
@@ -452,12 +436,10 @@ function Dashboard() {
                     </Box>
                   </VStack>
                   <RecentLog
-                    title="Recent sessions"
-                    flow="train"
-                    icon={FiActivity}
+                    title="Recent workouts"
                     records={recentWorkouts}
                     total={workouts.length}
-                    emptyText="Add your first workout and your Train flow starts filling in."
+                    emptyText="No workouts yet. Add one with the form and it will show up here."
                     renderItem={(workout) => (
                       <WorkoutCard
                         key={workout._id}

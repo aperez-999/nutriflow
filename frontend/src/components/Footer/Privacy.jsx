@@ -4,14 +4,13 @@ import {
   Heading,
   Text,
   VStack,
-  useColorModeValue,
 } from '@chakra-ui/react';
 
 function Privacy() {
   return (
     <Box
       minH="100vh"
-      bg={useColorModeValue('gray.50', 'gray.900')}
+      bg={'bg.muted'}
       pt={20}
       pb={10}
     >

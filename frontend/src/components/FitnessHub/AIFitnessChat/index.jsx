@@ -14,7 +14,6 @@ import {
   WrapItem,
   IconButton,
   Select,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import PropTypes from 'prop-types';
 import { FiCpu, FiPlus, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
@@ -141,13 +140,13 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
   const { user } = useContext(AuthContext);
   const storageUserId = user?.user?._id || user?._id || user?.result?._id || 'anonymous';
 
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const aiBubbleColor = useColorModeValue('gray.100', 'gray.700');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subTextColor = useColorModeValue('gray.600', 'gray.400');
-  const cardBorderColor = useColorModeValue('gray.200', 'gray.600');
-  const railBg = useColorModeValue('gray.50', 'whiteAlpha.50');
-  const bubbleBorderColor = useColorModeValue('gray.200', 'gray.600');
+  const bgColor = 'bg.surface';
+  const aiBubbleColor = 'border';
+  const textColor = 'fg';
+  const subTextColor = 'fg.muted';
+  const cardBorderColor = 'border';
+  const railBg = 'bg.muted';
+  const bubbleBorderColor = 'border';
 
   const activeConversation = useMemo(
     () => conversations.find((conversation) => conversation.id === activeConversationId) || conversations[0],

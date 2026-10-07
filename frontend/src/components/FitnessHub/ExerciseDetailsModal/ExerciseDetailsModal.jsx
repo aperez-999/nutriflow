@@ -27,8 +27,8 @@ import { FaYoutube, FaCheckCircle, FaFire, FaHeartbeat, FaDumbbell } from 'react
 import { getExerciseMeta } from '../../../utils/workoutUtils';
 
 const ExerciseDetailsModal = ({ isOpen, onClose, workout }) => {
-  const headingColor = useColorModeValue('gray.800', 'white');
-  const textColor = useColorModeValue('gray.600', 'gray.400');
+  const headingColor = 'fg';
+  const textColor = 'fg.muted';
 
   if (!workout) return null;
 
@@ -225,7 +225,7 @@ const DetailSection = ({ title, colorScheme, content, isList, variations, benefi
   const bgColor = useColorModeValue(`${colorScheme}.50`, `${colorScheme}.900`);
   const borderColor = useColorModeValue(`${colorScheme}.200`, `${colorScheme}.700`);
   const titleColor = useColorModeValue(`${colorScheme}.700`, `${colorScheme}.300`);
-  const textColor = useColorModeValue('gray.600', 'gray.400');
+  const textColor = 'fg.muted';
   const chipBg = useColorModeValue(`${colorScheme}.100`, `${colorScheme}.800`);
 
   return (

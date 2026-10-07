@@ -9,7 +9,6 @@ import {
   Input,
   VStack,
   Text,
-  useColorModeValue,
   useToast,
   InputGroup,
   InputLeftElement,
@@ -83,7 +82,7 @@ function ForgotPassword() {
           transition={{ duration: 0.5 }}
         >
           <Box
-            bg={useColorModeValue('white', 'gray.800')}
+            bg={'bg.surface'}
             p={8}
             borderRadius="xl"
             boxShadow="2xl"
@@ -91,7 +90,7 @@ function ForgotPassword() {
             <VStack spacing={6}>
               <Box textAlign="center">
                 <Heading size="xl" mb={2}>Reset Password</Heading>
-                <Text color={useColorModeValue('gray.600', 'gray.400')}>
+                <Text color={'fg.muted'}>
                   Enter your email to receive reset instructions
                 </Text>
               </Box>

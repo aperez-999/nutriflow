@@ -6,15 +6,14 @@ import {
   Box,
   IconButton,
   Tooltip,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { FiCpu, FiRefreshCw } from 'react-icons/fi';
 
 const ChatHeader = ({ onClear }) => {
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subTextColor = useColorModeValue('gray.500', 'gray.400');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const headerBg = useColorModeValue('white', 'gray.800');
+  const textColor = 'fg';
+  const subTextColor = 'fg.muted';
+  const borderColor = 'border';
+  const headerBg = 'bg.surface';
 
   return (
     <Flex

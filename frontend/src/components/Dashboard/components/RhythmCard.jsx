@@ -27,11 +27,11 @@ function DayCell({ day }) {
         w="100%"
         aspectRatio={1}
         p="2px"
-        bg="bg.subtle"
+        bg="bg.muted"
         borderRadius="3px"
         tabIndex={0}
         aria-label={describeDay(day)}
-        _hover={{ outline: '2px solid', outlineColor: 'text.muted' }}
+        _hover={{ outline: '2px solid', outlineColor: 'fg.muted' }}
         _focusVisible={{ outline: '2px solid', outlineColor: 'brand.500' }}
       >
         {FLOWS.map((flow) => (
@@ -39,7 +39,7 @@ function DayCell({ day }) {
             key={flow.key}
             flex="1"
             borderRadius="1px"
-            bg={day.flows[flow.key] ? `data.${flow.key}` : 'transparent'}
+            bg={day.flows[flow.key] ? `${flow.key}.solid` : 'transparent'}
           />
         ))}
       </Flex>
@@ -52,25 +52,25 @@ function RhythmCard({ rhythm }) {
   const recentColumns = columns.slice(-12);
 
   return (
-    <Card variant="flat" h="100%">
+    <Card h="100%">
       <CardBody display="flex" flexDirection="column" gap={5}>
         <Flex justify="space-between" align="flex-start" gap={4} wrap="wrap">
           <Box>
             <Heading as="h2" size="md">Your rhythm</Heading>
-            <Text fontSize="sm" color="text.muted" mt={1} maxW="42ch">
+            <Text fontSize="sm" color="fg.muted" mt={1} maxW="42ch">
               Consistency beats perfection. One missed day is a grace day; your streak only ends after two in a row.
             </Text>
           </Box>
           <HStack spacing={6} align="flex-end">
             <Box textAlign="right">
-              <Text fontFamily="heading" fontSize="3xl" fontWeight="700" lineHeight="1">{streak}</Text>
-              <Text fontSize="xs" color="text.muted">day streak</Text>
+              <Text textStyle="figure" fontSize="4xl">{streak}</Text>
+              <Text fontSize="xs" color="fg.muted">day streak</Text>
             </Box>
             <Box textAlign="right">
-              <Text fontFamily="heading" fontSize="3xl" fontWeight="700" lineHeight="1">
-                {activeDays28}<Text as="span" fontSize="md" color="text.muted">/28</Text>
+              <Text textStyle="figure" fontSize="4xl">
+                {activeDays28}<Text as="span" fontSize="lg" color="fg.muted">/28</Text>
               </Text>
-              <Text fontSize="xs" color="text.muted">active days</Text>
+              <Text fontSize="xs" color="fg.muted">active days</Text>
             </Box>
           </HStack>
         </Flex>
@@ -78,7 +78,7 @@ function RhythmCard({ rhythm }) {
         <Flex gap={2} role="group" aria-label="Last 12 weeks of logging">
           <Flex direction="column" gap={{ base: '3px', md: '5px' }} display={{ base: 'none', sm: 'flex' }}>
             {WEEKDAY_LABELS.map((label, i) => (
-              <Flex key={i} flex="1" align="center" fontSize="10px" color="text.muted" minH={0} aspectRatio={1} w="24px">
+              <Flex key={i} flex="1" align="center" fontSize="10px" color="fg.muted" minH={0} aspectRatio={1} w="24px">
                 {label}
               </Flex>
             ))}
@@ -88,7 +88,7 @@ function RhythmCard({ rhythm }) {
             display="grid"
             gridTemplateColumns={`repeat(${recentColumns.length}, minmax(0, 1fr))`}
             gap={{ base: '3px', md: '5px' }}
-            maxW="480px"
+            maxW="640px"
           >
             {recentColumns.map((column) => (
               <Flex key={column[0].dayKey} direction="column" gap={{ base: '3px', md: '5px' }}>
@@ -98,15 +98,15 @@ function RhythmCard({ rhythm }) {
           </Box>
         </Flex>
 
-        <HStack spacing={4} flexWrap="wrap" fontSize="xs" color="text.muted">
+        <HStack spacing={4} flexWrap="wrap" fontSize="xs" color="fg.muted">
           {FLOWS.map((flow, i) => (
             <HStack key={flow.key} spacing={1.5}>
               <Flex direction="column" gap="1px" w="10px">
                 {FLOWS.map((f, j) => (
-                  <Box key={f.key} h="3px" borderRadius="1px" bg={i === j ? `data.${flow.key}` : 'data.empty'} />
+                  <Box key={f.key} h="3px" borderRadius="1px" bg={i === j ? `${flow.key}.solid` : 'bg.muted'} />
                 ))}
               </Flex>
-              <Text>{flow.label} · {flow.hint}</Text>
+              <Text>{flow.label}: {flow.hint}</Text>
             </HStack>
           ))}
         </HStack>

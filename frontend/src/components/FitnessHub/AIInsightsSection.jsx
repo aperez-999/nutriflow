@@ -6,7 +6,6 @@ import {
   VStack,
   HStack,
   Icon,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { FiTrendingUp, FiActivity, FiZap } from 'react-icons/fi';
 
@@ -28,11 +27,11 @@ const cardStyles = {
 };
 
 export default function AIInsightsSection({ insights = [] }) {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subColor = useColorModeValue('gray.600', 'gray.400');
-  const sectionBg = useColorModeValue('gray.50', 'whiteAlpha.50');
+  const cardBg = 'bg.surface';
+  const borderColor = 'border';
+  const textColor = 'fg';
+  const subColor = 'fg.muted';
+  const sectionBg = 'bg.muted';
 
   if (!insights || insights.length === 0) {
     return (

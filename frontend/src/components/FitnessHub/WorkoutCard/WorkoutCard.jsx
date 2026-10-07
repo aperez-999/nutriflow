@@ -11,7 +11,6 @@ import {
   Wrap,
   WrapItem,
   Stack,
-  useColorModeValue,
   Icon,
 } from '@chakra-ui/react';
 import { FaPlay, FaDumbbell, FaClock } from 'react-icons/fa';
@@ -27,11 +26,11 @@ const WorkoutCard = React.memo(function WorkoutCard({
   isCompleting = false,
   index,
 }) {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const hoverBorderColor = useColorModeValue('teal.300', 'teal.500');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subTextColor = useColorModeValue('gray.600', 'gray.400');
+  const cardBg = 'bg.surface';
+  const borderColor = 'border';
+  const hoverBorderColor = 'border';
+  const textColor = 'fg';
+  const subTextColor = 'fg.muted';
 
   return (
     <MotionBox

@@ -1,32 +1,54 @@
-import { useEffect, useMemo, useState } from 'react';
-import PropTypes from 'prop-types';
+import { useEffect, useState } from 'react';
 import {
   Box,
-  VStack,
-  Heading,
-  FormControl,
-  FormLabel,
-  Input,
   Button,
-  Select,
-  Textarea,
-  useColorModeValue,
-  Text,
-  SimpleGrid,
+  ButtonGroup,
+  FormControl,
+  FormHelperText,
+  FormLabel,
+  Heading,
   HStack,
-  Badge,
+  Input,
+  InputGroup,
+  InputRightElement,
+  SimpleGrid,
+  Textarea,
+  VStack,
 } from '@chakra-ui/react';
-import { EditIcon, AddIcon, DeleteIcon, CalendarIcon, SearchIcon, TimeIcon } from '@chakra-ui/icons';
-import { FiActivity, FiZap, FiTrendingUp, FiTarget, FiPackage } from 'react-icons/fi';
-import { motion } from 'framer-motion';
 import WorkoutSearchInput from '../../../Workout/WorkoutSearchInput';
 
-const MotionButton = motion(Button);
+const WORKOUT_TYPES = ['Strength', 'Cardio', 'Flexibility', 'Sports', 'Other'];
+const INTENSITIES = ['Low', 'Medium', 'High'];
+// Used when a custom (non-searched) workout has a duration but no burn rate.
+const DEFAULT_KCAL_PER_MINUTE = 8;
 
-const previewMetrics = [
-  { key: 'duration', label: 'Duration', suffix: 'min', icon: TimeIcon, color: 'blue.400' },
-  { key: 'caloriesBurned', label: 'Calories', suffix: 'cal', icon: FiZap, color: 'red.400' },
-];
+/** Segmented single choice with radio semantics. */
+function ChoiceGroup({ id, label, options, value, onChange }) {
+  return (
+    <ButtonGroup role="radiogroup" aria-labelledby={id} isAttached size="sm" w="100%" variant="outline">
+      {options.map((option) => {
+        const selected = value === option;
+        return (
+          <Button
+            key={option}
+            flex="1"
+            px={2}
+            role="radio"
+            aria-checked={selected}
+            aria-label={`${label}: ${option}`}
+            onClick={() => onChange(option)}
+            bg={selected ? 'fg' : 'bg.surface'}
+            color={selected ? 'bg.surface' : 'fg'}
+            borderColor={selected ? 'fg' : 'border'}
+            _hover={{ bg: selected ? 'fg' : 'bg.muted' }}
+          >
+            {option}
+          </Button>
+        );
+      })}
+    </ButtonGroup>
+  );
+}
 
 const WorkoutForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
   const [formData, setFormData] = useState(initialData);
@@ -37,27 +59,8 @@ const WorkoutForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
     setSelectedWorkout(null);
   }, [initialData]);
 
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subTextColor = useColorModeValue('gray.600', 'gray.400');
-  const mutedBg = useColorModeValue('gray.50', 'whiteAlpha.50');
-  const accentColor = useColorModeValue('blue.500', 'blue.300');
-  const inputBg = useColorModeValue('white', 'gray.700');
-  const iconBg = useColorModeValue('blue.50', 'whiteAlpha.100');
-
-  const estimatedCaloriesPerMinute = useMemo(() => {
-    if (!formData.duration || !formData.caloriesBurned) return 0;
-    return Math.round((Number(formData.caloriesBurned) / Number(formData.duration)) * 10) / 10;
-  }, [formData.duration, formData.caloriesBurned]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const setField = (name, value) => setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleInputChange = (e) => setField(e.target.name, e.target.value);
 
   const handleWorkoutSelect = (workout) => {
     setSelectedWorkout(workout);
@@ -77,10 +80,7 @@ const WorkoutForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
   };
 
   const handleWorkoutNameChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      workoutName: value,
-    }));
+    setField('workoutName', value);
     if (selectedWorkout && value !== selectedWorkout.name) {
       setSelectedWorkout(null);
     }
@@ -93,7 +93,7 @@ const WorkoutForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
       if (selectedWorkout && duration) {
         nextData.caloriesBurned = Math.round(selectedWorkout.caloriesPerMinute * Number(duration)).toString();
       } else if (prev.workoutName && duration && !selectedWorkout) {
-        nextData.caloriesBurned = Math.round(Number(duration) * 8).toString();
+        nextData.caloriesBurned = Math.round(Number(duration) * DEFAULT_KCAL_PER_MINUTE).toString();
       }
       return nextData;
     });
@@ -101,318 +101,92 @@ const WorkoutForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const formattedData = {
+    onSubmit({
       ...formData,
       duration: Number(formData.duration),
       caloriesBurned: Number(formData.caloriesBurned),
-    };
-    onSubmit(formattedData);
+    });
   };
 
+  const canSubmit = Boolean(formData.type && formData.duration !== '' && Number(formData.duration) > 0);
+
   return (
-    <Box
-      p={{ base: 5, md: 6 }}
-      bg={bgColor}
-      borderRadius="2xl"
-      borderWidth="1px"
-      borderColor={borderColor}
-      boxShadow="lg"
-      minH={{ base: 'auto', xl: '760px' }}
-    >
-      <VStack spacing={5} align="stretch">
-        <Box>
-          <HStack spacing={3} mb={2}>
-            <Box
-              p={2.5}
-              borderRadius="xl"
-              bg={iconBg}
-              color={accentColor}
-            >
-              {isEditing ? <EditIcon /> : <AddIcon />}
-            </Box>
-            <Box>
-              <Heading size="md" color={textColor}>
-                {isEditing ? 'Edit Workout Record' : 'Add Workout Record'}
-              </Heading>
-              <Text fontSize="sm" color={subTextColor}>
-                Search Ninja workout matches, review the session preview, then log the workout.
-              </Text>
-            </Box>
+    <Box bg="bg.surface" borderWidth="1px" borderColor="border" borderRadius="panel" p={{ base: 4, md: 5 }}>
+      <Heading as="h3" size="sm" mb={4}>{isEditing ? 'Edit workout' : 'Log a workout'}</Heading>
+
+      <form onSubmit={handleSubmit}>
+        <VStack spacing={4} align="stretch">
+          <FormControl>
+            <FormLabel>Exercise</FormLabel>
+            <WorkoutSearchInput
+              value={formData.workoutName}
+              onChange={handleWorkoutNameChange}
+              onWorkoutSelect={handleWorkoutSelect}
+              placeholder="Search exercises, or type your own"
+            />
+          </FormControl>
+
+          <FormControl isRequired>
+            <FormLabel id="workout-type-label">Type</FormLabel>
+            <ChoiceGroup id="workout-type-label" label="Type" options={WORKOUT_TYPES} value={formData.type} onChange={(v) => setField('type', v)} />
+          </FormControl>
+
+          <SimpleGrid columns={2} spacing={3}>
+            <FormControl isRequired>
+              <FormLabel>Duration</FormLabel>
+              <InputGroup>
+                <Input type="number" inputMode="numeric" min={1} name="duration" value={formData.duration} onChange={handleDurationChange} placeholder="0" pr={12} />
+                <InputRightElement pointerEvents="none" color="fg.muted" fontSize="sm" w={12}>min</InputRightElement>
+              </InputGroup>
+            </FormControl>
+            <FormControl>
+              <FormLabel>Calories burned</FormLabel>
+              <InputGroup>
+                <Input type="number" inputMode="numeric" min={0} name="caloriesBurned" value={formData.caloriesBurned} onChange={handleInputChange} placeholder="0" pr={12} />
+                <InputRightElement pointerEvents="none" color="fg.muted" fontSize="sm" w={12}>kcal</InputRightElement>
+              </InputGroup>
+              {selectedWorkout && <FormHelperText color="fg.muted">Estimated from the exercise and duration.</FormHelperText>}
+            </FormControl>
+          </SimpleGrid>
+
+          <FormControl>
+            <FormLabel id="intensity-label">Intensity</FormLabel>
+            <ChoiceGroup id="intensity-label" label="Intensity" options={INTENSITIES} value={formData.intensity} onChange={(v) => setField('intensity', v)} />
+          </FormControl>
+
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={3}>
+            <FormControl isRequired>
+              <FormLabel>Date</FormLabel>
+              <Input type="date" name="date" value={formData.date} onChange={handleInputChange} />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Equipment</FormLabel>
+              <Input name="equipment" value={formData.equipment} onChange={handleInputChange} placeholder="Barbell, bike, none" />
+            </FormControl>
+          </SimpleGrid>
+
+          <FormControl>
+            <FormLabel>Notes</FormLabel>
+            <Textarea
+              name="notes"
+              value={formData.notes}
+              onChange={handleInputChange}
+              placeholder="Sets, pace, how it felt"
+              rows={2}
+              resize="vertical"
+            />
+          </FormControl>
+
+          <HStack spacing={2} justify="flex-end">
+            {isEditing && <Button variant="ghost" onClick={onCancel}>Cancel</Button>}
+            <Button type="submit" isDisabled={!canSubmit} flex={{ base: 1, md: 'none' }} minW={{ md: '160px' }}>
+              {isEditing ? 'Save changes' : 'Log workout'}
+            </Button>
           </HStack>
-        </Box>
-
-        <form onSubmit={handleSubmit}>
-          <VStack spacing={4} align="stretch">
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              <FormControl isRequired>
-                <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                  <CalendarIcon />
-                  Date
-                </FormLabel>
-                <Input
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleInputChange}
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                />
-              </FormControl>
-
-              <FormControl isRequired>
-                <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                  <Box as={FiActivity} />
-                  Workout Type
-                </FormLabel>
-                <Select
-                  name="type"
-                  value={formData.type}
-                  onChange={handleInputChange}
-                  placeholder="Select workout type"
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                >
-                  <option value="Cardio">Cardio</option>
-                  <option value="Strength">Strength</option>
-                  <option value="Flexibility">Flexibility</option>
-                  <option value="Sports">Sports</option>
-                  <option value="Other">Other</option>
-                </Select>
-              </FormControl>
-            </SimpleGrid>
-
-            <FormControl>
-              <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                <SearchIcon />
-                Workout Search
-              </FormLabel>
-              <WorkoutSearchInput
-                value={formData.workoutName}
-                onChange={handleWorkoutNameChange}
-                onWorkoutSelect={handleWorkoutSelect}
-                placeholder="Search workouts like incline dumbbell press, rowing, or mobility flow"
-              />
-            </FormControl>
-
-            <Box p={3.5} borderRadius="2xl" bg={mutedBg} borderWidth="1px" borderColor={borderColor}>
-              <HStack justify="space-between" align={{ base: 'start', md: 'center' }} flexWrap="wrap" gap={3} mb={4}>
-                <Box>
-                  <Text fontSize="sm" fontWeight="700" color={textColor}>
-                    Workout Preview
-                  </Text>
-                  <Text fontSize="sm" color={subTextColor}>
-                    {selectedWorkout
-                      ? `Using Ninja details for ${selectedWorkout.name}`
-                      : 'Calories and session details update here as you build the entry.'}
-                  </Text>
-                </Box>
-                {selectedWorkout && (
-                  <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
-                    Smart match selected
-                  </Badge>
-                )}
-              </HStack>
-
-              <SimpleGrid columns={{ base: 2, lg: 4 }} spacing={3}>
-                {previewMetrics.map((metric) => (
-                  <Box key={metric.key} p={3} borderRadius="xl" bg={bgColor} borderWidth="1px" borderColor={borderColor}>
-                    <HStack spacing={2} mb={2} color={metric.color}>
-                      <Box as={metric.icon} boxSize={4} />
-                      <Text fontSize="xs" fontWeight="700" textTransform="uppercase" letterSpacing="wide">
-                        {metric.label}
-                      </Text>
-                    </HStack>
-                    <Text fontSize="xl" fontWeight="700" color={textColor}>
-                      {formData[metric.key] || 0}
-                      <Text as="span" fontSize="sm" color={subTextColor} ml={1}>
-                        {metric.suffix}
-                      </Text>
-                    </Text>
-                  </Box>
-                ))}
-
-                <Box p={3} borderRadius="xl" bg={bgColor} borderWidth="1px" borderColor={borderColor}>
-                  <HStack spacing={2} mb={2} color="purple.400">
-                    <Box as={FiTrendingUp} boxSize={4} />
-                    <Text fontSize="xs" fontWeight="700" textTransform="uppercase" letterSpacing="wide">
-                      Intensity
-                    </Text>
-                  </HStack>
-                  <Text fontSize="xl" fontWeight="700" color={textColor}>
-                    {formData.intensity || selectedWorkout?.intensity || '—'}
-                  </Text>
-                </Box>
-
-                <Box p={3} borderRadius="xl" bg={bgColor} borderWidth="1px" borderColor={borderColor}>
-                  <HStack spacing={2} mb={2} color="teal.400">
-                    <Box as={FiTarget} boxSize={4} />
-                    <Text fontSize="xs" fontWeight="700" textTransform="uppercase" letterSpacing="wide">
-                      Rate
-                    </Text>
-                  </HStack>
-                  <Text fontSize="xl" fontWeight="700" color={textColor}>
-                    {estimatedCaloriesPerMinute || selectedWorkout?.caloriesPerMinute || 0}
-                    <Text as="span" fontSize="sm" color={subTextColor} ml={1}>
-                      cal/min
-                    </Text>
-                  </Text>
-                </Box>
-              </SimpleGrid>
-            </Box>
-
-            <SimpleGrid columns={{ base: 1, md: 2, xl: 4 }} spacing={4}>
-              <FormControl isRequired>
-                <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                  <TimeIcon />
-                  Duration (minutes)
-                </FormLabel>
-                <Input
-                  type="number"
-                  name="duration"
-                  value={formData.duration}
-                  onChange={handleDurationChange}
-                  placeholder="0"
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                  <Box as={FiZap} />
-                  Calories Burned
-                </FormLabel>
-                <Input
-                  type="number"
-                  name="caloriesBurned"
-                  value={formData.caloriesBurned}
-                  onChange={handleInputChange}
-                  placeholder="0"
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                />
-              </FormControl>
-              <FormControl>
-                <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                  <Box as={FiTrendingUp} />
-                  Intensity Level
-                </FormLabel>
-                <Select
-                  name="intensity"
-                  value={formData.intensity}
-                  onChange={handleInputChange}
-                  placeholder="Select intensity"
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                >
-                  <option value="Low">Low</option>
-                  <option value="Medium">Medium</option>
-                  <option value="High">High</option>
-                </Select>
-              </FormControl>
-
-              <FormControl>
-                <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                  <Box as={FiTarget} />
-                  Equipment Used
-                </FormLabel>
-                <Input
-                  type="text"
-                  name="equipment"
-                  value={formData.equipment}
-                  onChange={handleInputChange}
-                  placeholder="e.g., Dumbbells, Treadmill, None"
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                />
-              </FormControl>
-            </SimpleGrid>
-
-            <FormControl>
-              <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                <Box as={FiPackage} />
-                Notes
-              </FormLabel>
-              <Textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
-                placeholder="Add notes about pacing, sets, recovery, or anything worth remembering."
-                bg={inputBg}
-                borderColor={borderColor}
-                color={textColor}
-                borderRadius="xl"
-                rows={2}
-                _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-              />
-            </FormControl>
-
-            <HStack spacing={4} justify="flex-end" flexWrap="wrap">
-              {isEditing && (
-                <Button
-                  onClick={onCancel}
-                  colorScheme="gray"
-                  variant="outline"
-                  size="lg"
-                  leftIcon={<DeleteIcon />}
-                  minW={{ base: '100%', md: '180px' }}
-                >
-                  Cancel Edit
-                </Button>
-              )}
-
-              <MotionButton
-                type="submit"
-                colorScheme="blue"
-                size="lg"
-                minW={{ base: '100%', md: '220px' }}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                leftIcon={isEditing ? <EditIcon /> : <AddIcon />}
-                fontWeight="700"
-              >
-                {isEditing ? 'Update Workout Record' : 'Save Workout Record'}
-              </MotionButton>
-            </HStack>
-          </VStack>
-        </form>
-      </VStack>
+        </VStack>
+      </form>
     </Box>
   );
-};
-
-WorkoutForm.propTypes = {
-  isEditing: PropTypes.bool,
-  onSubmit: PropTypes.func,
-  onCancel: PropTypes.func,
-  initialData: PropTypes.shape({
-    date: PropTypes.string,
-    type: PropTypes.string,
-    workoutName: PropTypes.string,
-    duration: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    caloriesBurned: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
-    intensity: PropTypes.string,
-    equipment: PropTypes.string,
-    notes: PropTypes.string,
-  }),
 };
 
 export default WorkoutForm;

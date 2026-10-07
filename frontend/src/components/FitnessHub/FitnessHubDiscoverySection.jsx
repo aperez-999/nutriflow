@@ -15,7 +15,6 @@ import {
   Button,
   Badge,
   Collapse,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { FaDumbbell, FaRunning, FaHeartbeat, FaFireAlt, FaCheckCircle, FaYoutube } from 'react-icons/fa';
 import { Icon } from '@chakra-ui/react';
@@ -40,13 +39,13 @@ export default function FitnessHubDiscoverySection({
   onClearFilters,
 }) {
   const [showAll, setShowAll] = useState(false);
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const headingColor = useColorModeValue('gray.800', 'white');
-  const textColor = useColorModeValue('gray.600', 'gray.400');
-  const accentColor = useColorModeValue('teal.500', 'teal.300');
-  const exerciseCardHoverBg = useColorModeValue('gray.50', 'gray.700');
-  const panelBg = useColorModeValue('gray.50', 'whiteAlpha.100');
+  const cardBg = 'bg.surface';
+  const borderColor = 'border';
+  const headingColor = 'fg';
+  const textColor = 'fg.muted';
+  const accentColor = 'fg';
+  const exerciseCardHoverBg = 'bg.muted';
+  const panelBg = 'bg.muted';
   const hasActiveFilters = Boolean(muscle || equipment || difficulty);
   const previewCount = 6;
   const visibleExercises = useMemo(

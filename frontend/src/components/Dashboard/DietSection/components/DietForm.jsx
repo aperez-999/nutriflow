@@ -1,59 +1,56 @@
 import { useEffect, useState } from 'react';
 import {
   Box,
-  VStack,
-  Heading,
+  Button,
+  ButtonGroup,
   FormControl,
   FormLabel,
-  Input,
-  Button,
-  Select,
-  Textarea,
-  useColorModeValue,
-  Text,
-  SimpleGrid,
+  Heading,
   HStack,
-  Badge,
+  Input,
+  InputGroup,
+  InputRightElement,
+  SimpleGrid,
+  Text,
+  Textarea,
+  VStack,
 } from '@chakra-ui/react';
-import { EditIcon, AddIcon, DeleteIcon, CalendarIcon, SearchIcon } from '@chakra-ui/icons';
-import { FiCoffee, FiZap, FiActivity, FiTrendingUp, FiTarget, FiPackage } from 'react-icons/fi';
-import { motion } from 'framer-motion';
 import FoodSearchInput from '../../../Diet/FoodSearchInput';
 
-const MotionButton = motion(Button);
+const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
-const metricCards = [
-  { key: 'calories', label: 'Calories', icon: FiZap, color: 'teal.400', suffix: '' },
-  { key: 'protein', label: 'Protein', icon: FiActivity, color: 'blue.400', suffix: 'g' },
-  { key: 'carbs', label: 'Carbs', icon: FiTrendingUp, color: 'orange.400', suffix: 'g' },
-  { key: 'fats', label: 'Fats', icon: FiTarget, color: 'red.400', suffix: 'g' },
+const MACRO_FIELDS = [
+  { name: 'calories', label: 'Calories', unit: 'kcal', isRequired: true },
+  { name: 'protein', label: 'Protein', unit: 'g' },
+  { name: 'carbs', label: 'Carbs', unit: 'g' },
+  { name: 'fats', label: 'Fat', unit: 'g' },
 ];
 
+// New entries start on the meal that fits the time of day; one tap changes it.
+const mealTypeForNow = (date = new Date()) => {
+  const hour = date.getHours();
+  if (hour < 11) return 'Breakfast';
+  if (hour < 15) return 'Lunch';
+  if (hour >= 17 && hour < 21) return 'Dinner';
+  return 'Snack';
+};
+
+const withDefaults = (data, isEditing) => ({
+  ...data,
+  mealType: data.mealType || (isEditing ? '' : mealTypeForNow()),
+});
+
 const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
-  const [formData, setFormData] = useState(initialData);
+  const [formData, setFormData] = useState(() => withDefaults(initialData, isEditing));
   const [selectedFood, setSelectedFood] = useState(null);
 
   useEffect(() => {
-    setFormData(initialData);
+    setFormData(withDefaults(initialData, isEditing));
     setSelectedFood(null);
-  }, [initialData]);
+  }, [initialData, isEditing]);
 
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subTextColor = useColorModeValue('gray.600', 'gray.400');
-  const mutedBg = useColorModeValue('gray.50', 'whiteAlpha.50');
-  const accentColor = useColorModeValue('teal.500', 'teal.300');
-  const inputBg = useColorModeValue('white', 'gray.700');
-  const iconBg = useColorModeValue('teal.50', 'whiteAlpha.100');
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+  const setField = (name, value) => setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleInputChange = (e) => setField(e.target.name, e.target.value);
 
   const handleFoodSelect = (food) => {
     setSelectedFood(food);
@@ -70,10 +67,7 @@ const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
   };
 
   const handleFoodNameChange = (value) => {
-    setFormData((prev) => ({
-      ...prev,
-      foodName: value,
-    }));
+    setField('foodName', value);
     if (selectedFood && value !== selectedFood.description) {
       setSelectedFood(null);
     }
@@ -81,263 +75,113 @@ const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const formattedData = {
+    onSubmit({
       ...formData,
       calories: Number(formData.calories),
       protein: Number(formData.protein),
       carbs: Number(formData.carbs),
       fats: Number(formData.fats),
-    };
-    onSubmit(formattedData);
+    });
   };
 
+  const canSubmit = Boolean(formData.foodName?.trim() && formData.mealType && formData.calories !== '');
+
   return (
-    <Box
-      p={{ base: 5, md: 6 }}
-      bg={bgColor}
-      borderRadius="2xl"
-      borderWidth="1px"
-      borderColor={borderColor}
-      boxShadow="lg"
-      minH={{ base: 'auto', xl: '760px' }}
-    >
-      <VStack spacing={5} align="stretch">
-        <Box>
-          <HStack spacing={3} mb={2}>
-            <Box
-              p={2.5}
-              borderRadius="xl"
-              bg={iconBg}
-              color={accentColor}
-            >
-              {isEditing ? <EditIcon /> : <AddIcon />}
-            </Box>
-            <Box>
-              <Heading size="md" color={textColor}>
-                {isEditing ? 'Edit Nutrition Record' : 'Add Nutrition Record'}
-              </Heading>
-              <Text fontSize="sm" color={subTextColor}>
-                Search USDA foods, confirm the nutrition preview, then save the meal.
+    <Box bg="bg.surface" borderWidth="1px" borderColor="border" borderRadius="panel" p={{ base: 4, md: 5 }}>
+      <Heading as="h3" size="sm" mb={4}>{isEditing ? 'Edit meal' : 'Log a meal'}</Heading>
+
+      <form onSubmit={handleSubmit}>
+        <VStack spacing={4} align="stretch">
+          <FormControl isRequired>
+            <FormLabel>Food</FormLabel>
+            <FoodSearchInput
+              value={formData.foodName}
+              onChange={handleFoodNameChange}
+              onFoodSelect={handleFoodSelect}
+              placeholder="Search USDA foods, or type your own"
+            />
+            {selectedFood && (
+              <Text fontSize="xs" color="fg.muted" mt={1.5}>
+                Values filled from USDA. Adjust them if your portion is different.
               </Text>
-            </Box>
+            )}
+          </FormControl>
+
+          <FormControl isRequired>
+            <FormLabel id="meal-type-label">Meal</FormLabel>
+            <ButtonGroup role="radiogroup" aria-labelledby="meal-type-label" isAttached size="sm" w="100%" variant="outline">
+              {MEAL_TYPES.map((type) => {
+                const selected = formData.mealType === type;
+                return (
+                  <Button
+                    key={type}
+                    flex="1"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setField('mealType', type)}
+                    bg={selected ? 'fg' : 'bg.surface'}
+                    color={selected ? 'bg.surface' : 'fg'}
+                    borderColor={selected ? 'fg' : 'border'}
+                    _hover={{ bg: selected ? 'fg' : 'bg.muted' }}
+                  >
+                    {type}
+                  </Button>
+                );
+              })}
+            </ButtonGroup>
+          </FormControl>
+
+          <SimpleGrid columns={{ base: 2, md: 4 }} spacing={3}>
+            {MACRO_FIELDS.map((field) => (
+              <FormControl key={field.name} isRequired={field.isRequired}>
+                <FormLabel>{field.label}</FormLabel>
+                <InputGroup>
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min={0}
+                    step={field.name === 'calories' ? 1 : 0.1}
+                    name={field.name}
+                    value={formData[field.name]}
+                    onChange={handleInputChange}
+                    placeholder="0"
+                    pr={field.unit.length > 1 ? 12 : 8}
+                  />
+                  <InputRightElement pointerEvents="none" color="fg.muted" fontSize="sm" w={field.unit.length > 1 ? 12 : 8}>
+                    {field.unit}
+                  </InputRightElement>
+                </InputGroup>
+              </FormControl>
+            ))}
+          </SimpleGrid>
+
+          <FormControl isRequired maxW={{ md: '50%' }}>
+            <FormLabel>Date</FormLabel>
+            <Input type="date" name="date" value={formData.date} onChange={handleInputChange} />
+          </FormControl>
+
+          <FormControl>
+            <FormLabel>Notes</FormLabel>
+            <Textarea
+              name="notes"
+              value={formData.notes}
+              onChange={handleInputChange}
+              placeholder="Portion, how it sat, anything worth remembering"
+              rows={2}
+              resize="vertical"
+            />
+          </FormControl>
+
+          <HStack spacing={2} justify="flex-end">
+            {isEditing && (
+              <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+            )}
+            <Button type="submit" isDisabled={!canSubmit} flex={{ base: 1, md: 'none' }} minW={{ md: '160px' }}>
+              {isEditing ? 'Save changes' : 'Log meal'}
+            </Button>
           </HStack>
-        </Box>
-
-        <form onSubmit={handleSubmit}>
-          <VStack spacing={4} align="stretch">
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              <FormControl isRequired>
-                <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                  <CalendarIcon />
-                  Date
-                </FormLabel>
-                <Input
-                  type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleInputChange}
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                />
-              </FormControl>
-
-              <FormControl isRequired>
-                <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                  <Box as={FiCoffee} />
-                  Meal Type
-                </FormLabel>
-                <Select
-                  name="mealType"
-                  value={formData.mealType}
-                  onChange={handleInputChange}
-                  placeholder="Select meal type"
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                >
-                  <option value="Breakfast">Breakfast</option>
-                  <option value="Lunch">Lunch</option>
-                  <option value="Dinner">Dinner</option>
-                  <option value="Snack">Snack</option>
-                </Select>
-              </FormControl>
-            </SimpleGrid>
-
-            <FormControl>
-              <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                <SearchIcon />
-                Food Search
-              </FormLabel>
-              <FoodSearchInput
-                value={formData.foodName}
-                onChange={handleFoodNameChange}
-                onFoodSelect={handleFoodSelect}
-                placeholder="Search foods like greek yogurt, chicken and rice, or salmon bowl"
-              />
-            </FormControl>
-
-            <Box p={3.5} borderRadius="2xl" bg={mutedBg} borderWidth="1px" borderColor={borderColor}>
-              <HStack justify="space-between" align={{ base: 'start', md: 'center' }} flexWrap="wrap" gap={3} mb={4}>
-                <Box>
-                  <Text fontSize="sm" fontWeight="700" color={textColor}>
-                    Nutrition Preview
-                  </Text>
-                  <Text fontSize="sm" color={subTextColor}>
-                    {selectedFood
-                      ? `Auto-filled from USDA for ${selectedFood.description}`
-                      : 'Manual values update live here so you can review before saving.'}
-                  </Text>
-                </Box>
-                {selectedFood && (
-                  <Badge colorScheme="teal" borderRadius="full" px={3} py={1}>
-                    USDA selected
-                  </Badge>
-                )}
-              </HStack>
-
-              <SimpleGrid columns={{ base: 2, lg: 4 }} spacing={3}>
-                {metricCards.map((metric) => (
-                  <Box key={metric.key} p={3} borderRadius="xl" bg={bgColor} borderWidth="1px" borderColor={borderColor}>
-                    <HStack spacing={2} mb={2} color={metric.color}>
-                      <Box as={metric.icon} boxSize={4} />
-                      <Text fontSize="xs" fontWeight="700" textTransform="uppercase" letterSpacing="wide">
-                        {metric.label}
-                      </Text>
-                    </HStack>
-                    <Text fontSize="xl" fontWeight="700" color={textColor}>
-                      {formData[metric.key] || 0}
-                      <Text as="span" fontSize="sm" color={subTextColor} ml={1}>
-                        {metric.suffix}
-                      </Text>
-                    </Text>
-                  </Box>
-                ))}
-              </SimpleGrid>
-            </Box>
-
-            <SimpleGrid columns={{ base: 1, md: 2, xl: 4 }} spacing={4}>
-              <FormControl isRequired>
-                <FormLabel color={textColor} fontWeight="semibold">Calories</FormLabel>
-                <Input
-                  type="number"
-                  name="calories"
-                  value={formData.calories}
-                  onChange={handleInputChange}
-                  placeholder="0"
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel color={textColor} fontWeight="semibold">Protein (g)</FormLabel>
-                <Input
-                  type="number"
-                  step="0.1"
-                  name="protein"
-                  value={formData.protein}
-                  onChange={handleInputChange}
-                  placeholder="0"
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel color={textColor} fontWeight="semibold">Carbs (g)</FormLabel>
-                <Input
-                  type="number"
-                  step="0.1"
-                  name="carbs"
-                  value={formData.carbs}
-                  onChange={handleInputChange}
-                  placeholder="0"
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                />
-              </FormControl>
-
-              <FormControl>
-                <FormLabel color={textColor} fontWeight="semibold">Fats (g)</FormLabel>
-                <Input
-                  type="number"
-                  step="0.1"
-                  name="fats"
-                  value={formData.fats}
-                  onChange={handleInputChange}
-                  placeholder="0"
-                  bg={inputBg}
-                  borderColor={borderColor}
-                  color={textColor}
-                  borderRadius="xl"
-                  _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-                />
-              </FormControl>
-            </SimpleGrid>
-
-            <FormControl>
-              <FormLabel color={textColor} fontWeight="semibold" display="flex" alignItems="center" gap={2}>
-                <Box as={FiPackage} />
-                Notes
-              </FormLabel>
-              <Textarea
-                name="notes"
-                value={formData.notes}
-                onChange={handleInputChange}
-                placeholder="Add context like portion size, prep details, or how the meal felt."
-                bg={inputBg}
-                borderColor={borderColor}
-                color={textColor}
-                borderRadius="xl"
-                rows={2}
-                _focus={{ borderColor: accentColor, boxShadow: `0 0 0 1px ${accentColor}` }}
-              />
-            </FormControl>
-
-            <HStack spacing={4} justify="flex-end" flexWrap="wrap">
-              {isEditing && (
-                <Button
-                  onClick={onCancel}
-                  colorScheme="gray"
-                  variant="outline"
-                  size="lg"
-                  leftIcon={<DeleteIcon />}
-                  minW={{ base: '100%', md: '180px' }}
-                >
-                  Cancel Edit
-                </Button>
-              )}
-
-              <MotionButton
-                type="submit"
-                colorScheme="teal"
-                size="lg"
-                minW={{ base: '100%', md: '220px' }}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                leftIcon={isEditing ? <EditIcon /> : <AddIcon />}
-                fontWeight="700"
-              >
-                {isEditing ? 'Update Nutrition Record' : 'Save Nutrition Record'}
-              </MotionButton>
-            </HStack>
-          </VStack>
-        </form>
-      </VStack>
+        </VStack>
+      </form>
     </Box>
   );
 };

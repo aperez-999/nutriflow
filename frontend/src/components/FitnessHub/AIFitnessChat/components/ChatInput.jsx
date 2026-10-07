@@ -3,15 +3,14 @@ import {
   HStack,
   Textarea,
   IconButton,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { FiSend } from 'react-icons/fi';
 
 const ChatInput = ({ value, onChange, onSend, isLoading }) => {
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const inputBg = useColorModeValue('gray.50', 'gray.700');
-  const containerBg = useColorModeValue('white', 'gray.800');
-  const placeholderColor = useColorModeValue('gray.400', 'gray.500');
+  const borderColor = 'border';
+  const inputBg = 'bg.muted';
+  const containerBg = 'bg.surface';
+  const placeholderColor = 'fg.muted';
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {

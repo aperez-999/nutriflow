@@ -10,7 +10,6 @@ import {
   Input,
   Textarea,
   Button,
-  useColorModeValue,
   useToast,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
@@ -67,7 +66,7 @@ function Contact() {
   return (
     <Box
       minH="100vh"
-      bg={useColorModeValue('gray.50', 'gray.900')}
+      bg={'bg.muted'}
       pt={20}
       pb={10}
     >
@@ -96,7 +95,7 @@ function Contact() {
                   type="text"
                   value={formData.name}
                   onChange={handleChange}
-                  bg={useColorModeValue('white', 'gray.700')}
+                  bg={'bg.surface'}
                 />
               </FormControl>
 
@@ -107,7 +106,7 @@ function Contact() {
                   type="email"
                   value={formData.email}
                   onChange={handleChange}
-                  bg={useColorModeValue('white', 'gray.700')}
+                  bg={'bg.surface'}
                 />
               </FormControl>
 
@@ -117,7 +116,7 @@ function Contact() {
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
-                  bg={useColorModeValue('white', 'gray.700')}
+                  bg={'bg.surface'}
                   rows={6}
                 />
               </FormControl>

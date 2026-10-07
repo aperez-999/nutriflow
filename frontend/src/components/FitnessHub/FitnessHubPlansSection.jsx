@@ -13,7 +13,6 @@ import {
   Icon,
   Select,
   IconButton,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { FiActivity, FiChevronLeft, FiChevronRight, FiCoffee, FiTrash2 } from 'react-icons/fi';
 import PlanCard from './PlanCard';
@@ -51,12 +50,12 @@ export default function FitnessHubPlansSection({
   mealPlansOnly = false,
   workoutPlansOnly = false,
 }) {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const headingColor = useColorModeValue('gray.800', 'white');
-  const textColor = useColorModeValue('gray.600', 'gray.400');
-  const badgeBg = useColorModeValue('teal.50', 'teal.900');
-  const badgeColor = useColorModeValue('teal.700', 'teal.200');
+  const cardBg = 'bg.surface';
+  const borderColor = 'border';
+  const headingColor = 'fg';
+  const textColor = 'fg.muted';
+  const badgeBg = 'bg.muted';
+  const badgeColor = 'fg';
   const overviewItems = aiWorkouts.map((workout, index) => {
     if (typeof workout.title === 'string' && workout.title.trim()) return workout.title.trim();
     if (Array.isArray(workout.focusAreas) && workout.focusAreas.length > 0) {

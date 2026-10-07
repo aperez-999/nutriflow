@@ -5,7 +5,6 @@ import Navbar from './components/Navbar'
 import AppRoutes from './routes'
 import Footer from './components/Footer'
 import ErrorBoundary from './components/ErrorBoundary'
-import FloatingAICoachButton from './components/Global/FloatingAICoachButton'
 import MobileTabBar, { TAB_BAR_HEIGHT } from './components/Global/MobileTabBar'
 import { AuthContext } from './context/AuthContext'
 
@@ -95,7 +94,6 @@ function App() {
         </ErrorBoundary>
       </Box>
       <Footer />
-      <FloatingAICoachButton />
       <MobileTabBar />
     </Flex>
   )

@@ -18,7 +18,6 @@ import {
   Text,
   VStack,
   useColorMode,
-  useColorModeValue,
   useToast,
 } from '@chakra-ui/react';
 import { FiBell, FiLock, FiMoon, FiSave, FiUser } from 'react-icons/fi';
@@ -33,10 +32,10 @@ function ProfileSettings() {
   const account = getAccount(user);
   const toast = useToast();
   const { colorMode, toggleColorMode } = useColorMode();
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const mutedColor = useColorModeValue('gray.600', 'gray.400');
-  const surfaceBg = useColorModeValue('gray.50', 'whiteAlpha.50');
+  const cardBg = 'bg.surface';
+  const borderColor = 'border';
+  const mutedColor = 'fg.muted';
+  const surfaceBg = 'bg.muted';
 
   const [profileForm, setProfileForm] = useState({
     username: account.username || '',

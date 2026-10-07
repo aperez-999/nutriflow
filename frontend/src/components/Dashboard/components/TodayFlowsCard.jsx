@@ -1,20 +1,19 @@
 import { memo } from 'react';
-import { Box, Button, Card, CardBody, Flex, Heading, Icon, Text, VStack } from '@chakra-ui/react';
-import { FiActivity, FiCoffee, FiEdit2, FiMoon } from 'react-icons/fi';
+import { Box, Button, Card, CardBody, Flex, Heading, Text, VStack } from '@chakra-ui/react';
 
 function Meter({ label, value, goal, unit, flow }) {
   const pct = goal > 0 ? Math.min((value / goal) * 100, 100) : 0;
   return (
     <Box>
       <Flex justify="space-between" fontSize="xs" mb={1}>
-        <Text color="text.muted">{label}</Text>
+        <Text color="fg.muted">{label}</Text>
         <Text fontWeight="600">
-          {Math.round(value).toLocaleString()} <Text as="span" color="text.muted" fontWeight="400">/ {goal.toLocaleString()} {unit}</Text>
+          {Math.round(value).toLocaleString()} <Text as="span" color="fg.muted" fontWeight="400">/ {goal.toLocaleString()} {unit}</Text>
         </Text>
       </Flex>
       <Box
         h="6px"
-        bg="data.empty"
+        bg="bg.muted"
         borderRadius="full"
         overflow="hidden"
         role="progressbar"
@@ -23,27 +22,25 @@ function Meter({ label, value, goal, unit, flow }) {
         aria-valuemax={goal}
         aria-valuenow={Math.round(value)}
       >
-        <Box h="100%" w={`${pct}%`} bg={`data.${flow}`} borderRadius="full" transition="width 0.5s cubic-bezier(0.22, 1, 0.36, 1)" />
+        <Box h="100%" w={`${pct}%`} bg={`${flow}.solid`} borderRadius="full" transition="width 0.5s cubic-bezier(0.22, 1, 0.36, 1)" />
       </Box>
     </Box>
   );
 }
 
-function FlowRow({ flow, icon, title, status, children, advice }) {
+function FlowRow({ flow, title, status, children, advice }) {
   return (
     <Box display="grid" gridTemplateColumns={{ base: '1fr', md: '170px 1fr' }} gap={{ base: 3, md: 5 }} py={4}>
       <Flex align="center" gap={3} alignSelf="start">
-        <Flex boxSize="36px" borderRadius="lg" bg={`${flow}.bg`} color={`${flow}.fg`} align="center" justify="center" flexShrink={0}>
-          <Icon as={icon} boxSize={4} />
-        </Flex>
+        <Box boxSize="10px" borderRadius="2px" bg={`${flow}.solid`} flexShrink={0} aria-hidden="true" />
         <Box>
-          <Text fontFamily="heading" fontWeight="700" fontSize="md" lineHeight="1.2">{title}</Text>
-          <Text fontSize="xs" color={`${flow}.fg`} fontWeight="600">{status}</Text>
+          <Text fontWeight="700" fontSize="md" lineHeight="1.2">{title}</Text>
+          <Text fontSize="xs" color="fg.muted" fontWeight="500">{status}</Text>
         </Box>
       </Flex>
       <VStack align="stretch" spacing={3}>
         {children}
-        <Text fontSize="sm" color="text.muted" maxW="65ch">{advice}</Text>
+        <Text fontSize="sm" color="fg.muted" maxW="65ch">{advice}</Text>
       </VStack>
     </Box>
   );
@@ -58,22 +55,21 @@ function TodayFlowsCard({ goals, today, actions, hasCheckIn, onEditGoals }) {
     : `${Math.max(goals.weeklyWorkouts - today.weeklyWorkouts, 0)} to go this week`;
 
   return (
-    <Card variant="flat" h="100%">
+    <Card h="100%">
       <CardBody>
         <Flex justify="space-between" align="center" mb={1}>
           <Heading as="h2" size="md">Today&apos;s flows</Heading>
-          <Button size="sm" variant="ghost" leftIcon={<FiEdit2 />} onClick={onEditGoals}>
+          <Button size="sm" variant="outline" onClick={onEditGoals}>
             Edit goals
           </Button>
         </Flex>
-        <Box sx={{ '& > * + *': { borderTopWidth: '1px', borderColor: 'border.subtle' } }}>
-          <FlowRow flow="fuel" icon={FiCoffee} title="Fuel" status={fuelStatus} advice={actions.nutritionSuggestion}>
+        <Box sx={{ '& > * + *': { borderTopWidth: '1px', borderColor: 'border' } }}>
+          <FlowRow flow="fuel" title="Fuel" status={fuelStatus} advice={actions.nutritionSuggestion}>
             <Meter label="Calories" value={today.calories} goal={goals.dailyCalories} unit="kcal" flow="fuel" />
             <Meter label="Protein" value={today.protein} goal={goals.dailyProtein} unit="g" flow="fuel" />
           </FlowRow>
           <FlowRow
             flow="train"
-            icon={FiActivity}
             title="Train"
             status={trainStatus}
             advice={`${actions.workoutIntensity} intensity today. ${actions.workoutDetail}`}
@@ -82,7 +78,6 @@ function TodayFlowsCard({ goals, today, actions, hasCheckIn, onEditGoals }) {
           </FlowRow>
           <FlowRow
             flow="recover"
-            icon={FiMoon}
             title="Recover"
             status={hasCheckIn ? 'Checked in' : 'Check-in pending'}
             advice={actions.recoverySuggestion}

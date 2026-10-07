@@ -442,13 +442,13 @@ function FitnessHub() {
     () => savedMealPlans.find((plan) => plan.id === activeMealPlanId) || savedMealPlans[0] || null,
     [activeMealPlanId, savedMealPlans]
   );
-  const bgColor = useColorModeValue('gray.50', 'gray.900');
-  const surfaceBg = useColorModeValue('white', 'gray.800');
+  const bgColor = 'bg.muted';
+  const surfaceBg = 'bg.surface';
   const heroBg = useColorModeValue('linear(to-br, white, teal.50, blue.50)', 'linear(to-br, gray.800, gray.800, blue.900)');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const heroTextColor = useColorModeValue('gray.800', 'white');
-  const textColor = useColorModeValue('gray.600', 'gray.400');
-  const mutedColor = useColorModeValue('gray.500', 'gray.500');
+  const borderColor = 'border';
+  const heroTextColor = 'fg';
+  const textColor = 'fg.muted';
+  const mutedColor = 'fg.muted';
 
   useEffect(() => {
     let isMounted = true;

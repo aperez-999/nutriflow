@@ -9,5 +9,7 @@ This folder contains files that are **not used** by the current NutriFlow v2 app
 - **Layout/Header.jsx** — Old header component. The app uses `frontend/src/components/Navbar.jsx` instead.
 
 - **Dashboard/** — Dashboard cards (TodayAISummary, QuickStatsStrip, GoalsSection, WeeklySummaryCard, RecommendedActionsCard, QuickActionsCard, DailyReadinessCard, DailyActionsCard, RecentActivityCard) replaced by the Fuel / Train / Recover dashboard (`ReadinessCheckInCard`, `TodayFlowsCard`, `RhythmCard`).
+- **Dashboard/DietSection, Dashboard/WorkoutSection, Dashboard/index.js** — unused section wrappers and the old date navigators (replaced by `DaySummaryLabel`).
+- **Diet/AddDiet, Diet/DietList, Workout/AddWorkout, Workout/WorkoutList, Global/PageTransition** — unused since the dashboard forms replaced them.
 
 The Layout files were moved from `frontend/src/components/legacy/` during the production audit. Do not import from this folder.

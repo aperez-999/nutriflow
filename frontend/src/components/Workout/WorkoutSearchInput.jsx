@@ -2,21 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Input,
-  VStack,
   Text,
   Spinner,
-  useColorModeValue,
   Flex,
-  Badge,
   IconButton,
-  HStack,
   InputGroup,
   InputLeftElement,
   InputRightElement,
-  Divider,
 } from '@chakra-ui/react';
 import { CloseIcon, SearchIcon } from '@chakra-ui/icons';
-import { FiZap, FiTarget, FiClock, FiTool } from 'react-icons/fi';
 import { searchExercises } from '../../services/api';
 
 const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'Search for workout...' }) => {
@@ -28,23 +22,6 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'S
 
   const searchTimeoutRef = useRef(null);
   const resultsRef = useRef(null);
-
-  const bgColor = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const hoverBg = useColorModeValue('gray.50', 'gray.650');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subTextColor = useColorModeValue('gray.600', 'gray.300');
-  const helperColor = useColorModeValue('gray.500', 'gray.400');
-  const selectedBg = useColorModeValue('blue.50', 'blue.900');
-  const selectedBorder = useColorModeValue('blue.200', 'blue.500');
-  const focusBorder = useColorModeValue('blue.400', 'blue.300');
-  const resultBorder = useColorModeValue('gray.100', 'whiteAlpha.100');
-
-  const getIntensityColor = (intensity) => {
-    if (intensity === 'High') return 'red';
-    if (intensity === 'Low') return 'green';
-    return 'yellow';
-  };
 
   const performSearch = async (query) => {
     if (query.trim().length < 2) {
@@ -135,8 +112,8 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'S
 
   return (
     <Box position="relative" ref={resultsRef}>
-      <InputGroup size="lg">
-        <InputLeftElement pointerEvents="none" color={subTextColor}>
+      <InputGroup>
+        <InputLeftElement pointerEvents="none" color="fg.muted">
           <SearchIcon />
         </InputLeftElement>
         <Input
@@ -146,145 +123,75 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'S
             if (searchQuery.trim().length >= 2) setShowResults(true);
           }}
           placeholder={placeholder}
-          bg={selectedWorkout ? selectedBg : bgColor}
-          borderColor={selectedWorkout ? selectedBorder : borderColor}
-          color={textColor}
-          pl={10}
           pr={10}
-          borderRadius="xl"
-          _placeholder={{ color: subTextColor }}
-          _focus={{ borderColor: focusBorder, boxShadow: `0 0 0 1px ${focusBorder}` }}
-          _hover={{ borderColor: focusBorder }}
+          role="combobox"
+          aria-expanded={shouldShowDropdown}
+          aria-autocomplete="list"
         />
-        <InputRightElement width="3rem">
+        <InputRightElement>
           {isLoading ? (
-            <Spinner size="sm" color="blue.400" />
+            <Spinner size="sm" color="fg.muted" />
           ) : selectedWorkout ? (
-            <IconButton
-              icon={<CloseIcon />}
-              size="sm"
-              aria-label="Clear selection"
-              variant="ghost"
-              onClick={clearSelection}
-            />
+            <IconButton icon={<CloseIcon boxSize={2.5} />} size="xs" aria-label="Clear exercise" variant="ghost" onClick={clearSelection} />
           ) : null}
         </InputRightElement>
       </InputGroup>
 
-      <Text fontSize="xs" color={helperColor} mt={2}>
-        Search moves, equipment, or muscle groups like &ldquo;dumbbell chest&rdquo; or &ldquo;hamstring stretch&rdquo;.
-      </Text>
-
-      {selectedWorkout && (
-        <Box
-          mt={3}
-          p={4}
-          bg={selectedBg}
-          borderRadius="xl"
-          borderWidth="1px"
-          borderColor={selectedBorder}
-        >
-          <HStack justify="space-between" align="start" spacing={4}>
-            <Box minW={0}>
-              <Text fontSize="sm" fontWeight="700" color={textColor} noOfLines={2}>
-                {selectedWorkout.name}
-              </Text>
-              <Text fontSize="xs" color={subTextColor} mt={1}>
-                {selectedWorkout.type} · {selectedWorkout.target || selectedWorkout.bodyPart || 'General'}
-              </Text>
-            </Box>
-            <Badge colorScheme="blue" borderRadius="full" px={2.5} py={1}>
-              {selectedWorkout.caloriesPerMinute} cal/min
-            </Badge>
-          </HStack>
-
-          <HStack spacing={2} wrap="wrap" mt={3}>
-            <Badge colorScheme="blue" variant="subtle">{selectedWorkout.type}</Badge>
-            <Badge colorScheme={getIntensityColor(selectedWorkout.intensity)} variant="subtle">
-              {selectedWorkout.intensity} intensity
-            </Badge>
-            <Badge colorScheme="purple" variant="subtle">
-              Equipment: {selectedWorkout.equipment || 'None'}
-            </Badge>
-          </HStack>
-        </Box>
-      )}
-
       {shouldShowDropdown && (
         <Box
           position="absolute"
-          top="calc(100% + 10px)"
+          top="calc(100% + 6px)"
           left={0}
           right={0}
-          zIndex={1000}
-          bg={bgColor}
+          zIndex="dropdown"
+          bg="bg.surface"
           borderWidth="1px"
-          borderColor={borderColor}
-          borderRadius="2xl"
-          boxShadow="xl"
-          maxH="360px"
+          borderColor="border"
+          borderRadius="panel"
+          boxShadow="overlay"
+          maxH="320px"
           overflowY="auto"
+          role="listbox"
         >
           {isLoading ? (
-            <Flex justify="center" align="center" p={5} gap={3}>
-              <Spinner size="sm" color="blue.400" />
-              <Text fontSize="sm" color={subTextColor}>Searching workout matches...</Text>
+            <Flex align="center" p={4} gap={3}>
+              <Spinner size="sm" color="fg.muted" />
+              <Text fontSize="sm" color="fg.muted">Searching exercises</Text>
             </Flex>
           ) : searchResults.length === 0 ? (
-            <VStack spacing={2} p={5} align="start">
-              <Text fontSize="sm" fontWeight="600" color={textColor}>
-                No workout matches yet
-              </Text>
-              <Text fontSize="sm" color={subTextColor}>
-                Try broader terms like &ldquo;rowing&rdquo;, &ldquo;chest press&rdquo;, or &ldquo;mobility&rdquo;.
-              </Text>
-            </VStack>
+            <Text fontSize="sm" color="fg.muted" p={4}>
+              No matches. Try a broader word like &ldquo;row&rdquo; or &ldquo;squat&rdquo;, or keep your own name.
+            </Text>
           ) : (
-            <VStack spacing={0} align="stretch">
-              {searchResults.map((workout, index) => (
-                <Box
-                  key={workout.id}
-                  px={4}
-                  py={3.5}
-                  cursor="pointer"
-                  _hover={{ bg: hoverBg }}
-                  onClick={() => handleWorkoutSelect(workout)}
-                >
-                  <HStack justify="space-between" align="start" spacing={4}>
-                    <Box minW={0} flex="1">
-                      <HStack spacing={2} mb={1.5} wrap="wrap">
-                        <Badge colorScheme="blue" variant="subtle">{workout.type}</Badge>
-                        <Badge colorScheme={getIntensityColor(workout.intensity)} variant="subtle">
-                          {workout.intensity}
-                        </Badge>
-                      </HStack>
-                      <Text fontSize="sm" fontWeight="700" color={textColor} noOfLines={2}>
-                        {workout.name}
-                      </Text>
-                      <HStack spacing={3} wrap="wrap" mt={2}>
-                        <HStack spacing={1} color={subTextColor}>
-                          <Box as={FiZap} boxSize={3.5} />
-                          <Text fontSize="xs">{workout.caloriesPerMinute} cal/min</Text>
-                        </HStack>
-                        <HStack spacing={1} color={subTextColor}>
-                          <Box as={FiTarget} boxSize={3.5} />
-                          <Text fontSize="xs">{workout.target || workout.bodyPart || 'General'}</Text>
-                        </HStack>
-                        <HStack spacing={1} color={subTextColor}>
-                          <Box as={FiTool} boxSize={3.5} />
-                          <Text fontSize="xs">{workout.equipment || 'None'}</Text>
-                        </HStack>
-                        <HStack spacing={1} color={subTextColor}>
-                          <Box as={FiClock} boxSize={3.5} />
-                          <Text fontSize="xs">Quick lookup</Text>
-                        </HStack>
-                      </HStack>
-                    </Box>
-                  </HStack>
-                  {index < searchResults.length - 1 && <Divider mt={3.5} borderColor={resultBorder} />}
-                </Box>
-              ))}
-            </VStack>
+            searchResults.map((workout) => (
+              <Box
+                as="button"
+                type="button"
+                role="option"
+                key={`${workout.name}-${workout.type}`}
+                display="block"
+                w="100%"
+                textAlign="left"
+                px={4}
+                py={2.5}
+                borderBottomWidth="1px"
+                borderColor="border"
+                _last={{ borderBottomWidth: 0 }}
+                _hover={{ bg: 'bg.muted' }}
+                _focusVisible={{ bg: 'bg.muted', outline: 'none' }}
+                onClick={() => handleWorkoutSelect(workout)}
+              >
+                <Flex justify="space-between" gap={4} align="baseline">
+                  <Text fontSize="sm" fontWeight="600" noOfLines={1}>{workout.name}</Text>
+                  <Text fontSize="sm" fontWeight="700" flexShrink={0} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {workout.caloriesPerMinute} kcal/min
+                  </Text>
+                </Flex>
+                <Text fontSize="xs" color="fg.muted" noOfLines={1}>
+                  {[workout.type, workout.intensity && `${workout.intensity.toLowerCase()} intensity`, workout.target || workout.bodyPart, workout.equipment && workout.equipment !== 'None' ? workout.equipment : null].filter(Boolean).join(', ')}
+                </Text>
+              </Box>
+            ))
           )}
         </Box>
       )}

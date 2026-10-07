@@ -7,7 +7,6 @@ import {
   VStack,
   HStack,
   Icon,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { FiActivity, FiCoffee } from 'react-icons/fi';
 
@@ -27,11 +26,11 @@ const cardStyles = {
  * type: 'workout' | 'meal' for header icon (FiActivity / FiCoffee).
  */
 export default function PlanCard({ title = 'Plan', items = [], type = 'workout' }) {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subColor = useColorModeValue('gray.600', 'gray.400');
-  const iconColor = useColorModeValue('teal.500', 'teal.300');
+  const cardBg = 'bg.surface';
+  const borderColor = 'border';
+  const textColor = 'fg';
+  const subColor = 'fg.muted';
+  const iconColor = 'fg';
   const PlanIcon = type === 'meal' ? FiCoffee : FiActivity;
 
   return (

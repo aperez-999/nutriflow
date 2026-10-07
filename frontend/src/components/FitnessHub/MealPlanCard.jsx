@@ -8,7 +8,6 @@ import {
   Stack,
   Text,
   VStack,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { FiCheckCircle, FiCoffee } from 'react-icons/fi';
 
@@ -24,11 +23,11 @@ export default function MealPlanCard({
   onCompleteMeal,
   getMealState,
 }) {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subColor = useColorModeValue('gray.600', 'gray.400');
-  const panelBg = useColorModeValue('gray.50', 'whiteAlpha.50');
+  const cardBg = 'bg.surface';
+  const borderColor = 'border';
+  const textColor = 'fg';
+  const subColor = 'fg.muted';
+  const panelBg = 'bg.muted';
 
   return (
     <Card

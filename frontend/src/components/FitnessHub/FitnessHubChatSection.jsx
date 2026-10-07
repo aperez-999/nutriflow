@@ -1,11 +1,11 @@
-import { Box, VStack, Text, HStack, Badge, useColorModeValue } from '@chakra-ui/react';
+import { Box, VStack, Text, HStack, Badge } from '@chakra-ui/react';
 import AIFitnessChat from './AIFitnessChat/index.jsx';
 
 export default function FitnessHubChatSection({ userWorkouts = [], userDiets = [], toast }) {
-  const headingColor = useColorModeValue('gray.800', 'white');
-  const textColor = useColorModeValue('gray.600', 'gray.400');
-  const panelBg = useColorModeValue('gray.50', 'whiteAlpha.50');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const headingColor = 'fg';
+  const textColor = 'fg.muted';
+  const panelBg = 'bg.muted';
+  const borderColor = 'border';
 
   return (
     <Box w="100%" h="100%">

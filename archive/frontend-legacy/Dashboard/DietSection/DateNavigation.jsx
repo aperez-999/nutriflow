@@ -4,17 +4,16 @@ import {
   IconButton,
   Button,
   Box,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { formatDate } from '../utils/dietUtils';
 
 const DateNavigation = ({ selectedDate, onPreviousDay, onNextDay, onToday }) => {
-  const subTextColor = useColorModeValue('gray.600', 'gray.400');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const bgColor = useColorModeValue('gray.50', 'whiteAlpha.50');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const hoverBg = useColorModeValue('teal.50', 'teal.900');
+  const subTextColor = 'fg.muted';
+  const textColor = 'fg';
+  const bgColor = 'bg.muted';
+  const borderColor = 'border';
+  const hoverBg = 'bg.muted';
   const formattedDate = formatDate(selectedDate);
 
   return (

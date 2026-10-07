@@ -24,21 +24,21 @@ const hoverMotion = {
 
 export function usePreAuthPalette() {
   const shellBg = useColorModeValue('gray.50', '#020617');
-  const shellText = useColorModeValue('gray.700', 'gray.300');
-  const headingColor = useColorModeValue('gray.900', 'white');
+  const shellText = 'fg.muted';
+  const headingColor = 'fg';
   const surfaceBg = useColorModeValue('rgba(255, 255, 255, 0.9)', 'rgba(15, 23, 42, 0.82)');
-  const surfaceBorder = useColorModeValue('gray.200', 'whiteAlpha.100');
+  const surfaceBorder = 'border';
   const mutedSurface = useColorModeValue('rgba(15, 23, 42, 0.03)', 'rgba(255, 255, 255, 0.04)');
-  const accent = useColorModeValue('teal.600', 'teal.300');
-  const accentStrong = useColorModeValue('cyan.600', 'cyan.300');
-  const subtleBorder = useColorModeValue('gray.200', 'whiteAlpha.200');
+  const accent = 'fg';
+  const accentStrong = 'fg';
+  const subtleBorder = 'border';
   const inputBg = useColorModeValue('white', 'rgba(15, 23, 42, 0.92)');
-  const inputBorder = useColorModeValue('gray.200', 'whiteAlpha.200');
-  const inputFocus = useColorModeValue('teal.500', 'teal.300');
-  const inputText = useColorModeValue('gray.800', 'white');
-  const placeholder = useColorModeValue('gray.500', 'gray.400');
-  const iconBg = useColorModeValue('teal.50', 'whiteAlpha.100');
-  const iconColor = useColorModeValue('teal.600', 'teal.200');
+  const inputBorder = 'border';
+  const inputFocus = 'fg';
+  const inputText = 'fg';
+  const placeholder = 'fg.muted';
+  const iconBg = 'bg.muted';
+  const iconColor = 'fg';
 
   return {
     shellBg,
@@ -68,7 +68,7 @@ export function PreAuthShell({ children }) {
   );
   const gridOpacity = useColorModeValue(0.14, 0.22);
   const gridLineColor = useColorModeValue('rgba(15, 23, 42, 0.06)', 'rgba(255, 255, 255, 0.04)');
-  const topGlow = useColorModeValue('teal.200', 'teal.400');
+  const topGlow = 'border';
   const bottomGlow = useColorModeValue('cyan.200', 'cyan.500');
   const radialOverlay = useColorModeValue(
     'radial-gradient(circle at top left, rgba(20, 184, 166, 0.12), transparent 26%), radial-gradient(circle at top right, rgba(14, 165, 233, 0.08), transparent 22%), radial-gradient(circle at bottom center, rgba(45, 212, 191, 0.08), transparent 26%)',
@@ -205,7 +205,7 @@ export function SectionEyebrow({ children }) {
 
 export function MarketingMetric({ label, value, detail }) {
   const { surfaceBorder, mutedSurface, headingColor, shellText } = usePreAuthPalette();
-  const metricHoverBorder = useColorModeValue('gray.300', 'whiteAlpha.200');
+  const metricHoverBorder = 'border';
 
   return (
     <Box
@@ -334,7 +334,7 @@ export function MarketingStepCard({ step, title, description, media, accent }) {
   const { surfaceBg, surfaceBorder, headingColor, shellText } = usePreAuthPalette();
   const reducedMotion = usePrefersReducedMotion();
   const stepTagBg = useColorModeValue('whiteAlpha.800', 'blackAlpha.600');
-  const stepTagColor = useColorModeValue('gray.900', 'white');
+  const stepTagColor = 'fg';
   const stepOverlayGradient = useColorModeValue(
     'linear(to-t, rgba(2, 6, 23, 0.52), transparent 60%)',
     'linear(to-t, rgba(2, 6, 23, 0.76), transparent 60%)'

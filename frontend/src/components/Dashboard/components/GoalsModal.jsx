@@ -10,7 +10,6 @@ import {
   Input,
   Button,
   HStack,
-  useColorModeValue,
 } from '@chakra-ui/react';
 
 const GoalsModal = ({ 
@@ -20,8 +19,8 @@ const GoalsModal = ({
   onEditingGoalsChange,
   onSave 
 }) => {
-  const bgColor = useColorModeValue('white', 'gray.700');
-  const textColor = useColorModeValue('gray.800', 'white');
+  const bgColor = 'bg.surface';
+  const textColor = 'fg';
 
   const handleInputChange = (field, value) => {
     onEditingGoalsChange({

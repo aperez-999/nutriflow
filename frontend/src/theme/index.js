@@ -1,115 +1,142 @@
 import { extendTheme } from '@chakra-ui/react';
 
+/**
+ * NutriFlow design system. See /DESIGN.md for the rationale.
+ * Chrome is monochrome ink on paper; color only ever means data:
+ *   fuel (meals), train (workouts), recover (check-ins, readiness).
+ * Components should use the semantic tokens (fg, fg.muted, bg.surface, border, <flow>.fg ...)
+ * rather than raw palette steps or useColorModeValue.
+ */
+
 const config = {
   initialColorMode: 'system',
   useSystemColorMode: true,
 };
 
-/**
- * NutriFlow identity: every day is three flows.
- *   Fuel (amber)   – what you eat
- *   Train (teal)   – how you move (the existing `brand` scale)
- *   Recover (violet) – how you rest and feel
- * Use the semantic tokens below in components instead of ad-hoc gray values.
- */
+// Pure neutrals (no blue tint) replace Chakra's default gray everywhere.
+const gray = {
+  50: '#FAFAFA',
+  100: '#F5F5F5',
+  200: '#E5E5E5',
+  300: '#D4D4D4',
+  400: '#A3A3A3',
+  500: '#737373',
+  600: '#525252',
+  700: '#404040',
+  800: '#262626',
+  900: '#171717',
+};
+
+// "ink" is the action color: solid buttons are black in light mode, near-white in dark mode.
+const ink = {
+  50: '#FAFAFA',
+  100: '#F0F0F0',
+  200: '#EDEDED',
+  300: '#D4D4D4',
+  400: '#A3A3A3',
+  500: '#0A0A0A',
+  600: '#262626',
+  700: '#404040',
+  800: '#171717',
+  900: '#0A0A0A',
+};
+
+const fuel = {
+  50: '#E8F6F1', 100: '#C8EBDF', 200: '#93D6BF', 300: '#5CC09F', 400: '#2FA984',
+  500: '#14936F', 600: '#0E7A5C', 700: '#0B6049', 800: '#094A39', 900: '#06342A',
+};
+const train = {
+  50: '#FDEFE8', 100: '#FAD7C6', 200: '#F4AE8D', 300: '#EE8656', 400: '#E86D36',
+  500: '#E0561F', 600: '#B9441A', 700: '#923616', 800: '#6E2912', 900: '#4A1C0D',
+};
+const recover = {
+  50: '#ECF0FC', 100: '#D2DBF7', 200: '#A7B8EF', 300: '#7B93E8', 400: '#5A76E0',
+  500: '#3C5FD9', 600: '#2F4BB3', 700: '#253B8C', 800: '#1C2D69', 900: '#141F48',
+};
+
+const flowTokens = (name, solidDark) => ({
+  // Data marks (bars, rings, map cells). Validated for CVD and >= 3:1 on the surface.
+  [`${name}.solid`]: { default: `${name}.500`, _dark: solidDark },
+  // Text-safe variant for labels and numbers (>= 4.5:1).
+  [`${name}.fg`]: { default: `${name}.700`, _dark: `${name}.300` },
+  // Quiet fill for selected states and chips.
+  [`${name}.subtle`]: { default: `${name}.50`, _dark: `color-mix(in srgb, ${solidDark} 18%, transparent)` },
+});
+
 const theme = extendTheme({
   config,
   fonts: {
-    heading: `'Bricolage Grotesque', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif`,
-    body: `ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif`,
+    heading: `'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif`,
+    body: `'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif`,
   },
-  // Semantic tokens for consistent, professional layout (dashboard, FitnessHub, future screens).
-  space: {
-    section: '8',
-    card: '6',
-    block: '4',
+  colors: {
+    gray,
+    ink,
+    // Legacy alias: older components reference `brand`; it now resolves to ink.
+    brand: ink,
+    fuel,
+    train,
+    recover,
   },
   radii: {
-    card: '2xl',
-    panel: 'xl',
-    input: 'md',
+    control: '6px',
+    panel: '10px',
   },
   zIndices: {
     tabBar: 1150,
   },
-  colors: {
-    brand: {
-      50: '#E6FFFA',
-      100: '#B2F5EA',
-      200: '#81E6D9',
-      300: '#4FD1C5',
-      400: '#38B2AC',
-      500: '#319795',
-      600: '#2C7A7B',
-      700: '#285E61',
-      800: '#234E52',
-      900: '#1D4044',
-    },
-    fuel: {
-      50: '#FFF6E8',
-      100: '#FFE6C2',
-      200: '#FFD08A',
-      300: '#FDB654',
-      400: '#F59E2A',
-      500: '#E07F0F',
-      600: '#B9630A',
-      700: '#8F4B0B',
-      800: '#6B390E',
-      900: '#4A280C',
-    },
-    recover: {
-      50: '#F4F1FF',
-      100: '#E6DEFF',
-      200: '#CDBEFF',
-      300: '#AF97FB',
-      400: '#9474F2',
-      500: '#7A55E0',
-      600: '#6341C0',
-      700: '#4E3398',
-      800: '#3B2873',
-      900: '#291C50',
-    },
-  },
   semanticTokens: {
     colors: {
-      'bg.canvas': { default: '#F4F7F7', _dark: '#0D1413' },
-      'bg.surface': { default: 'white', _dark: '#141D1C' },
-      'bg.subtle': { default: '#EEF3F2', _dark: '#1B2625' },
-      'border.subtle': { default: '#DDE5E4', _dark: '#25312F' },
-      'text.primary': { default: '#13201E', _dark: '#EAF2F1' },
-      'text.muted': { default: '#4A5856', _dark: '#A3B3B1' },
-      'train.fg': { default: 'brand.600', _dark: 'brand.300' },
-      'train.bg': { default: 'brand.50', _dark: 'rgba(56, 178, 172, 0.14)' },
-      'fuel.fg': { default: 'fuel.600', _dark: 'fuel.300' },
-      'fuel.bg': { default: 'fuel.50', _dark: 'rgba(245, 158, 42, 0.14)' },
-      'recover.fg': { default: 'recover.600', _dark: 'recover.300' },
-      'recover.bg': { default: 'recover.50', _dark: 'rgba(148, 116, 242, 0.16)' },
-      // Chart marks. Validated with the dataviz palette checker (CVD ΔE ≥ 13, ≥ 3:1 vs surface).
-      'data.fuel': { default: '#C96A06', _dark: '#D27605' },
-      'data.train': { default: '#0A9E8F', _dark: '#0E9F8F' },
-      'data.recover': { default: '#7A55E0', _dark: '#8C68EE' },
-      'data.empty': { default: '#E3EAE9', _dark: '#222E2C' },
+      'bg.canvas': { default: '#F5F5F5', _dark: '#0A0A0A' },
+      'bg.surface': { default: '#FFFFFF', _dark: '#141414' },
+      'bg.muted': { default: '#EFEFEF', _dark: '#1C1C1C' },
+      border: { default: '#E3E3E3', _dark: '#2A2A2A' },
+      'border.strong': { default: '#0A0A0A', _dark: '#EDEDED' },
+      fg: { default: '#0A0A0A', _dark: '#EDEDED' },
+      'fg.muted': { default: '#525252', _dark: '#A3A3A3' },
+      'focus.ring': { default: '#3C5FD9', _dark: '#7B93E8' },
+      ...flowTokens('fuel', '#17977A'),
+      ...flowTokens('train', '#D9561F'),
+      ...flowTokens('recover', '#5070E8'),
+      'chakra-body-bg': { default: '#F5F5F5', _dark: '#0A0A0A' },
+      'chakra-body-text': { default: '#0A0A0A', _dark: '#EDEDED' },
+      'chakra-border-color': { default: '#E3E3E3', _dark: '#2A2A2A' },
+      'chakra-placeholder-color': { default: '#737373', _dark: '#8A8A8A' },
     },
     shadows: {
-      card: {
-        default: '0 1px 2px rgba(16, 40, 38, 0.06), 0 4px 16px rgba(16, 40, 38, 0.05)',
-        _dark: '0 1px 2px rgba(0, 0, 0, 0.4)',
+      // Only floating layers (menus, modals, toasts) cast a shadow.
+      overlay: {
+        default: '0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.12)',
+        _dark: '0 0 0 1px #2A2A2A, 0 8px 24px rgba(0, 0, 0, 0.6)',
       },
-      cardHover: {
-        default: '0 2px 4px rgba(16, 40, 38, 0.08), 0 12px 28px rgba(16, 40, 38, 0.10)',
-        _dark: '0 8px 24px rgba(0, 0, 0, 0.5)',
-      },
+      outline: { default: '0 0 0 2px #3C5FD9', _dark: '0 0 0 2px #7B93E8' },
+    },
+  },
+  textStyles: {
+    // Condensed tabular numerals: scoreboard / nutrition-label figures.
+    figure: {
+      fontStretch: '75%',
+      fontWeight: 700,
+      fontVariantNumeric: 'tabular-nums',
+      letterSpacing: '-0.01em',
+      lineHeight: 1,
     },
   },
   styles: {
     global: {
       body: {
         bg: 'bg.canvas',
-        color: 'text.primary',
+        color: 'fg',
+        fontFeatureSettings: '"ss01"',
+        WebkitFontSmoothing: 'antialiased',
         WebkitTapHighlightColor: 'transparent',
       },
       'h1, h2, h3': {
         textWrap: 'balance',
+      },
+      '::selection': {
+        background: 'recover.100',
+        color: 'gray.900',
       },
       '@media (prefers-reduced-motion: reduce)': {
         '*, *::before, *::after': {
@@ -123,19 +150,63 @@ const theme = extendTheme({
   components: {
     Heading: {
       baseStyle: {
-        letterSpacing: '-0.02em',
         fontWeight: 700,
+        letterSpacing: '-0.015em',
+        color: 'fg',
+      },
+    },
+    Text: {
+      baseStyle: {
+        fontVariantNumeric: 'tabular-nums',
       },
     },
     Button: {
       baseStyle: {
-        _hover: {
-          transform: 'translateY(-1px)',
+        borderRadius: 'control',
+        fontWeight: 600,
+        transition: 'background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+      },
+      variants: {
+        // Any legacy "teal"/"brand" solid button renders as the ink primary.
+        solid: (props) => {
+          const scheme = ['teal', 'brand', 'ink', 'gray', 'cyan', 'blue'].includes(props.colorScheme)
+            ? 'ink'
+            : props.colorScheme;
+          if (scheme === 'ink') {
+            return {
+              bg: 'fg',
+              color: 'bg.surface',
+              _hover: { bg: props.colorMode === 'dark' ? '#FFFFFF' : '#262626', _disabled: { bg: 'fg' } },
+              _active: { bg: props.colorMode === 'dark' ? '#D4D4D4' : '#404040' },
+            };
+          }
+          return {
+            bg: `${scheme}.600`,
+            color: 'white',
+            _hover: { bg: `${scheme}.700`, _disabled: { bg: `${scheme}.600` } },
+            _active: { bg: `${scheme}.800` },
+          };
         },
-        _active: {
-          transform: 'translateY(0)',
+        outline: {
+          bg: 'bg.surface',
+          borderColor: 'border',
+          color: 'fg',
+          _hover: { bg: 'bg.muted' },
+          _active: { bg: 'bg.muted' },
         },
-        transition: 'all 0.18s cubic-bezier(0.22, 1, 0.36, 1)',
+        ghost: {
+          color: 'fg',
+          _hover: { bg: 'bg.muted' },
+          _active: { bg: 'bg.muted' },
+        },
+        link: {
+          color: 'fg',
+          textDecoration: 'underline',
+          textUnderlineOffset: '3px',
+        },
+      },
+      defaultProps: {
+        colorScheme: 'ink',
       },
     },
     Input: {
@@ -143,63 +214,154 @@ const theme = extendTheme({
         outline: {
           field: {
             bg: 'bg.surface',
-            color: 'text.primary',
-            borderColor: 'border.subtle',
-            _hover: {
-              borderColor: 'brand.300',
-            },
-            _focusVisible: {
-              borderColor: 'brand.500',
-              boxShadow: `0 0 0 1px var(--chakra-colors-brand-500)`,
-            },
+            color: 'fg',
+            borderColor: 'border',
+            borderRadius: 'control',
+            _hover: { borderColor: 'gray.400' },
+            _focusVisible: { borderColor: 'border.strong', boxShadow: '0 0 0 1px var(--chakra-colors-border-strong)' },
+            _invalid: { borderColor: 'red.500', boxShadow: '0 0 0 1px var(--chakra-colors-red-500)' },
           },
         },
       },
     },
-    Form: {
+    Select: {
       variants: {
-        floating: (props) => ({
-          container: {
-            _focusWithin: {
-              label: {
-                color: props.colorMode === 'dark' ? 'teal.300' : 'teal.500',
-              },
-            },
-            'input:not(:placeholder-shown) + label, .chakra-select__wrapper + label, textarea:not(:placeholder-shown) ~ label': {
-              color: props.colorMode === 'dark' ? 'gray.300' : 'gray.600',
-            },
-            label: {
-              color: props.colorMode === 'dark' ? 'gray.400' : 'gray.600',
-            },
+        outline: {
+          field: {
+            bg: 'bg.surface',
+            borderColor: 'border',
+            borderRadius: 'control',
+            _hover: { borderColor: 'gray.400' },
+            _focusVisible: { borderColor: 'border.strong', boxShadow: '0 0 0 1px var(--chakra-colors-border-strong)' },
           },
-        }),
+        },
+      },
+    },
+    Textarea: {
+      variants: {
+        outline: {
+          bg: 'bg.surface',
+          borderColor: 'border',
+          borderRadius: 'control',
+          _hover: { borderColor: 'gray.400' },
+          _focusVisible: { borderColor: 'border.strong', boxShadow: '0 0 0 1px var(--chakra-colors-border-strong)' },
+        },
+      },
+    },
+    NumberInput: {
+      variants: {
+        outline: {
+          field: {
+            bg: 'bg.surface',
+            borderColor: 'border',
+            borderRadius: 'control',
+            _focusVisible: { borderColor: 'border.strong', boxShadow: '0 0 0 1px var(--chakra-colors-border-strong)' },
+          },
+        },
+      },
+    },
+    FormLabel: {
+      baseStyle: {
+        fontSize: 'sm',
+        fontWeight: 600,
+        color: 'fg',
+        mb: 1.5,
       },
     },
     Card: {
       baseStyle: {
         container: {
           bg: 'bg.surface',
-          color: 'text.primary',
+          color: 'fg',
           borderWidth: '1px',
-          borderColor: 'border.subtle',
-          boxShadow: 'card',
-          transition: 'transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease',
-          borderRadius: '2xl',
-          _hover: {
-            transform: 'translateY(-2px)',
-            boxShadow: 'cardHover',
-          },
+          borderColor: 'border',
+          borderRadius: 'panel',
+          boxShadow: 'none',
         },
       },
       variants: {
-        flat: {
-          container: {
-            _hover: { transform: 'none', boxShadow: 'card' },
-          },
-        },
+        // Kept so existing `variant="flat"` usages resolve; all panels are flat now.
+        flat: {},
       },
       defaultProps: {
         variant: null,
+      },
+    },
+    Badge: {
+      baseStyle: {
+        borderRadius: '4px',
+        textTransform: 'none',
+        fontWeight: 600,
+        fontSize: 'xs',
+        px: 2,
+        py: 0.5,
+        letterSpacing: 0,
+      },
+      variants: {
+        subtle: (props) => {
+          const scheme = ['teal', 'brand', 'cyan', 'gray', 'ink'].includes(props.colorScheme) ? null : props.colorScheme;
+          if (!scheme) return { bg: 'bg.muted', color: 'fg' };
+          if (['fuel', 'train', 'recover'].includes(scheme)) return { bg: `${scheme}.subtle`, color: `${scheme}.fg` };
+          return {};
+        },
+      },
+    },
+    Tag: {
+      baseStyle: {
+        container: { borderRadius: '4px', fontWeight: 600 },
+      },
+    },
+    Progress: {
+      baseStyle: {
+        track: { bg: 'bg.muted' },
+      },
+    },
+    Tabs: {
+      variants: {
+        line: {
+          tablist: { borderColor: 'border' },
+          tab: {
+            color: 'fg.muted',
+            fontWeight: 600,
+            _selected: { color: 'fg', borderColor: 'border.strong' },
+            _hover: { color: 'fg' },
+          },
+        },
+      },
+    },
+    Modal: {
+      baseStyle: {
+        overlay: { bg: 'blackAlpha.600' },
+        dialog: { bg: 'bg.surface', borderRadius: 'panel', boxShadow: 'overlay', borderWidth: '1px', borderColor: 'border' },
+        header: { fontWeight: 700 },
+      },
+    },
+    Drawer: {
+      baseStyle: {
+        dialog: { bg: 'bg.surface' },
+      },
+    },
+    Menu: {
+      baseStyle: {
+        list: { bg: 'bg.surface', borderColor: 'border', boxShadow: 'overlay', borderRadius: 'panel', py: 1 },
+        item: { bg: 'transparent', _hover: { bg: 'bg.muted' }, _focus: { bg: 'bg.muted' } },
+      },
+    },
+    Tooltip: {
+      baseStyle: {
+        bg: 'fg',
+        color: 'bg.surface',
+        borderRadius: '4px',
+        fontWeight: 500,
+        px: 2,
+        py: 1,
+        '--popper-arrow-bg': 'var(--chakra-colors-fg)',
+      },
+    },
+    Divider: {
+      baseStyle: {
+        borderColor: 'border',
+        opacity: 1,
       },
     },
   },

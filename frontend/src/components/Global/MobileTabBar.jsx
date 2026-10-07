@@ -35,7 +35,7 @@ export default function MobileTabBar() {
       zIndex="tabBar"
       bg="bg.surface"
       borderTopWidth="1px"
-      borderColor="border.subtle"
+      borderColor="border"
       pb="env(safe-area-inset-bottom)"
       sx={{ backdropFilter: 'saturate(180%) blur(12px)' }}
     >
@@ -53,7 +53,7 @@ export default function MobileTabBar() {
               align="center"
               justify="center"
               gap={1}
-              color={active ? `${tab.flow || 'train'}.fg` : 'text.muted'}
+              color={active ? `${tab.flow || 'train'}.fg` : 'fg.muted'}
               transition="color 0.15s ease"
               _focusVisible={{ outline: '2px solid', outlineColor: 'brand.500', outlineOffset: '-4px', borderRadius: 'md' }}
             >

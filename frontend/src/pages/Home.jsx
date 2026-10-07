@@ -263,13 +263,13 @@ function Home() {
   const surfaceBorder = useColorModeValue('blackAlpha.100', palette.surfaceBorder);
   const mutedSurface = useColorModeValue('white', palette.mutedSurface);
   const cardSurface = useColorModeValue('rgba(255, 255, 255, 0.88)', palette.surfaceBg);
-  const eyebrowBg = useColorModeValue('white', 'whiteAlpha.100');
-  const eyebrowColor = useColorModeValue('gray.800', 'white');
-  const buttonText = useColorModeValue('gray.800', 'whiteAlpha.900');
+  const eyebrowBg = 'bg.surface';
+  const eyebrowColor = 'fg';
+  const buttonText = 'fg';
   const buttonBorder = useColorModeValue('blackAlpha.200', 'whiteAlpha.300');
-  const buttonBg = useColorModeValue('white', 'whiteAlpha.50');
-  const buttonHoverBg = useColorModeValue('gray.50', 'whiteAlpha.100');
-  const buttonHoverBorder = useColorModeValue('gray.300', 'whiteAlpha.400');
+  const buttonBg = 'bg.surface';
+  const buttonHoverBg = 'bg.muted';
+  const buttonHoverBorder = 'border';
   const ghostHoverBg = useColorModeValue('blackAlpha.50', 'whiteAlpha.100');
   const panelShadow = useColorModeValue('0 20px 45px rgba(15, 23, 42, 0.08)', '0 20px 60px rgba(2, 6, 23, 0.35)');
 

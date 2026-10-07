@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import {
   VStack,
   Box,
@@ -7,14 +8,13 @@ import {
   SimpleGrid,
   HStack,
   Badge,
-  useColorModeValue,
 } from '@chakra-ui/react';
-import { FiPackage, FiCoffee } from 'react-icons/fi';
+import { FiAward, FiActivity } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import {
   DailySummaryCard,
-  DietForm,
-  DietCard,
+  WorkoutForm,
+  WorkoutCard,
 } from './components';
 import { getTodayDayKey, toDayKey } from '../../../utils/dateUtils';
 
@@ -22,16 +22,16 @@ const MotionBox = motion(Box);
 
 const initialFormState = {
   date: getTodayDayKey(),
-  mealType: '',
-  foodName: '',
-  calories: '',
-  protein: '',
-  carbs: '',
-  fats: '',
+  type: '',
+  workoutName: '',
+  duration: '',
+  caloriesBurned: '',
+  intensity: '',
+  equipment: '',
   notes: ''
 };
 
-function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
+function WorkoutSection({ workouts, onAddWorkout, onUpdateWorkout, onDeleteWorkout }) {
   const [formData, setFormData] = useState(initialFormState);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -40,30 +40,30 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
   const handleSubmit = useCallback(async (formattedData) => {
     try {
       if (isEditing) {
-        await onUpdateDiet(editingId, formattedData);
+        await onUpdateWorkout(editingId, formattedData);
         setIsEditing(false);
         setEditingId(null);
       } else {
-        await onAddDiet(formattedData);
+        await onAddWorkout(formattedData);
       }
       setFormData(initialFormState);
     } catch (error) {
-      console.error('Error in diet operation:', error);
+      console.error('Error in workout operation:', error);
     }
-  }, [editingId, isEditing, onAddDiet, onUpdateDiet]);
+  }, [editingId, isEditing, onAddWorkout, onUpdateWorkout]);
 
-  const handleEdit = useCallback((diet) => {
+  const handleEdit = useCallback((workout) => {
     setIsEditing(true);
-    setEditingId(diet._id);
+    setEditingId(workout._id);
     setFormData({
-      date: toDayKey(diet.date),
-      mealType: diet.mealType || '',
-      foodName: diet.foodName || '',
-      calories: diet.calories?.toString() || '',
-      protein: diet.protein?.toString() || '',
-      carbs: diet.carbs?.toString() || '',
-      fats: diet.fats?.toString() || '',
-      notes: diet.notes || ''
+      date: toDayKey(workout.date),
+      type: workout.type || '',
+      workoutName: workout.workoutName || workout.type || '',
+      duration: workout.duration?.toString() || '',
+      caloriesBurned: workout.caloriesBurned?.toString() || '',
+      intensity: workout.intensity || '',
+      equipment: workout.equipment || '',
+      notes: workout.notes || ''
     });
   }, []);
 
@@ -74,13 +74,13 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
   }, []);
 
   // Color mode values
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const textColor = useColorModeValue('gray.800', 'white');
-  const subTextColor = useColorModeValue('gray.600', 'gray.400');
-  const recentDiets = useMemo(
-    () => [...(Array.isArray(diets) ? diets : [])].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6),
-    [diets]
+  const bgColor = 'bg.surface';
+  const borderColor = 'border';
+  const textColor = 'fg';
+  const subTextColor = 'fg.muted';
+  const recentWorkouts = useMemo(
+    () => [...(Array.isArray(workouts) ? workouts : [])].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6),
+    [workouts]
   );
 
   return (
@@ -89,75 +89,76 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
       h="100%"
+      display="flex"
+      flexDirection="column"
     >
       <VStack spacing={6} align="stretch" h="100%">
         <DailySummaryCard
-          diets={diets}
+          workouts={workouts}
           selectedDate={selectedDate}
           setSelectedDate={setSelectedDate}
         />
 
-        <DietForm
+        <WorkoutForm
           isEditing={isEditing}
           onSubmit={handleSubmit}
           onCancel={handleCancel}
           initialData={formData}
         />
 
-        {/* Diet Records Section */}
+        {/* Workout Records Section */}
         <Box
           p={{ base: 5, md: 6 }}
           bg={bgColor}
           borderRadius="2xl"
-          borderWidth="1px" 
+          borderWidth="1px"
           borderColor={borderColor}
           boxShadow="lg"
           flex="1"
           display="flex"
-          minH={{ base: '300px', xl: '360px' }}
         >
           <VStack spacing={4} align="stretch" h="100%" w="100%">
             <HStack justify="space-between" align={{ base: 'start', md: 'center' }} flexWrap="wrap" gap={3}>
               <Box>
                 <Heading size="md" color={textColor} display="flex" alignItems="center" gap={2}>
-                  <Box as={FiPackage} />
-                  Nutrition Log
+                  <Box as={FiAward} />
+                  Training Log
                 </Heading>
                 <Text fontSize="sm" color={subTextColor} mt={1}>
-                  Recent meal entries with clearer macro detail and easier scanning.
+                  Recent sessions with clearer performance and burn details.
                 </Text>
               </Box>
-              <Badge colorScheme="teal" borderRadius="full" px={3} py={1}>
-                {diets.length} total record{diets.length === 1 ? '' : 's'}
+              <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
+                {workouts.length} total record{workouts.length === 1 ? '' : 's'}
               </Badge>
             </HStack>
             
-            {recentDiets.length === 0 ? (
+            {recentWorkouts.length === 0 ? (
               <VStack spacing={4} py={8} px={2} align="center" justify="center" flex="1">
-                <Box as={FiCoffee} boxSize="48px" color={subTextColor} />
+                <Box as={FiActivity} boxSize="48px" color={subTextColor} />
                 <Text fontSize="lg" color={textColor} textAlign="center" fontWeight="medium">
-                  No diet records yet
+                  No workout records yet
                 </Text>
                 <Text fontSize="sm" color={subTextColor} textAlign="center" maxW="320px">
-                  Start your nutrition journey. Log your first meal to begin tracking progress.
+                  Add your first workout to start building your fitness streak.
                 </Text>
               </VStack>
             ) : (
               <SimpleGrid columns={{ base: 1, xl: 2 }} spacing={5} alignItems="stretch">
-                {recentDiets.map((diet) => (
-                    <DietCard
-                      key={diet._id}
-                      diet={diet}
+                {recentWorkouts.map((workout) => (
+                    <WorkoutCard
+                      key={workout._id}
+                      workout={workout}
                       onEdit={handleEdit}
-                      onDelete={onDeleteDiet}
+                      onDelete={onDeleteWorkout}
                     />
                 ))}
               </SimpleGrid>
             )}
             
-            {recentDiets.length > 0 && diets.length > 6 && (
+            {recentWorkouts.length > 0 && workouts.length > 6 && (
               <Text fontSize="sm" color={subTextColor} textAlign="center" mt={4}>
-                Showing the 6 most recent nutrition records.
+                Showing the 6 most recent workout records.
               </Text>
             )}
           </VStack>
@@ -167,4 +168,11 @@ function DietSection({ diets, onAddDiet, onUpdateDiet, onDeleteDiet }) {
   );
 }
 
-export default DietSection;
+WorkoutSection.propTypes = {
+  workouts: PropTypes.arrayOf(PropTypes.object),
+  onAddWorkout: PropTypes.func,
+  onUpdateWorkout: PropTypes.func,
+  onDeleteWorkout: PropTypes.func,
+};
+
+export default WorkoutSection;
