@@ -1,8 +1,15 @@
 # NutriFlow - Fitness & Nutrition Tracking App
 
-A comprehensive fitness and nutrition tracking application built with React, Node.js, and MongoDB. Track your daily meals, workouts, and progress towards your health goals.
+NutriFlow treats every day as three flows: **Fuel** (what you eat), **Train** (how you move) and **Recover** (how you feel). Meals, workouts and a 20-second daily check-in combine into one readiness score, and the AI coach turns that into a single next step. It is built for consistency over perfection: streaks forgive a missed day and no food is labeled good or bad.
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for what is next, including the iOS app.
 
 ## Features
+
+### **Fuel / Train / Recover**
+- Daily check-in (sleep, energy, soreness, water) that feeds the readiness score, so no wearable is needed
+- Rhythm map: 12 weeks of which flows you logged each day, with a forgiving streak (one grace day)
+- Goals for calories, protein and weekly sessions, saved to your account
 
 ### **AI-Powered Features**
 - Personalized workout recommendations based on fitness level and goals
@@ -208,6 +215,11 @@ The application will be available at:
 - `POST /api/auth/login` - User login
 - `POST /api/auth/forgot-password` - Request password reset
 - `POST /api/auth/reset-password/:token` - Reset password
+- `PUT /api/auth/me/goals` - Save daily calorie, protein and weekly workout goals
+
+### Daily Check-ins
+- `GET /api/checkins?limit=30` - Recent check-ins, newest first
+- `PUT /api/checkins/:dayKey` - Create or update the check-in for a `YYYY-MM-DD` day
 
 ### Diet Management
 - `GET /api/diets` - Get user's diet records
@@ -259,7 +271,18 @@ npm run lint         # Run ESLint
 ```bash
 npm start            # Start production server
 npm run dev          # Start development server with nodemon
+npm test             # node:test suite
 ```
+
+**Repo root:**
+```bash
+npm run check        # lint + backend tests + frontend tests + production build
+```
+
+Run `npm run check` before every commit. Frontend tests use Vitest (`cd frontend && npm test`).
+
+### Shared code
+`shared/` holds pure modules used by both the backend AI agents and the frontend (for example `readinessScore.js`). The frontend imports them through the `@shared` Vite alias. Keep them free of Node and browser APIs.
 
 ## Contributing
 
