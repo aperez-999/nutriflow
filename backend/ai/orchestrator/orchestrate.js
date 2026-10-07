@@ -57,6 +57,7 @@ function detectIntent(message) {
   if (
     m.includes('readiness score') ||
     m.includes('how ready am i') ||
+    m.includes('how ready i am') ||
     m.includes('am i ready') ||
     m.includes('should i train today') ||
     m.includes('can i train today') ||
