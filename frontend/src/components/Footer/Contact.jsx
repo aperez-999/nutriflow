@@ -65,14 +65,12 @@ function Contact() {
 
   return (
     <Box
-      minH="100vh"
-      bg={'bg.muted'}
       pt={20}
       pb={10}
     >
       <Container maxW="4xl">
         <VStack spacing={8} align="start">
-          <Heading size="2xl">Contact Us</Heading>
+          <Heading size="2xl">Contact</Heading>
           
           <Text fontSize="lg">
             Have questions or feedback? We&apos;d love to hear from you. Send us a

@@ -9,8 +9,6 @@ import {
 function Terms() {
   return (
     <Box
-      minH="100vh"
-      bg={'bg.muted'}
       pt={20}
       pb={10}
     >

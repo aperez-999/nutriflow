@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Button, Heading, Text, VStack } from '@chakra-ui/react';
 
 function ErrorFallback({ onRetry }) {
-  const bg = 'bg.muted';
+  const bg = 'transparent';
   const textColor = 'fg';
   const subColor = 'fg.muted';
   return (

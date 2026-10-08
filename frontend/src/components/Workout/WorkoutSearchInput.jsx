@@ -111,7 +111,14 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'S
   const shouldShowDropdown = showResults && searchQuery.trim().length >= 2;
 
   return (
-    <Box position="relative" ref={resultsRef}>
+    <Box
+      position="relative"
+      ref={resultsRef}
+      // Close the results when focus leaves the field and its list (keyboard users).
+      onBlur={(e) => {
+        if (!resultsRef.current?.contains(e.relatedTarget)) setShowResults(false);
+      }}
+    >
       <InputGroup>
         <InputLeftElement pointerEvents="none" color="fg.muted">
           <SearchIcon />
@@ -121,6 +128,9 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'S
           onChange={handleInputChange}
           onFocus={() => {
             if (searchQuery.trim().length >= 2) setShowResults(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') setShowResults(false);
           }}
           placeholder={placeholder}
           pr={10}
@@ -179,6 +189,8 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'S
                 _last={{ borderBottomWidth: 0 }}
                 _hover={{ bg: 'bg.muted' }}
                 _focusVisible={{ bg: 'bg.muted', outline: 'none' }}
+                // Keep focus in the input while pressing a result (Safari does not focus buttons on click).
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={() => handleWorkoutSelect(workout)}
               >
                 <Flex justify="space-between" gap={4} align="baseline">

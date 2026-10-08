@@ -1,41 +1,35 @@
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import {
-  Avatar,
-  Badge,
   Box,
   Button,
-  Card,
-  CardBody,
+  ButtonGroup,
   Container,
-  Divider,
+  Flex,
   FormControl,
+  FormErrorMessage,
   FormLabel,
   Heading,
-  HStack,
   Input,
-  SimpleGrid,
   Switch,
   Text,
   VStack,
   useColorMode,
   useToast,
 } from '@chakra-ui/react';
-import { FiBell, FiLock, FiMoon, FiSave, FiUser } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { changePassword, updateProfile } from '../services/api';
 import { handleApiError } from '../utils/apiErrorHandler';
+import PasswordInput from '../components/Auth/PasswordInput';
 
 const getAccount = (user) => user?.user || user?.result || user || {};
 
 function ProfileSettings() {
-  const { user, updateUser } = useContext(AuthContext);
+  const { user, updateUser, logout } = useContext(AuthContext);
+  const navigate = useNavigate();
   const account = getAccount(user);
   const toast = useToast();
-  const { colorMode, toggleColorMode } = useColorMode();
-  const cardBg = 'bg.surface';
-  const borderColor = 'border';
-  const mutedColor = 'fg.muted';
-  const surfaceBg = 'bg.muted';
+  const { colorMode, setColorMode } = useColorMode();
 
   const [profileForm, setProfileForm] = useState({
     username: account.username || '',
@@ -57,15 +51,6 @@ function ProfileSettings() {
       notificationsEnabled: account.preferences?.notificationsEnabled ?? true,
     });
   }, [account.email, account.preferences?.notificationsEnabled, account.username]);
-
-  const accountStats = useMemo(
-    () => [
-      { label: 'Theme', value: colorMode === 'light' ? 'Light' : 'Dark' },
-      { label: 'Notifications', value: profileForm.notificationsEnabled ? 'Enabled' : 'Disabled' },
-      { label: 'Account Email', value: account.email || 'Not available' },
-    ],
-    [account.email, colorMode, profileForm.notificationsEnabled]
-  );
 
   const handleProfileChange = (field, value) => {
     setProfileForm((prev) => ({ ...prev, [field]: value }));
@@ -144,177 +129,104 @@ function ProfileSettings() {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
+  const passwordMismatch = Boolean(passwordForm.confirmPassword) && passwordForm.newPassword !== passwordForm.confirmPassword;
+
   return (
-    <Box minH="100vh">
-      <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
-        <VStack spacing={8} align="stretch">
-          <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} borderRadius="2xl" boxShadow="lg">
-            <CardBody p={{ base: 6, md: 8 }}>
-              <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8} alignItems="center">
-                <HStack spacing={5} align="start">
-                  <Avatar size="xl" name={account.username || 'User'} bg="teal.500" color="white" />
-                  <VStack align="start" spacing={2}>
-                    <Badge colorScheme="teal" borderRadius="full" px={3} py={1}>
-                      Account Center
-                    </Badge>
-                    <Heading size="lg">Profile & Settings</Heading>
-                    <Text color={mutedColor} maxW="xl">
-                      Manage your account details, security, and a few personal preferences from one clean workspace.
-                    </Text>
-                    <Text fontSize="sm" color={mutedColor}>
-                      Signed in as {account.email || 'your account'}
-                    </Text>
-                  </VStack>
-                </HStack>
+    <Container maxW="880px" px={{ base: 4, md: 6 }} py={{ base: 6, md: 10 }}>
+      <Heading as="h1" size="xl">Settings</Heading>
+      <Text color="fg.muted" mt={1}>Signed in as {account.email}</Text>
 
-                <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={4}>
-                  {accountStats.map((item) => (
-                    <Box key={item.label} p={4} borderWidth="1px" borderColor={borderColor} borderRadius="xl" bg={surfaceBg}>
-                      <Text fontSize="xs" color={mutedColor} textTransform="uppercase" letterSpacing="widest" mb={1}>
-                        {item.label}
-                      </Text>
-                      <Text fontSize="md" fontWeight="700" noOfLines={1}>
-                        {item.value}
-                      </Text>
-                    </Box>
-                  ))}
-                </SimpleGrid>
-              </SimpleGrid>
-            </CardBody>
-          </Card>
+      <Box mt={8} borderTopWidth="1px" borderColor="border">
+        <SettingsSection title="Profile" description="How you appear in the app.">
+          <VStack spacing={4} align="stretch">
+            <FormControl>
+              <FormLabel>Name</FormLabel>
+              <Input value={profileForm.username} autoComplete="nickname" onChange={(e) => handleProfileChange('username', e.target.value)} />
+            </FormControl>
+            <FormControl>
+              <FormLabel>Email</FormLabel>
+              <Input type="email" value={profileForm.email} autoComplete="email" onChange={(e) => handleProfileChange('email', e.target.value)} />
+            </FormControl>
+            <Flex justify="space-between" align="center" gap={4}>
+              <Box>
+                <Text fontWeight="600" fontSize="sm">Account notifications</Text>
+                <Text fontSize="sm" color="fg.muted">Emails about your account, like password changes.</Text>
+              </Box>
+              <Switch
+                colorScheme="gray"
+                isChecked={profileForm.notificationsEnabled}
+                onChange={(e) => handleProfileChange('notificationsEnabled', e.target.checked)}
+                aria-label="Account notifications"
+              />
+            </Flex>
+            <Box>
+              <Button onClick={handleSaveProfile} isLoading={isSavingProfile}>Save profile</Button>
+            </Box>
+          </VStack>
+        </SettingsSection>
 
-          <SimpleGrid columns={{ base: 1, xl: 3 }} spacing={6} alignItems="start">
-            <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} borderRadius="2xl" boxShadow="sm" gridColumn={{ base: 'auto', xl: 'span 2' }}>
-              <CardBody p={{ base: 5, md: 6 }}>
-                <VStack align="stretch" spacing={5}>
-                  <HStack spacing={3}>
-                    <Box as={FiUser} color="teal.400" boxSize={5} />
-                    <Heading size="md">Account Details</Heading>
-                  </HStack>
-                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                    <FormControl>
-                      <FormLabel>Display Name</FormLabel>
-                      <Input
-                        value={profileForm.username}
-                        onChange={(e) => handleProfileChange('username', e.target.value)}
-                        placeholder="Your display name"
-                      />
-                    </FormControl>
-                    <FormControl>
-                      <FormLabel>Email</FormLabel>
-                      <Input
-                        type="email"
-                        value={profileForm.email}
-                        onChange={(e) => handleProfileChange('email', e.target.value)}
-                        placeholder="you@example.com"
-                      />
-                    </FormControl>
-                  </SimpleGrid>
+        <SettingsSection title="Appearance" description="Follows your device until you choose.">
+          <ButtonGroup isAttached size="sm" variant="outline" role="radiogroup" aria-label="Theme">
+            {['light', 'dark'].map((mode) => (
+              <Button
+                key={mode}
+                role="radio"
+                aria-checked={colorMode === mode}
+                onClick={() => setColorMode(mode)}
+                bg={colorMode === mode ? 'fg' : 'bg.surface'}
+                color={colorMode === mode ? 'bg.surface' : 'fg'}
+                borderColor={colorMode === mode ? 'fg' : 'border'}
+                _hover={{ bg: colorMode === mode ? 'fg' : 'bg.muted' }}
+                minW="88px"
+              >
+                {mode === 'light' ? 'Light' : 'Dark'}
+              </Button>
+            ))}
+          </ButtonGroup>
+        </SettingsSection>
 
-                  <Divider />
+        <SettingsSection title="Password" description="Use at least 6 characters.">
+          <VStack spacing={4} align="stretch" as="form" onSubmit={(e) => { e.preventDefault(); handleSavePassword(); }}>
+            <FormControl isRequired>
+              <FormLabel>Current password</FormLabel>
+              <PasswordInput autoComplete="current-password" value={passwordForm.currentPassword} onChange={(e) => handlePasswordChange('currentPassword', e.target.value)} />
+            </FormControl>
+            <FormControl isRequired>
+              <FormLabel>New password</FormLabel>
+              <PasswordInput autoComplete="new-password" minLength={6} value={passwordForm.newPassword} onChange={(e) => handlePasswordChange('newPassword', e.target.value)} />
+            </FormControl>
+            <FormControl isRequired isInvalid={passwordMismatch}>
+              <FormLabel>Confirm new password</FormLabel>
+              <PasswordInput autoComplete="new-password" value={passwordForm.confirmPassword} onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)} />
+              <FormErrorMessage>The passwords don’t match.</FormErrorMessage>
+            </FormControl>
+            <Box>
+              <Button type="submit" variant="outline" isLoading={isSavingPassword} isDisabled={passwordMismatch}>Update password</Button>
+            </Box>
+          </VStack>
+        </SettingsSection>
 
-                  <HStack spacing={3}>
-                    <Box as={FiBell} color="blue.400" boxSize={5} />
-                    <Heading size="sm">Preferences</Heading>
-                  </HStack>
-                  <Box p={4} borderWidth="1px" borderColor={borderColor} borderRadius="xl" bg={surfaceBg}>
-                    <VStack align="stretch" spacing={4}>
-                      <HStack justify="space-between" align="center">
-                        <Box>
-                          <Text fontWeight="600">Notifications</Text>
-                          <Text fontSize="sm" color={mutedColor}>
-                            Keep lightweight account notifications enabled for important updates.
-                          </Text>
-                        </Box>
-                        <Switch
-                          colorScheme="teal"
-                          isChecked={profileForm.notificationsEnabled}
-                          onChange={(e) => handleProfileChange('notificationsEnabled', e.target.checked)}
-                        />
-                      </HStack>
+        <SettingsSection title="Session" description="Log out of NutriFlow on this device.">
+          <Button variant="outline" onClick={handleLogout}>Log out</Button>
+        </SettingsSection>
+      </Box>
+    </Container>
+  );
+}
 
-                      <HStack justify="space-between" align="center">
-                        <Box>
-                          <Text fontWeight="600">Dark Mode</Text>
-                          <Text fontSize="sm" color={mutedColor}>
-                            Toggle the app color theme to match your workspace preference.
-                          </Text>
-                        </Box>
-                        <Button
-                          variant="outline"
-                          leftIcon={<FiMoon />}
-                          onClick={toggleColorMode}
-                          borderRadius="full"
-                        >
-                          {colorMode === 'light' ? 'Enable Dark' : 'Enable Light'}
-                        </Button>
-                      </HStack>
-                    </VStack>
-                  </Box>
-
-                  <HStack justify="flex-end">
-                    <Button
-                      colorScheme="teal"
-                      leftIcon={<FiSave />}
-                      onClick={handleSaveProfile}
-                      isLoading={isSavingProfile}
-                    >
-                      Save Profile Changes
-                    </Button>
-                  </HStack>
-                </VStack>
-              </CardBody>
-            </Card>
-
-            <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} borderRadius="2xl" boxShadow="sm">
-              <CardBody p={{ base: 5, md: 6 }}>
-                <VStack align="stretch" spacing={5}>
-                  <HStack spacing={3}>
-                    <Box as={FiLock} color="orange.400" boxSize={5} />
-                    <Heading size="md">Security</Heading>
-                  </HStack>
-                  <Text fontSize="sm" color={mutedColor}>
-                    Update your password to keep your account secure.
-                  </Text>
-
-                  <FormControl>
-                    <FormLabel>Current Password</FormLabel>
-                    <Input
-                      type="password"
-                      value={passwordForm.currentPassword}
-                      onChange={(e) => handlePasswordChange('currentPassword', e.target.value)}
-                    />
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>New Password</FormLabel>
-                    <Input
-                      type="password"
-                      value={passwordForm.newPassword}
-                      onChange={(e) => handlePasswordChange('newPassword', e.target.value)}
-                    />
-                  </FormControl>
-                  <FormControl>
-                    <FormLabel>Confirm New Password</FormLabel>
-                    <Input
-                      type="password"
-                      value={passwordForm.confirmPassword}
-                      onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)}
-                    />
-                  </FormControl>
-
-                  <Button
-                    colorScheme="orange"
-                    onClick={handleSavePassword}
-                    isLoading={isSavingPassword}
-                  >
-                    Update Password
-                  </Button>
-                </VStack>
-              </CardBody>
-            </Card>
-          </SimpleGrid>
-        </VStack>
-      </Container>
+function SettingsSection({ title, description, children }) {
+  return (
+    <Box display="grid" gridTemplateColumns={{ base: '1fr', md: '220px 1fr' }} gap={{ base: 3, md: 10 }} py={8} borderBottomWidth="1px" borderColor="border">
+      <Box>
+        <Heading as="h2" size="sm">{title}</Heading>
+        <Text fontSize="sm" color="fg.muted" mt={1}>{description}</Text>
+      </Box>
+      <Box>{children}</Box>
     </Box>
   );
 }

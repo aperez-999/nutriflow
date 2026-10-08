@@ -33,12 +33,11 @@ Core features include:
 - Avoid duplicate logic unless there is a strong reason
 
 ## Frontend Rules
-- Reuse the existing design system and Chakra UI patterns
-- Keep cards visually consistent:
-  - rounded corners
-  - subtle shadows
-  - hover lift
-  - spacing consistency
+- Follow `DESIGN.md` (the design system) and use the semantic tokens in `frontend/src/theme/index.js`
+  (`fg`, `fg.muted`, `bg.surface`, `border`, `<flow>.solid` / `<flow>.fg`); avoid raw palette steps and `useColorModeValue`
+- Color only means data (fuel, train, recover); chrome stays monochrome
+- No gradients, glows, blurs, hover lift, tracked uppercase eyebrows or colored side stripes
+- Panels use 1px borders, not shadows; only menus, popovers and modals float
 - Preserve responsiveness and avoid layout regressions
 - Improve existing components before creating parallel UI patterns
 
