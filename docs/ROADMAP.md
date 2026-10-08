@@ -21,12 +21,13 @@ Most nutrition apps are calorie ledgers that punish missed days. NutriFlow's ang
 
 ## Next
 
-1. **Fitness Hub restyle.** Move it onto the semantic tokens (`bg.surface`, `text.muted`, `data.*`) so it matches the dashboard.
-2. **Restyle the log sub-components** (DailySummaryCard, DietForm/WorkoutForm, DietCard/WorkoutCard) onto the same tokens and drop their uppercase eyebrow labels.
-3. **Fuel timing.** If a hard session is planned and today's intake is low, nudge a pre-workout meal. Needs a "planned session" field.
-4. **Weekly recap.** A shareable Sunday card: rhythm, best day, readiness trend. Good for word of mouth.
-5. **Reminders.** Optional morning check-in reminder (web push now, native notifications in iOS).
-6. **App icon.** The current logo is an illustration of a phone; commission or design a simple mark that reads at 29px.
+1. **Fuel timing.** If a hard session is planned and today's intake is low, nudge a pre-workout meal. Needs a "planned session" field.
+2. **Weekly recap.** A shareable Sunday card in the day-label style: rhythm, best day, readiness trend. Good for word of mouth.
+3. **Reminders.** Optional morning check-in reminder (web push now, native notifications in iOS).
+4. **Account deletion.** Required by the App Store before the iOS release.
+5. **Undo instead of confirm** for deleting entries, once there is a toast with actions.
+
+Done since the first pass: the design system (`DESIGN.md`) now covers every screen, the app icon is the rhythm-day mark, and the Coach page, log forms and auth pages were rebuilt.
 
 ## iOS app plan (Capacitor)
 
