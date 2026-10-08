@@ -3,24 +3,23 @@ import {
   Box,
   VStack,
   HStack,
-  Stack,
+  Flex,
   Card,
   CardBody,
   Text,
   Button,
-  Avatar,
-  Spinner,
-  Wrap,
-  WrapItem,
   IconButton,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
   Select,
 } from '@chakra-ui/react';
-import PropTypes from 'prop-types';
-import { FiCpu, FiPlus, FiTrash2, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiMoreHorizontal, FiPlus } from 'react-icons/fi';
 import { AuthContext } from '../../../context/AuthContext';
 import { aiChat, saveChatHistory, loadChatHistory, clearChatHistory, normalizeChatMessage, sanitizeChatMessages } from '../../../services/api';
-import { ChatHeader, ChatInput, ChatMessage, TypingDots } from './components';
-import { WELCOME_MESSAGE, CLEAR_MESSAGE, QUICK_ACTIONS, CHAT_ACTION_BUTTON_PROPS, TYPING_INDICATOR_TEXT } from './constants';
+import { ChatInput, ChatMessage, TypingDots } from './components';
+import { WELCOME_MESSAGE, CLEAR_MESSAGE, QUICK_ACTIONS, QUICK_ACTION_LABELS, CHAT_ACTION_BUTTON_PROPS, TYPING_INDICATOR_TEXT } from './constants';
 import {
   parseAIRecommendations,
   parseAIMealPlan,
@@ -133,20 +132,12 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
-  const didInitRef = useRef(false);
   const suppressSaveRef = useRef(false);
   const chatHistorySaveRef = useRef({ inFlight: false, queued: null });
 
   const { user } = useContext(AuthContext);
   const storageUserId = user?.user?._id || user?._id || user?.result?._id || 'anonymous';
 
-  const bgColor = 'bg.surface';
-  const aiBubbleColor = 'border';
-  const textColor = 'fg';
-  const subTextColor = 'fg.muted';
-  const cardBorderColor = 'border';
-  const railBg = 'bg.muted';
-  const bubbleBorderColor = 'border';
 
   const activeConversation = useMemo(
     () => conversations.find((conversation) => conversation.id === activeConversationId) || conversations[0],
@@ -199,10 +190,9 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     return () => window.cancelAnimationFrame(frame);
   }, [activeConversationId, isLoading, messages, scrollToBottom]);
 
+  // Runs again in StrictMode development; the cancelled flag (not a run-once ref) keeps
+  // the second run from being skipped while the first run's late result is ignored.
   useEffect(() => {
-    if (didInitRef.current) return;
-    didInitRef.current = true;
-
     let cancelled = false;
 
     const loadInitialState = async () => {
@@ -427,75 +417,33 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
   }));
 
   return (
-    <Card
-      bg={bgColor}
-      w="100%"
-      maxW="100%"
-      h={{ base: '760px', md: '800px', xl: '820px' }}
-      display="flex"
-      flexDirection="column"
-      variant="flat"
-      borderWidth="1px"
-      borderColor={cardBorderColor}
-      borderRadius="xl"
-      boxShadow="sm"
-      _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg' }}
-      transition="all 0.2s ease"
-      overflow="hidden"
-    >
+    <Card w="100%" maxW="100%" h={{ base: '72vh', md: '680px' }} minH="480px" display="flex" flexDirection="column" overflow="hidden">
       <CardBody p={0} display="flex" flexDirection="column" height="100%">
-        <ChatHeader
-          onClear={clearCurrentConversation}
-        />
-
-        <Box px={{ base: 4, md: 5 }} py={{ base: 3.5, md: 4 }} borderBottom="1px" borderColor={cardBorderColor} bg={railBg}>
-          <VStack align="stretch" spacing={3}>
-            <Stack direction={{ base: 'column', lg: 'row' }} justify="space-between" gap={3}>
-              <Stack direction={{ base: 'column', md: 'row' }} spacing={3} flex="1" minW={0}>
-                <Select
-                  value={activeConversationId || ''}
-                  onChange={(e) => setActiveConversationId(e.target.value)}
-                  size="sm"
-                  maxW={{ base: '100%', md: '280px' }}
-                  borderColor={cardBorderColor}
-                >
-                  {conversations.map((conversation) => (
-                    <option key={conversation.id} value={conversation.id}>
-                      {conversation.title}
-                    </option>
-                  ))}
-                </Select>
-                <HStack spacing={2} flexWrap="wrap">
-                  <Button size="sm" leftIcon={<FiPlus />} variant="outline" onClick={startNewConversation}>
-                    New chat
-                  </Button>
-                  <Button size="sm" leftIcon={<FiTrash2 />} variant="ghost" onClick={deleteCurrentConversation}>
-                    Delete
-                  </Button>
-                </HStack>
-              </Stack>
-              <Text fontSize="xs" color={subTextColor} maxW="320px">
-                Your chat threads stay saved locally for this user
-              </Text>
-            </Stack>
-
-            <Wrap spacing={2.5}>
-              {QUICK_ACTIONS.map((suggestion) => (
-                <WrapItem key={suggestion}>
-                  <Button
-                    colorScheme="teal"
-                    variant={suggestion === 'Generate Weekly Plan' ? 'solid' : 'outline'}
-                    {...CHAT_ACTION_BUTTON_PROPS}
-                    onClick={() => handleActionClick(suggestion)}
-                    isDisabled={isLoading}
-                  >
-                    {suggestion}
-                  </Button>
-                </WrapItem>
-              ))}
-            </Wrap>
-          </VStack>
-        </Box>
+        <Flex px={{ base: 3, md: 4 }} py={3} gap={2} align="center" borderBottomWidth="1px" borderColor="border">
+          <Select
+            value={activeConversationId || ''}
+            onChange={(e) => setActiveConversationId(e.target.value)}
+            size="sm"
+            maxW={{ base: '100%', md: '320px' }}
+            aria-label="Conversation"
+          >
+            {conversations.map((conversation) => (
+              <option key={conversation.id} value={conversation.id}>
+                {conversation.title}
+              </option>
+            ))}
+          </Select>
+          <Button size="sm" leftIcon={<FiPlus />} variant="outline" onClick={startNewConversation} flexShrink={0}>
+            New chat
+          </Button>
+          <Menu placement="bottom-end">
+            <MenuButton as={IconButton} size="sm" variant="ghost" icon={<FiMoreHorizontal />} aria-label="Conversation options" ml="auto" />
+            <MenuList fontSize="sm">
+              <MenuItem onClick={clearCurrentConversation}>Clear messages</MenuItem>
+              <MenuItem onClick={deleteCurrentConversation} color="red.500">Delete conversation</MenuItem>
+            </MenuList>
+          </Menu>
+        </Flex>
 
         <Box
           flex="1"
@@ -507,8 +455,9 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
           position="relative"
           ref={messagesContainerRef}
           minH={0}
+          aria-live="polite"
         >
-          <VStack spacing={6} align="stretch">
+          <VStack spacing={5} align="stretch">
             {messages.map((message) => (
               <ChatMessage
                 key={message.id}
@@ -518,70 +467,29 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
             ))}
 
             {isLoading && (
-              <HStack spacing={3} align="flex-start" alignSelf="flex-start" maxW={{ base: '100%', md: '90%' }}>
-                <Avatar size="sm" bg="blue.500" color="white" icon={<FiCpu />} />
-                <Box
-                  bg={aiBubbleColor}
-                  color={textColor}
-                  px={4}
-                  py={3.5}
-                  borderWidth="1px"
-                  borderColor={bubbleBorderColor}
-                  borderRadius="xl"
-                  borderBottomLeftRadius="sm"
-                  minH="48px"
-                  display="flex"
-                  alignItems="center"
-                >
-                  <HStack spacing={3} align="center">
-                    <Spinner size="sm" thickness="2px" flexShrink={0} />
-                    <Text fontSize="sm" color={textColor} lineHeight="1.5">
-                      {TYPING_INDICATOR_TEXT}
-                    </Text>
-                    <TypingDots />
-                  </HStack>
-                </Box>
+              <HStack spacing={2} color="fg.muted" fontSize="sm">
+                <Text>{TYPING_INDICATOR_TEXT}</Text>
+                <TypingDots />
               </HStack>
             )}
             <div ref={messagesEndRef} />
           </VStack>
         </Box>
 
-        <Box px={{ base: 4, md: 5 }} py={2.5} borderTop="1px" borderColor={cardBorderColor} bg={railBg}>
-          <HStack justify="space-between" align="center" gap={3} flexWrap="wrap">
-            <Text fontSize="xs" color={subTextColor}>
-              {messages.filter((message) => message.type === 'user').length} prompts in this conversation
-            </Text>
-            <HStack spacing={1}>
-              <IconButton
-                aria-label="Older conversation"
-                size="xs"
-                icon={<FiChevronLeft />}
-                variant="ghost"
-                isDisabled={conversations.length < 2}
-                onClick={() => {
-                  const currentIndex = conversations.findIndex((conversation) => conversation.id === activeConversationId);
-                  if (currentIndex < conversations.length - 1) {
-                    setActiveConversationId(conversations[currentIndex + 1].id);
-                  }
-                }}
-              />
-              <IconButton
-                aria-label="Newer conversation"
-                size="xs"
-                icon={<FiChevronRight />}
-                variant="ghost"
-                isDisabled={conversations.length < 2}
-                onClick={() => {
-                  const currentIndex = conversations.findIndex((conversation) => conversation.id === activeConversationId);
-                  if (currentIndex > 0) {
-                    setActiveConversationId(conversations[currentIndex - 1].id);
-                  }
-                }}
-              />
-            </HStack>
-          </HStack>
-        </Box>
+        <Flex gap={2} px={{ base: 3, md: 4 }} pb={2} overflowX="auto" sx={{ scrollbarWidth: 'none' }}>
+          {QUICK_ACTIONS.map((suggestion) => (
+            <Button
+              key={suggestion}
+              variant="outline"
+              flexShrink={0}
+              {...CHAT_ACTION_BUTTON_PROPS}
+              onClick={() => handleActionClick(suggestion)}
+              isDisabled={isLoading}
+            >
+              {QUICK_ACTION_LABELS[suggestion] || suggestion}
+            </Button>
+          ))}
+        </Flex>
 
         <ChatInput
           value={inputMessage}
@@ -595,10 +503,5 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
 });
 
 AIFitnessChat.displayName = 'AIFitnessChat';
-AIFitnessChat.propTypes = {
-  userWorkouts: PropTypes.array,
-  userDiets: PropTypes.array,
-  toast: PropTypes.func,
-};
 
 export default AIFitnessChat;

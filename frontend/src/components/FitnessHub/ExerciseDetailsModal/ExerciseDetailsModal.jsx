@@ -21,7 +21,6 @@ import {
   ListItem,
   ListIcon,
   Icon,
-  useColorModeValue,
 } from '@chakra-ui/react';
 import { FaYoutube, FaCheckCircle, FaFire, FaHeartbeat, FaDumbbell } from 'react-icons/fa';
 import { getExerciseMeta } from '../../../utils/workoutUtils';
@@ -41,11 +40,11 @@ const ExerciseDetailsModal = ({ isOpen, onClose, workout }) => {
         <ModalBody>
           <VStack align="start" spacing={4}>
             <HStack spacing={2}>
-              <Badge colorScheme="blue">{workout.duration} min</Badge>
-              <Badge colorScheme={workout.intensity === 'High' ? 'red' : workout.intensity === 'Medium' ? 'yellow' : 'green'}>
+              <Badge>{workout.duration} min</Badge>
+              <Badge>
                 {workout.intensity}
               </Badge>
-              <Badge colorScheme="purple" variant="outline">{workout.difficulty}</Badge>
+              <Badge variant="subtle">{workout.difficulty}</Badge>
             </HStack>
             
             <Text>{workout.description}</Text>
@@ -53,7 +52,7 @@ const ExerciseDetailsModal = ({ isOpen, onClose, workout }) => {
             {workout.focusAreas?.length > 0 && (
               <HStack wrap="wrap" spacing={1}>
                 {workout.focusAreas.map((area, i) => (
-                  <Badge key={i} colorScheme="teal" variant="outline">{area}</Badge>
+                  <Badge key={i} variant="subtle">{area}</Badge>
                 ))}
               </HStack>
             )}
@@ -69,14 +68,14 @@ const ExerciseDetailsModal = ({ isOpen, onClose, workout }) => {
                           <VStack align="start" spacing={1}>
                             <Text fontWeight="bold" fontSize="lg">{ex.name}</Text>
                             <HStack spacing={3} fontSize="sm" color={textColor}>
-                              <Badge colorScheme="blue" variant="outline">
+                              <Badge variant="subtle">
                                 {ex.sets || '3'} sets
                               </Badge>
-                              <Badge colorScheme="green" variant="outline">
+                              <Badge variant="subtle">
                                 {ex.reps || '10'} reps
                               </Badge>
                               {ex.interval && (
-                                <Badge colorScheme="orange" variant="outline">
+                                <Badge variant="subtle">
                                   {ex.interval}s
                                 </Badge>
                               )}
@@ -95,11 +94,13 @@ const ExerciseDetailsModal = ({ isOpen, onClose, workout }) => {
             )}
 
             {workout.videoId && (
-              <Button 
-                leftIcon={<FaYoutube />} 
-                colorScheme="red" 
-                variant="solid" 
-                onClick={() => window.open(`https://www.youtube.com/watch?v=${workout.videoId}`, '_blank')}
+              <Button
+                as="a"
+                href={`https://www.youtube.com/watch?v=${workout.videoId}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                leftIcon={<FaYoutube />}
+                variant="outline"
               >
                 Watch on YouTube
               </Button>
@@ -221,12 +222,12 @@ const ExerciseDetails = ({ exercise, workout }) => {
   );
 };
 
-const DetailSection = ({ title, colorScheme, content, isList, variations, benefits }) => {
-  const bgColor = useColorModeValue(`${colorScheme}.50`, `${colorScheme}.900`);
-  const borderColor = useColorModeValue(`${colorScheme}.200`, `${colorScheme}.700`);
-  const titleColor = useColorModeValue(`${colorScheme}.700`, `${colorScheme}.300`);
+const DetailSection = ({ title, content, isList, variations, benefits }) => {
+  const bgColor = 'bg.surface';
+  const borderColor = 'border';
+  const titleColor = 'fg';
   const textColor = 'fg.muted';
-  const chipBg = useColorModeValue(`${colorScheme}.100`, `${colorScheme}.800`);
+  const chipBg = 'bg.muted';
 
   return (
     <Box p={4} bg={bgColor} borderRadius="lg" border="1px" borderColor={borderColor}>
@@ -260,7 +261,7 @@ const DetailSection = ({ title, colorScheme, content, isList, variations, benefi
                   <List spacing={1}>
                     {section.items.map((item, j) => (
                       <ListItem key={j}>
-                        <ListIcon as={FaCheckCircle} color={`${colorScheme}.500`} />
+                        <ListIcon as={FaCheckCircle} color="fg.muted" />
                         <Text fontSize="sm">{item}</Text>
                       </ListItem>
                     ))}
@@ -270,7 +271,7 @@ const DetailSection = ({ title, colorScheme, content, isList, variations, benefi
                   <VStack spacing={2} align="stretch">
                     {section.phases.map((phase, j) => (
                       <HStack key={j} spacing={3} p={2} bg={chipBg} borderRadius="md">
-                        <Badge colorScheme={phase.color} variant="solid">{phase.label}</Badge>
+                        <Badge variant="subtle">{phase.label}</Badge>
                         <Text fontSize="sm">{phase.value}</Text>
                       </HStack>
                     ))}
@@ -288,7 +289,7 @@ const DetailSection = ({ title, colorScheme, content, isList, variations, benefi
                 <Text fontSize="sm" fontWeight="medium" mb={1}>{variation.label}</Text>
                 <HStack spacing={2} wrap="wrap">
                   {variation.items.map((item, j) => (
-                    <Badge key={j} colorScheme={variation.color} variant="outline" size="sm">
+                    <Badge key={j} variant="subtle" size="sm">
                       {item}
                     </Badge>
                   ))}

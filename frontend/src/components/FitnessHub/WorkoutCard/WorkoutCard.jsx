@@ -1,193 +1,73 @@
-import React from 'react';
-import {
-  Box,
-  Card,
-  CardBody,
-  VStack,
-  HStack,
-  Text,
-  Badge,
-  Button,
-  Wrap,
-  WrapItem,
-  Stack,
-  Icon,
-} from '@chakra-ui/react';
-import { FaPlay, FaDumbbell, FaClock } from 'react-icons/fa';
-import { motion } from 'framer-motion';
+import { memo } from 'react';
+import { Box, Button, Flex, HStack, Link, Text } from '@chakra-ui/react';
 
-const MotionBox = motion(Box);
+const demoUrl = (videoId) => {
+  const v = String(videoId);
+  return /^https?:\/\//i.test(v) ? v : `https://www.youtube.com/watch?v=${v}`;
+};
 
-const WorkoutCard = React.memo(function WorkoutCard({
-  workout,
-  onViewDetails,
-  onComplete,
-  isCompleted = false,
-  isCompleting = false,
-  index,
-}) {
-  const cardBg = 'bg.surface';
-  const borderColor = 'border';
-  const hoverBorderColor = 'border';
-  const textColor = 'fg';
-  const subTextColor = 'fg.muted';
+/**
+ * One session in an AI training plan: what it is, the key exercises, and a
+ * single action to log it once done.
+ */
+function WorkoutCard({ workout, onViewDetails, onComplete, isCompleted = false, isCompleting = false }) {
+  const meta = [
+    workout.duration && `${workout.duration} min`,
+    workout.intensity && `${String(workout.intensity).toLowerCase()} intensity`,
+    workout.difficulty && String(workout.difficulty).toLowerCase(),
+  ].filter(Boolean).join(', ');
+  const exercises = workout.exercises || [];
 
   return (
-    <MotionBox
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: (index || 0) * 0.1 }}
-    >
-      <Card
-        bg={cardBg}
-        border="1px"
-        borderColor={borderColor}
-        borderRadius="xl"
-        boxShadow="sm"
-        h="100%"
-        _hover={{ transform: 'translateY(-2px)', boxShadow: 'lg', borderColor: hoverBorderColor }}
-        transition="all 0.2s ease"
-        overflow="hidden"
-      >
-        <CardBody>
-          <VStack spacing={4} align="start" h="100%">
-            <Text 
-              fontSize="lg" 
-              fontWeight="bold" 
-              color={textColor} 
-              noOfLines={2}
-            >
-              {workout.title}
+    <Box borderWidth="1px" borderColor="border" borderRadius="control" p={4} h="100%" display="flex" flexDirection="column" gap={3}>
+      <Box>
+        <Text fontWeight="700" noOfLines={2}>{workout.title}</Text>
+        {meta && <Text fontSize="sm" color="fg.muted">{meta}</Text>}
+      </Box>
+
+      {workout.description && <Text fontSize="sm" noOfLines={2}>{workout.description}</Text>}
+
+      {workout.focusAreas?.length > 0 && (
+        <Text fontSize="sm" color="fg.muted">Focus: {workout.focusAreas.join(', ')}</Text>
+      )}
+
+      {exercises.length > 0 && (
+        <Box as="ul" pl={5} fontSize="sm">
+          {exercises.slice(0, 3).map((exercise, idx) => (
+            <Text as="li" key={idx} noOfLines={1}>
+              {exercise.name}
+              {exercise.sets && exercise.reps && <Text as="span" color="fg.muted">{` ${exercise.sets} × ${exercise.reps}`}</Text>}
+              {exercise.interval && <Text as="span" color="fg.muted">{` ${exercise.interval}`}</Text>}
             </Text>
-            
-            <Text 
-              fontSize="sm" 
-              color={subTextColor} 
-              noOfLines={2}
-            >
-              {workout.description}
-            </Text>
-            
-            <Wrap spacing={2} w="100%">
-              <WrapItem>
-                <Badge colorScheme="blue" variant="subtle" size="sm">
-                  <HStack spacing={1}>
-                    <Icon as={FaClock} size={3} />
-                    <Text>{workout.duration} min</Text>
-                  </HStack>
-                </Badge>
-              </WrapItem>
-              <WrapItem>
-                <Badge 
-                  colorScheme={
-                    workout.intensity === 'High' ? 'red' : 
-                    workout.intensity === 'Medium' ? 'yellow' : 'green'
-                  } 
-                  variant="subtle" 
-                  size="sm"
-                >
-                  {workout.intensity}
-                </Badge>
-              </WrapItem>
-              <WrapItem>
-                <Badge colorScheme="purple" variant="outline" size="sm">
-                  {workout.difficulty}
-                </Badge>
-              </WrapItem>
-            </Wrap>
+          ))}
+          {exercises.length > 3 && (
+            <Text as="li" color="fg.muted" listStyleType="none" ml={-5}>and {exercises.length - 3} more</Text>
+          )}
+        </Box>
+      )}
 
-            {workout.focusAreas && workout.focusAreas.length > 0 && (
-              <Box w="100%" minW={0}>
-                <Text fontSize="xs" color={subTextColor} mb={1} fontWeight="medium">
-                  Focus Areas:
-                </Text>
-                <Wrap spacing={1}>
-                  {workout.focusAreas.map((area, idx) => (
-                    <WrapItem key={idx}>
-                      <Badge 
-                        colorScheme="teal" 
-                        variant="outline" 
-                        size="xs"
-                        maxW="100%"
-                      >
-                        {area}
-                      </Badge>
-                    </WrapItem>
-                  ))}
-                </Wrap>
-              </Box>
-            )}
-
-            {workout.exercises && workout.exercises.length > 0 && (
-              <Box w="100%" minW={0}>
-                <Text fontSize="xs" color={subTextColor} mb={1} fontWeight="medium">
-                  Key Exercises:
-                </Text>
-                <VStack spacing={1} align="start">
-                  {workout.exercises.slice(0, 3).map((exercise, idx) => (
-                    <Text key={idx} fontSize="xs" color={textColor} noOfLines={2}>
-                      • {exercise.name}
-                      {exercise.sets && exercise.reps && ` (${exercise.sets}×${exercise.reps})`}
-                      {exercise.interval && ` (${exercise.interval})`}
-                    </Text>
-                  ))}
-                  {workout.exercises.length > 3 && (
-                    <Text fontSize="xs" color={subTextColor}>
-                      +{workout.exercises.length - 3} more exercises
-                    </Text>
-                  )}
-                </VStack>
-              </Box>
-            )}
-
-            <Stack spacing={2} w="100%" mt="auto">
-              <Button
-                size="sm"
-                colorScheme={isCompleted ? 'green' : 'teal'}
-                variant={isCompleted ? 'solid' : 'outline'}
-                leftIcon={<FaDumbbell />}
-                isDisabled={isCompleted}
-                isLoading={isCompleting}
-                loadingText="Logging"
-                onClick={() => onComplete?.(workout)}
-                w="100%"
-              >
-                {isCompleted ? 'Completed' : 'Mark Complete'}
-              </Button>
-              {workout.videoId && (
-                <Button
-                  size="sm"
-                  colorScheme="red"
-                  variant="outline"
-                  leftIcon={<FaPlay />}
-                  onClick={() => {
-                    const v = String(workout.videoId);
-                    const url = /^https?:\/\//i.test(v)
-                      ? v
-                      : `https://www.youtube.com/watch?v=${v}`;
-                    window.open(url, '_blank');
-                  }}
-                  w="100%"
-                >
-                  Watch Demo
-                </Button>
-              )}
-              <Button
-                size="sm"
-                colorScheme="teal"
-                variant="outline"
-                leftIcon={<FaDumbbell />}
-                onClick={() => onViewDetails(workout)}
-                w="100%"
-              >
-                View Details
-              </Button>
-            </Stack>
-          </VStack>
-        </CardBody>
-      </Card>
-    </MotionBox>
+      <Flex mt="auto" gap={2} align="center" wrap="wrap">
+        <Button
+          size="sm"
+          variant={isCompleted ? 'ghost' : 'solid'}
+          isDisabled={isCompleted}
+          isLoading={isCompleting}
+          loadingText="Logging"
+          onClick={() => onComplete?.(workout)}
+        >
+          {isCompleted ? 'Logged' : 'Log session'}
+        </Button>
+        <Button size="sm" variant="outline" onClick={() => onViewDetails(workout)}>Details</Button>
+        {workout.videoId && (
+          <HStack ml="auto">
+            <Link href={demoUrl(workout.videoId)} isExternal fontSize="sm" textDecoration="underline" textUnderlineOffset="3px">
+              Watch demo
+            </Link>
+          </HStack>
+        )}
+      </Flex>
+    </Box>
   );
-});
+}
 
-export default WorkoutCard;
+export default memo(WorkoutCard);

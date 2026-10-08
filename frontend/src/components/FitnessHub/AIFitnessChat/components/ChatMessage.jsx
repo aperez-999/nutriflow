@@ -2,22 +2,16 @@ import React, { useMemo } from 'react';
 import {
   Box,
   VStack,
-  HStack,
   Text,
-  Avatar,
   Flex,
   Button,
   Wrap,
   WrapItem,
-  useColorModeValue,
 } from '@chakra-ui/react';
-import { FiUser, FiCpu } from 'react-icons/fi';
-import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { QUICK_ACTIONS, PRIMARY_SUGGESTIONS, CHAT_ACTION_BUTTON_PROPS } from '../constants';
+import { QUICK_ACTIONS, PRIMARY_SUGGESTIONS, CHAT_ACTION_BUTTON_PROPS, QUICK_ACTION_LABELS } from '../constants';
 
-const MotionBox = motion(Box);
 
 function splitSuggestions(suggestions) {
   if (!Array.isArray(suggestions)) return { primary: [], secondary: [] };
@@ -66,7 +60,7 @@ function parseStructuredSections(content) {
   };
 }
 
-function MarkdownBlock({ content, inlineCodeBg }) {
+function MarkdownBlock({ content }) {
   return (
     <Box
       fontSize="sm"
@@ -81,7 +75,7 @@ function MarkdownBlock({ content, inlineCodeBg }) {
         '& strong': { fontWeight: 600 },
         '& code': {
           fontSize: '0.85em',
-          background: inlineCodeBg,
+          background: 'var(--chakra-colors-bg-muted)',
           px: '0.2rem',
           py: '0.08rem',
           borderRadius: '0.3rem',
@@ -94,148 +88,59 @@ function MarkdownBlock({ content, inlineCodeBg }) {
 }
 
 const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick }) {
-  const userBubbleColor = useColorModeValue('blue.500', 'blue.400');
-  const aiBubbleColor = 'border';
-  const textColor = 'fg';
-  const subTextColor = 'fg.muted';
-  const bubbleBorderColor = 'border';
-  const inlineCodeBg = 'border';
-  const structuredSectionBg = 'bg.surface';
-
-  const { primary, secondary } = useMemo(
-    () => splitSuggestions(message.suggestions),
-    [message.suggestions]
-  );
+  const isUser = message.type === 'user';
+  const suggestions = useMemo(() => {
+    const { primary, secondary } = splitSuggestions(message.suggestions);
+    return [...primary, ...secondary];
+  }, [message.suggestions]);
   const structuredContent = useMemo(
     () => (message.type === 'ai' ? parseStructuredSections(message.content) : null),
     [message.content, message.type]
   );
+  const time = new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+  if (isUser) {
+    return (
+      <Flex justify="flex-end">
+        <Box maxW={{ base: '88%', md: '75%' }}>
+          <Box bg="bg.muted" px={4} py={2.5} borderRadius="panel" borderBottomRightRadius="4px">
+            <Text fontSize="sm" lineHeight="1.6" whiteSpace="pre-line" overflowWrap="anywhere">{message.content}</Text>
+          </Box>
+          <Text fontSize="xs" color="fg.muted" mt={1} textAlign="right">{time}</Text>
+        </Box>
+      </Flex>
+    );
+  }
 
   return (
-    <MotionBox
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.22 }}
-    >
-      <Flex justify={message.type === 'user' ? 'flex-end' : 'flex-start'}>
-        <HStack
-          spacing={3}
-          align="flex-start"
-          maxW={{ base: '100%', md: '92%' }}
-          flexDirection={message.type === 'user' ? 'row-reverse' : 'row'}
-        >
-          <Avatar
-            size="sm"
-            bg={message.type === 'user' ? userBubbleColor : 'blue.500'}
-            color="white"
-            icon={message.type === 'user' ? <FiUser /> : <FiCpu />}
-            mt="2px"
-          />
-
-          <VStack spacing={2.5} align={message.type === 'user' ? 'end' : 'start'} maxW="full">
-            <Box
-              bg={message.type === 'user' ? userBubbleColor : aiBubbleColor}
-              color={message.type === 'user' ? 'white' : textColor}
-              px={{ base: 4, md: 5 }}
-              py={{ base: 3.5, md: 4 }}
-              borderWidth={message.type === 'user' ? '0' : '1px'}
-              borderColor={bubbleBorderColor}
-              borderRadius="xl"
-              borderBottomLeftRadius={message.type === 'user' ? 'xl' : 'sm'}
-              borderBottomRightRadius={message.type === 'user' ? 'sm' : 'xl'}
-              maxW="full"
-              overflowWrap="break-word"
-              wordBreak="normal"
-            >
-              {message.type === 'ai' ? (
-                structuredContent ? (
-                  <VStack align="stretch" spacing={3}>
-                    {structuredContent.intro ? (
-                      <MarkdownBlock content={structuredContent.intro} inlineCodeBg={inlineCodeBg} />
-                    ) : null}
-                    {structuredContent.sections.map((section, index) => (
-                      <Box
-                        key={`${section.title}-${index}`}
-                        p={4}
-                        bg={structuredSectionBg}
-                        borderWidth="1px"
-                        borderColor={bubbleBorderColor}
-                        borderRadius="lg"
-                      >
-                        <VStack align="stretch" spacing={2}>
-                          <Text fontSize="sm" fontWeight="700" color={textColor}>
-                            {section.title}
-                          </Text>
-                          <MarkdownBlock content={section.content} inlineCodeBg={inlineCodeBg} />
-                        </VStack>
-                      </Box>
-                    ))}
-                  </VStack>
-                ) : (
-                  <MarkdownBlock content={message.content} inlineCodeBg={inlineCodeBg} />
-                )
-              ) : (
-                <Text fontSize="sm" lineHeight="1.7" whiteSpace="pre-line">
-                  {message.content}
-                </Text>
-              )}
+    <Box maxW={{ base: '100%', md: '92%' }}>
+      <Text fontSize="xs" fontWeight="700" mb={1}>Coach <Text as="span" color="fg.muted" fontWeight="400">{time}</Text></Text>
+      {structuredContent ? (
+        <VStack align="stretch" spacing={3}>
+          {structuredContent.intro ? <MarkdownBlock content={structuredContent.intro} /> : null}
+          {structuredContent.sections.map((section, index) => (
+            <Box key={`${section.title}-${index}`} borderTopWidth="1px" borderColor="border" pt={3}>
+              <Text fontSize="sm" fontWeight="700" mb={1}>{section.title}</Text>
+              <MarkdownBlock content={section.content} />
             </Box>
+          ))}
+        </VStack>
+      ) : (
+        <MarkdownBlock content={message.content} />
+      )}
 
-            {message.type === 'ai' && (primary.length > 0 || secondary.length > 0) && (
-              <VStack spacing={2} align="start" w="100%">
-                {primary.length > 0 && (
-                  <Wrap spacing={2}>
-                    {primary.map((suggestion, index) => (
-                      <WrapItem key={`primary-${message.id}-${index}`}>
-                        <Button
-                          colorScheme="teal"
-                          variant="solid"
-                          {...CHAT_ACTION_BUTTON_PROPS}
-                          onClick={() => onSuggestionClick(suggestion)}
-                          _hover={{ opacity: 0.92 }}
-                        >
-                          {suggestion}
-                        </Button>
-                      </WrapItem>
-                    ))}
-                  </Wrap>
-                )}
-
-                {secondary.length > 0 && (
-                  <Wrap spacing={2} align="center">
-                    <WrapItem>
-                      <Text fontSize="xs" color={subTextColor}>
-                        More:
-                      </Text>
-                    </WrapItem>
-                    {secondary.map((suggestion, index) => (
-                      <WrapItem key={`secondary-${message.id}-${index}`}>
-                        <Button
-                          colorScheme="teal"
-                          variant="outline"
-                          {...CHAT_ACTION_BUTTON_PROPS}
-                          onClick={() => onSuggestionClick(suggestion)}
-                          _hover={{ opacity: 0.92 }}
-                        >
-                          {suggestion}
-                        </Button>
-                      </WrapItem>
-                    ))}
-                  </Wrap>
-                )}
-              </VStack>
-            )}
-
-            <Text fontSize="xs" color={subTextColor} px={1}>
-              {new Date(message.timestamp).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </Text>
-          </VStack>
-        </HStack>
-      </Flex>
-    </MotionBox>
+      {suggestions.length > 0 && (
+        <Wrap spacing={2} mt={3}>
+          {suggestions.map((suggestion, index) => (
+            <WrapItem key={`${message.id}-suggestion-${index}`}>
+              <Button variant="outline" {...CHAT_ACTION_BUTTON_PROPS} onClick={() => onSuggestionClick(suggestion)}>
+                {QUICK_ACTION_LABELS[suggestion] || suggestion}
+              </Button>
+            </WrapItem>
+          ))}
+        </Wrap>
+      )}
+    </Box>
   );
 });
 

@@ -16,7 +16,7 @@ import {
 import { FiEdit2, FiTrash2 } from 'react-icons/fi';
 
 /** Delete with a one-step confirmation so a stray tap cannot lose a log. */
-function ConfirmDeleteButton({ label, onConfirm }) {
+export function ConfirmDeleteButton({ label, onConfirm }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   return (
     <Popover isOpen={isOpen} onOpen={onOpen} onClose={onClose} placement="bottom-end" isLazy>

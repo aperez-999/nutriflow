@@ -9,7 +9,7 @@ export const TAB_BAR_HEIGHT = '64px';
 const TABS = [
   { label: 'Today', icon: FiSun, to: '/dashboard', isActive: (path, hash) => path === '/dashboard' && !hash.startsWith('#log') },
   { label: 'Fuel', flow: 'fuel', icon: FiCoffee, to: '/dashboard#log-fuel', isActive: (path, hash) => path === '/dashboard' && hash === '#log-fuel' },
-  { label: 'Train', icon: FiActivity, to: '/dashboard#log-train', isActive: (path, hash) => path === '/dashboard' && hash === '#log-train' },
+  { label: 'Train', flow: 'train', icon: FiActivity, to: '/dashboard#log-train', isActive: (path, hash) => path === '/dashboard' && hash === '#log-train' },
   { label: 'Coach', icon: FiMessageCircle, to: '/fitness-hub', isActive: (path) => path === '/fitness-hub' },
   { label: 'Me', icon: FiUser, to: '/settings', isActive: (path) => path === '/settings' },
 ];
@@ -37,7 +37,6 @@ export default function MobileTabBar() {
       borderTopWidth="1px"
       borderColor="border"
       pb="env(safe-area-inset-bottom)"
-      sx={{ backdropFilter: 'saturate(180%) blur(12px)' }}
     >
       <Flex h={TAB_BAR_HEIGHT} align="stretch" justify="space-around" maxW="560px" mx="auto">
         {TABS.map((tab) => {
@@ -53,7 +52,7 @@ export default function MobileTabBar() {
               align="center"
               justify="center"
               gap={1}
-              color={active ? `${tab.flow || 'train'}.fg` : 'fg.muted'}
+              color={active ? (tab.flow ? `${tab.flow}.fg` : 'fg') : 'fg.muted'}
               transition="color 0.15s ease"
               _focusVisible={{ outline: '2px solid', outlineColor: 'brand.500', outlineOffset: '-4px', borderRadius: 'md' }}
             >

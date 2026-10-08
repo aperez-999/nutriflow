@@ -5,16 +5,9 @@ import {
   Heading,
   Text,
   VStack,
-  HStack,
-  SimpleGrid,
-  Card,
-  CardBody,
-  Badge,
-  useColorModeValue,
   useDisclosure,
   useToast,
 } from '@chakra-ui/react';
-import { motion } from 'framer-motion';
 import FitnessHubChatSection from '../components/FitnessHub/FitnessHubChatSection';
 import FitnessHubInsightsSection from '../components/FitnessHub/FitnessHubInsightsSection';
 import FitnessHubPlansSection from '../components/FitnessHub/FitnessHubPlansSection';
@@ -25,7 +18,6 @@ import { handleApiError } from '../utils/apiErrorHandler';
 import { AuthContext } from '../context/AuthContext';
 import { getTodayDayKey, toStoredIsoFromDayKey } from '../utils/dateUtils';
 
-const MotionBox = motion(Box);
 const AI_PLANS_STORAGE_KEY = 'nutriflow.fitnessHub.aiPlans';
 
 const createStoredPlan = (workouts = []) => ({
@@ -442,13 +434,6 @@ function FitnessHub() {
     () => savedMealPlans.find((plan) => plan.id === activeMealPlanId) || savedMealPlans[0] || null,
     [activeMealPlanId, savedMealPlans]
   );
-  const bgColor = 'bg.muted';
-  const surfaceBg = 'bg.surface';
-  const heroBg = useColorModeValue('linear(to-br, white, teal.50, blue.50)', 'linear(to-br, gray.800, gray.800, blue.900)');
-  const borderColor = 'border';
-  const heroTextColor = 'fg';
-  const textColor = 'fg.muted';
-  const mutedColor = 'fg.muted';
 
   useEffect(() => {
     let isMounted = true;
@@ -743,90 +728,16 @@ function FitnessHub() {
 
   const insights = useMemo(() => getInsightContent(userWorkouts, userDiets), [userDiets, userWorkouts]);
 
-  const hubStats = useMemo(
-    () => [
-      { label: 'Logged Workouts', value: userWorkouts.length, hint: 'Used to personalize AI plans' },
-      { label: 'Meals Logged', value: userDiets.length, hint: 'Nutrition context for coaching' },
-      {
-        label: 'AI Plans Saved',
-        value: savedPlans.length + savedMealPlans.length,
-        hint: savedPlans.length + savedMealPlans.length ? 'Workout and meal plans stay available after refresh' : 'Generate your first plan in chat',
-      },
-    ],
-    [savedMealPlans.length, savedPlans.length, userDiets.length, userWorkouts.length]
-  );
-
   return (
-    <Box bg={bgColor} minH="100vh">
-      <Container maxW="1400px" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
+    <Box>
+      <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
         <VStack spacing={8} align="stretch">
-          <MotionBox
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Card
-              bgGradient={heroBg}
-              border="1px solid"
-              borderColor={borderColor}
-              borderRadius="2xl"
-              boxShadow="xl"
-              overflow="hidden"
-            >
-              <CardBody p={{ base: 6, md: 8 }}>
-                <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={{ base: 6, lg: 10 }} alignItems="center">
-                  <VStack align="start" spacing={4}>
-                    <Badge colorScheme="teal" variant="subtle" px={3} py={1} borderRadius="full">
-                      AI-Powered Fitness Workspace
-                    </Badge>
-                    <Heading size="2xl" color={heroTextColor} lineHeight="1.05">
-                      Fitness Hub
-                    </Heading>
-                    <Text fontSize={{ base: 'md', md: 'lg' }} color={textColor} maxW="2xl">
-                      Coach, plan, review, and discover from a single workspace with cleaner conversations, saved AI
-                      plans, and insight cards driven by your real activity.
-                    </Text>
-                    <HStack spacing={3} flexWrap="wrap">
-                      <Badge colorScheme="blue" variant="outline" px={3} py={1} borderRadius="full">
-                        Saved plan history
-                      </Badge>
-                      <Badge colorScheme="teal" variant="outline" px={3} py={1} borderRadius="full">
-                        Real activity insights
-                      </Badge>
-                      <Badge colorScheme="orange" variant="outline" px={3} py={1} borderRadius="full">
-                        Guided exercise discovery
-                      </Badge>
-                    </HStack>
-                  </VStack>
-
-                  <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={4}>
-                    {hubStats.map((stat) => (
-                      <Card
-                        key={stat.label}
-                        bg={surfaceBg}
-                        border="1px solid"
-                        borderColor={borderColor}
-                        borderRadius="xl"
-                        boxShadow="sm"
-                      >
-                        <CardBody>
-                          <Text fontSize="sm" color={mutedColor} mb={2}>
-                            {stat.label}
-                          </Text>
-                          <Heading size="lg" color={heroTextColor} mb={2}>
-                            {stat.value}
-                          </Heading>
-                          <Text fontSize="sm" color={textColor}>
-                            {stat.hint}
-                          </Text>
-                        </CardBody>
-                      </Card>
-                    ))}
-                  </SimpleGrid>
-                </SimpleGrid>
-              </CardBody>
-            </Card>
-          </MotionBox>
+          <Box>
+            <Heading as="h1" size="xl">Coach</Heading>
+            <Text color="fg.muted" mt={1} maxW="65ch">
+              Ask anything, get training and meal plans built from your log, and browse exercises.
+            </Text>
+          </Box>
 
           {/* ─── Top Row: AI Chat (left) + Insights + Meal Plans (right) ─── */}
           <Box
@@ -882,16 +793,48 @@ function FitnessHub() {
                   mealPlansOnly
                 />
               </Box>
+              <Box minW={0}>
+                <FitnessHubPlansSection
+                  sectionRef={null}
+                  recommendationsLoading={recommendationsLoading}
+                  aiWorkouts={aiWorkouts}
+                  aiGeneratedAt={aiGeneratedAt}
+                  onViewDetails={handleViewDetails}
+                  savedPlans={savedPlans}
+                  activePlanId={activePlanId}
+                  onSelectPlan={setActivePlanId}
+                  onCompleteWorkout={handleCompleteWorkout}
+                  onDeletePlan={(planId) => {
+                    setSavedPlans((prev) => {
+                      const nextPlans = prev.filter((plan) => plan.id !== planId);
+                      if (nextPlans.length === 0) { setActivePlanId(null); return []; }
+                      if (activePlanId === planId) { setActivePlanId(nextPlans[0].id); }
+                      return nextPlans;
+                    });
+                  }}
+                  savedMealPlans={[]}
+                  activeMealPlanId={null}
+                  onSelectMealPlan={() => {}}
+                  onDeleteMealPlan={() => {}}
+                  onCompleteMeal={() => {}}
+                  mealPlansLoading={false}
+                  getWorkoutState={(index) => {
+                    const key = getCompletionKey('workout', activePlanId, index);
+                    return {
+                      loading: Boolean(completingItems[key]),
+                      completed: Boolean(activePlan?.workouts?.[index]?.completedRecordId),
+                    };
+                  }}
+                  getMealState={() => ({ loading: false, completed: false })}
+                  compact
+                  workoutPlansOnly
+                />
+              </Box>
             </Box>
           </Box>
 
-          {/* ─── Bottom Row: Exercise Library + AI Workout Plans ─── */}
-          <SimpleGrid
-            columns={{ base: 1, xl: 2 }}
-            spacing={8}
-            alignItems="start"
-          >
-            {/* Exercise Library */}
+          {/* Exercise library */}
+          <Box>
             <Box minW={0}>
               <FitnessHubDiscoverySection
                 muscle={discoveryMuscle}
@@ -909,46 +852,7 @@ function FitnessHub() {
                 }}
               />
             </Box>
-
-            {/* AI Workout Plans only */}
-            <Box minW={0}>
-              <FitnessHubPlansSection
-                sectionRef={null}
-                recommendationsLoading={recommendationsLoading}
-                aiWorkouts={aiWorkouts}
-                aiGeneratedAt={aiGeneratedAt}
-                onViewDetails={handleViewDetails}
-                savedPlans={savedPlans}
-                activePlanId={activePlanId}
-                onSelectPlan={setActivePlanId}
-                onCompleteWorkout={handleCompleteWorkout}
-                onDeletePlan={(planId) => {
-                  setSavedPlans((prev) => {
-                    const nextPlans = prev.filter((plan) => plan.id !== planId);
-                    if (nextPlans.length === 0) { setActivePlanId(null); return []; }
-                    if (activePlanId === planId) { setActivePlanId(nextPlans[0].id); }
-                    return nextPlans;
-                  });
-                }}
-                savedMealPlans={[]}
-                activeMealPlanId={null}
-                onSelectMealPlan={() => {}}
-                onDeleteMealPlan={() => {}}
-                onCompleteMeal={() => {}}
-                mealPlansLoading={false}
-                getWorkoutState={(index) => {
-                  const key = getCompletionKey('workout', activePlanId, index);
-                  return {
-                    loading: Boolean(completingItems[key]),
-                    completed: Boolean(activePlan?.workouts?.[index]?.completedRecordId),
-                  };
-                }}
-                getMealState={() => ({ loading: false, completed: false })}
-                compact
-                workoutPlansOnly
-              />
-            </Box>
-          </SimpleGrid>
+          </Box>
 
           <ExerciseDetailsModal
             isOpen={isOpen}

@@ -1,63 +1,17 @@
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Heading,
-  Text,
-  VStack,
-  HStack,
-  Icon,
-} from '@chakra-ui/react';
-import { FiActivity, FiCoffee } from 'react-icons/fi';
-
-const cardStyles = {
-  borderRadius: 'xl',
-  boxShadow: 'sm',
-  borderWidth: '1px',
-  _hover: {
-    transform: 'translateY(-2px)',
-    boxShadow: 'lg',
-  },
-  transition: 'all 0.2s ease',
-};
+import { Box, Text } from '@chakra-ui/react';
 
 /**
- * Displays an AI-generated plan (workout or meal) with title and list of items.
- * type: 'workout' | 'meal' for header icon (FiActivity / FiCoffee).
+ * Ordered overview of an AI-generated plan (one line per session or meal).
  */
-export default function PlanCard({ title = 'Plan', items = [], type = 'workout' }) {
-  const cardBg = 'bg.surface';
-  const borderColor = 'border';
-  const textColor = 'fg';
-  const subColor = 'fg.muted';
-  const iconColor = 'fg';
-  const PlanIcon = type === 'meal' ? FiCoffee : FiActivity;
-
+export default function PlanCard({ title = 'Plan', items = [] }) {
   return (
-    <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} {...cardStyles} height="100%">
-      <CardHeader pb={2}>
-        <HStack spacing={2} align="center">
-          <Icon as={PlanIcon} boxSize={4} color={iconColor} />
-          <Heading size="sm" fontWeight="600" color={textColor}>
-            {title}
-          </Heading>
-        </HStack>
-      </CardHeader>
-      <CardBody pt={0}>
-        <VStack align="stretch" spacing={2.5}>
-          {Array.isArray(items) && items.length > 0 ? (
-            items.map((item, index) => (
-              <Text key={index} fontSize="sm" color={subColor} lineHeight="1.6" noOfLines={2}>
-                • {typeof item === 'string' ? item : item.label || item.name}
-              </Text>
-            ))
-          ) : (
-            <Text fontSize="sm" color={subColor}>
-              No items in this plan.
-            </Text>
-          )}
-        </VStack>
-      </CardBody>
-    </Card>
+    <Box borderWidth="1px" borderColor="border" borderRadius="control" px={4} py={3}>
+      <Text fontSize="sm" fontWeight="700">{title}</Text>
+      <Box as="ol" pl={5} mt={1}>
+        {items.map((item, index) => (
+          <Text as="li" key={`${item}-${index}`} fontSize="sm" color="fg.muted" py={0.5}>{item}</Text>
+        ))}
+      </Box>
+    </Box>
   );
 }

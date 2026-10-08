@@ -1,17 +1,7 @@
-import {
-  Box,
-  HStack,
-  Textarea,
-  IconButton,
-} from '@chakra-ui/react';
-import { FiSend } from 'react-icons/fi';
+import { Box, HStack, IconButton, Textarea } from '@chakra-ui/react';
+import { FiArrowUp } from 'react-icons/fi';
 
 const ChatInput = ({ value, onChange, onSend, isLoading }) => {
-  const borderColor = 'border';
-  const inputBg = 'bg.muted';
-  const containerBg = 'bg.surface';
-  const placeholderColor = 'fg.muted';
-
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -20,59 +10,44 @@ const ChatInput = ({ value, onChange, onSend, isLoading }) => {
   };
 
   return (
-    <Box
-      px={{ base: 3, md: 4 }}
-      py={3}
-      borderTop="1px"
-      borderColor={borderColor}
-      bg={containerBg}
-      borderBottomRadius="xl"
-    >
+    <Box px={{ base: 3, md: 4 }} pb={{ base: 3, md: 4 }}>
       <HStack
         spacing={2}
         align="flex-end"
-        borderWidth="1.5px"
-        borderColor={borderColor}
-        borderRadius="xl"
-        bg={inputBg}
+        borderWidth="1px"
+        borderColor="border"
+        borderRadius="panel"
+        bg="bg.surface"
         px={3}
         py={2}
-        _focusWithin={{
-          borderColor: 'teal.400',
-          boxShadow: '0 0 0 1px var(--chakra-colors-teal-400)',
-        }}
-        transition="all 0.15s ease"
+        _focusWithin={{ borderColor: 'border.strong' }}
+        transition="border-color 0.15s ease"
       >
         <Textarea
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask your AI coach anything... (Enter to send, Shift+Enter for new line)"
-          bg="transparent"
-          border="none"
-          outline="none"
-          minH="44px"
+          placeholder="Ask your coach"
+          aria-label="Message your coach"
+          variant="unstyled"
+          minH="40px"
           maxH="140px"
           resize="none"
-          fontSize="sm"
+          rows={1}
           lineHeight="1.6"
-          p={0}
-          disabled={isLoading}
-          _focus={{ boxShadow: 'none', border: 'none' }}
-          _placeholder={{ color: placeholderColor }}
+          py={2}
+          isDisabled={isLoading}
           flex="1"
         />
         <IconButton
-          icon={<FiSend />}
-          colorScheme="teal"
+          icon={<FiArrowUp />}
           size="sm"
-          borderRadius="lg"
           onClick={onSend}
           isLoading={isLoading}
           isDisabled={!value.trim() || isLoading}
           aria-label="Send message"
           flexShrink={0}
-          mb={0.5}
+          mb={1}
         />
       </HStack>
     </Box>
