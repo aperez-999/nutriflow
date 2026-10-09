@@ -1,5 +1,10 @@
 import { memo } from 'react';
 import { Box, Card, CardBody, Flex, HStack, Heading, Text, Tooltip, VisuallyHidden } from '@chakra-ui/react';
+import { motion } from 'framer-motion';
+import { CountUp } from '../../Motion';
+import { DURATION, EASE_OUT } from '../../Motion/tokens';
+
+const MotionBox = motion(Box);
 import { formatDayKey } from '../../../utils/dateUtils';
 
 const FLOWS = [
@@ -17,7 +22,7 @@ function describeDay(day) {
 }
 
 /** One day = three stacked bars in fixed order, so identity never depends on color alone. */
-function DayCell({ day }) {
+function DayCell({ day, column }) {
   if (day.isFuture) return <Box w="100%" aspectRatio={1} />;
   return (
     <Tooltip label={describeDay(day)} placement="top" hasArrow openDelay={80}>
@@ -35,11 +40,15 @@ function DayCell({ day }) {
         _focusVisible={{ outline: '2px solid', outlineColor: 'brand.500' }}
       >
         {FLOWS.map((flow) => (
-          <Box
+          <MotionBox
             key={flow.key}
             flex="1"
             borderRadius="1px"
             bg={day.flows[flow.key] ? `${flow.key}.solid` : 'transparent'}
+            style={{ originX: 0 }}
+            initial={{ scaleX: 0 }}
+            animate={{ scaleX: 1 }}
+            transition={{ duration: DURATION.base, ease: EASE_OUT, delay: 0.2 + column * 0.04 }}
           />
         ))}
       </Flex>
@@ -63,12 +72,12 @@ function RhythmCard({ rhythm }) {
           </Box>
           <HStack spacing={6} align="flex-end">
             <Box textAlign="right">
-              <Text textStyle="figure" fontSize="4xl">{streak}</Text>
+              <Text textStyle="figure" fontSize="4xl"><CountUp value={streak} /></Text>
               <Text fontSize="xs" color="fg.muted">day streak</Text>
             </Box>
             <Box textAlign="right">
               <Text textStyle="figure" fontSize="4xl">
-                {activeDays28}<Text as="span" fontSize="lg" color="fg.muted">/28</Text>
+                <CountUp value={activeDays28} /><Text as="span" fontSize="lg" color="fg.muted">/28</Text>
               </Text>
               <Text fontSize="xs" color="fg.muted">active days</Text>
             </Box>
@@ -90,9 +99,9 @@ function RhythmCard({ rhythm }) {
             gap={{ base: '3px', md: '5px' }}
             maxW="640px"
           >
-            {recentColumns.map((column) => (
+            {recentColumns.map((column, columnIndex) => (
               <Flex key={column[0].dayKey} direction="column" gap={{ base: '3px', md: '5px' }}>
-                {column.map((day) => <DayCell key={day.dayKey} day={day} />)}
+                {column.map((day) => <DayCell key={day.dayKey} day={day} column={columnIndex} />)}
               </Flex>
             ))}
           </Box>

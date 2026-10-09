@@ -1,6 +1,7 @@
 import { Box, Button, Flex, HStack, IconButton, Text } from '@chakra-ui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@chakra-ui/icons';
 import { formatDayKey, getTodayDayKey, shiftDayKey } from '../../../utils/dateUtils';
+import { CountUp } from '../../Motion';
 
 /**
  * A day's totals laid out like a Nutrition Facts label: a heavy rule under the
@@ -44,7 +45,7 @@ function DaySummaryLabel({ title, flow, selectedDate, setSelectedDate, headline,
       <Flex justify="space-between" align="baseline" py={3} borderBottomWidth="3px" borderColor="border.strong">
         <Text fontWeight="800" fontSize="lg">{headline.label}</Text>
         <Text textStyle="figure" fontSize="5xl" color={`${flow}.fg`}>
-          {headline.value.toLocaleString()}
+          <CountUp value={headline.value} />
           {headline.unit && <Text as="span" fontSize="lg" color="fg.muted" ml={1} fontWeight={600}>{headline.unit}</Text>}
         </Text>
       </Flex>
@@ -59,7 +60,7 @@ function DaySummaryLabel({ title, flow, selectedDate, setSelectedDate, headline,
           borderColor="border"
         >
           <Text fontSize="sm" fontWeight={i === 0 ? 700 : 500}>{row.label}</Text>
-          <Text fontSize="sm" fontWeight="700" sx={{ fontVariantNumeric: 'tabular-nums' }}>
+          <Text fontSize="sm" fontWeight="700">
             {row.value.toLocaleString()}
             {row.unit && <Text as="span" color="fg.muted" fontWeight="500"> {row.unit}</Text>}
           </Text>

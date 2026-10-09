@@ -17,6 +17,9 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { FiMinus, FiPlus } from 'react-icons/fi';
+import { motion } from 'framer-motion';
+import { CountUp } from '../../Motion';
+import { EASE_OUT } from '../../Motion/tokens';
 
 const LEVEL_LABEL = { high: 'Ready to push', moderate: 'Steady day', low: 'Recovery day' };
 const DEFAULT_CHECK_IN = { sleepHours: 7, energy: 3, soreness: 2, waterCups: 4 };
@@ -29,7 +32,8 @@ function ScoreRing({ score, level }) {
     <Box position="relative" w="128px" h="128px" flexShrink={0}>
       <svg width="128" height="128" viewBox="0 0 128 128" aria-hidden="true">
         <circle cx="64" cy="64" r={RING_RADIUS} fill="none" stroke="var(--chakra-colors-bg-muted)" strokeWidth="10" />
-        <circle
+        {/* The ring draws from empty to the score on mount and when the score changes. */}
+        <motion.circle
           cx="64"
           cy="64"
           r={RING_RADIUS}
@@ -38,13 +42,14 @@ function ScoreRing({ score, level }) {
           strokeWidth="10"
           strokeLinecap="round"
           strokeDasharray={RING_CIRCUMFERENCE}
-          strokeDashoffset={offset}
+          initial={{ strokeDashoffset: RING_CIRCUMFERENCE }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1, ease: EASE_OUT }}
           transform="rotate(-90 64 64)"
-          style={{ transition: 'stroke-dashoffset 0.6s cubic-bezier(0.22, 1, 0.36, 1)' }}
         />
       </svg>
       <Flex position="absolute" inset={0} direction="column" align="center" justify="center">
-        <Text textStyle="figure" fontSize="5xl">{score}</Text>
+        <Text textStyle="figure" fontSize="5xl"><CountUp value={score} duration={1} /></Text>
         <Text fontSize="xs" color="fg.muted">{LEVEL_LABEL[level] || 'Readiness'}</Text>
       </Flex>
     </Box>

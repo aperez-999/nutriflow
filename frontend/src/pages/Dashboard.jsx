@@ -13,12 +13,15 @@ import {
   TabPanel,
   TabPanels,
   Tabs,
+  TabIndicator,
   Text,
   VStack,
   useDisclosure,
   useToast,
 } from '@chakra-ui/react';
 import { useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
+import { DURATION, EASE_OUT } from '../components/Motion/tokens';
 import {
   getDiets,
   addDiet,
@@ -42,6 +45,7 @@ import {
   ReadinessCheckInCard,
   RhythmCard,
   TodayFlowsCard,
+  TodayScoreboard,
   WeeklyCaloriesChart,
 } from '../components/Dashboard/components';
 import {
@@ -61,6 +65,14 @@ import { formatDayKey, getTodayDayKey, toDayKey } from '../utils/dateUtils';
 
 const DEFAULT_GOALS = { dailyCalories: 2000, dailyProtein: 150, weeklyWorkouts: 5 };
 const RECENT_LOG_LIMIT = 6;
+const MotionBox = motion(Box);
+
+// Dashboard bands rise in once, in reading order.
+const enter = (index) => ({
+  initial: { opacity: 0, y: 14 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: DURATION.slow, ease: EASE_OUT, delay: index * 0.07 },
+});
 // The mobile tab bar deep-links into the log tabs with these hashes.
 const LOG_TABS = ['#log-fuel', '#log-train'];
 
@@ -112,7 +124,24 @@ function RecentLog({ title, records, total, emptyText, renderItem }) {
           <Text fontSize="sm" color="fg.muted" py={6}>{emptyText}</Text>
         ) : (
           <>
-            <Box>{records.map(renderItem)}</Box>
+            <Box>
+              {/* New entries slide in and deleted ones collapse, so the change is visible. */}
+              <AnimatePresence initial={false}>
+                {records.map((record) => (
+                  <MotionBox
+                    key={record._id}
+                    layout
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: DURATION.base, ease: EASE_OUT }}
+                    overflow="hidden"
+                  >
+                    {renderItem(record)}
+                  </MotionBox>
+                ))}
+              </AnimatePresence>
+            </Box>
             {total > RECENT_LOG_LIMIT && (
               <Text fontSize="sm" color="fg.muted" pt={2}>
                 Showing the {RECENT_LOG_LIMIT} most recent.
@@ -321,154 +350,160 @@ function Dashboard() {
   const firstName = (user?.user?.username || '').split(/[\s._]/)[0];
 
   return (
-    <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
-      <VStack spacing={{ base: 6, md: 8 }} align="stretch">
-        <Box>
-          <Text fontSize="sm" color="fg.muted" fontWeight="500">
-            {formatDayKey(todayKey, { weekday: 'long', month: 'long', day: 'numeric' })}
-          </Text>
-          <Heading as="h1" size="xl" mt={1}>
-            {greetingFor(new Date())}{firstName ? `, ${firstName}` : ''}.
-          </Heading>
-        </Box>
+    <Box>
+      <TodayScoreboard
+        dateLabel={formatDayKey(todayKey, { weekday: 'long', month: 'long', day: 'numeric' })}
+        greeting={`${greetingFor(new Date())}${firstName ? `, ${firstName}` : ''}.`}
+        today={today}
+        goals={goals}
+        checkIn={todayCheckIn}
+        onCheckIn={() => document.getElementById('check-in')?.scrollIntoView({ block: 'center' })}
+      />
+      <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
+        <VStack spacing={{ base: 6, md: 8 }} align="stretch">
+          <MotionBox {...enter(1)} display="grid" gridTemplateColumns={{ base: '1fr', lg: '5fr 7fr' }} gap={6} id="check-in" scrollMarginTop="88px">
+            <ReadinessCheckInCard
+              key={todayCheckIn?.updatedAt || 'no-check-in'}
+              readiness={readiness}
+              checkIn={todayCheckIn}
+              onSaveCheckIn={handleSaveCheckIn}
+              isSaving={isSavingCheckIn}
+            />
+            <TodayFlowsCard
+              goals={goals}
+              today={today}
+              actions={dailyActions}
+              hasCheckIn={Boolean(todayCheckIn)}
+              onEditGoals={openGoalsEditor}
+            />
+          </MotionBox>
 
-        <Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '5fr 7fr' }} gap={6}>
-          <ReadinessCheckInCard
-            key={todayCheckIn?.updatedAt || 'no-check-in'}
-            readiness={readiness}
-            checkIn={todayCheckIn}
-            onSaveCheckIn={handleSaveCheckIn}
-            isSaving={isSavingCheckIn}
-          />
-          <TodayFlowsCard
-            goals={goals}
-            today={today}
-            actions={dailyActions}
-            hasCheckIn={Boolean(todayCheckIn)}
-            onEditGoals={openGoalsEditor}
-          />
-        </Box>
+          <MotionBox {...enter(2)} display="grid" gridTemplateColumns={{ base: '1fr', lg: '7fr 5fr' }} gap={6}>
+            <RhythmCard rhythm={rhythm} />
+            <WeeklyCaloriesChart data={weeklyCaloriesByDay} goal={goals.dailyCalories} />
+          </MotionBox>
 
-        <Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '7fr 5fr' }} gap={6}>
-          <RhythmCard rhythm={rhythm} />
-          <WeeklyCaloriesChart data={weeklyCaloriesByDay} goal={goals.dailyCalories} />
-        </Box>
-
-        <Box id="log" scrollMarginTop="88px">
-          <Heading as="h2" size="lg" mb={4}>Log</Heading>
-          <Tabs index={logTab} onChange={setLogTab} variant="line">
-            <TabList mb={5}>
-              <Tab>Meals</Tab>
-              <Tab>Workouts</Tab>
-            </TabList>
-            <TabPanels>
-              <TabPanel p={0}>
-                <Box display="grid" gridTemplateColumns={{ base: '1fr', xl: '5fr 7fr' }} gap={6} alignItems="start">
-                  <VStack spacing={6} align="stretch">
-                    <DietDailySummaryCard
-                      diets={diets}
-                      selectedDate={dietSelectedDate}
-                      setSelectedDate={setDietSelectedDate}
+          <MotionBox {...enter(3)} id="log" scrollMarginTop="88px">
+            <Heading as="h2" size="lg" mb={4}>Log</Heading>
+            <Tabs index={logTab} onChange={setLogTab} variant="unstyled" position="relative">
+              <TabList mb={5} borderBottomWidth="1px" borderColor="border">
+                {['Meals', 'Workouts'].map((label) => (
+                  <Tab key={label} px={4} py={2.5} fontWeight={600} color="fg.muted" _selected={{ color: 'fg' }} _hover={{ color: 'fg' }}>
+                    {label}
+                  </Tab>
+                ))}
+              </TabList>
+              {/* Sliding underline between the two tabs. */}
+              <TabIndicator mt="-22px" height="2px" bg="border.strong" borderRadius="1px" />
+              <TabPanels>
+                <TabPanel p={0}>
+                  <Box display="grid" gridTemplateColumns={{ base: '1fr', xl: '5fr 7fr' }} gap={6} alignItems="start">
+                    <VStack spacing={6} align="stretch">
+                      <DietDailySummaryCard
+                        diets={diets}
+                        selectedDate={dietSelectedDate}
+                        setSelectedDate={setDietSelectedDate}
+                      />
+                      <Box id="diet-form" scrollMarginTop="88px">
+                        <DietForm
+                          isEditing={isDietEditing}
+                          onSubmit={async (data) => {
+                            if (isDietEditing) {
+                              await handleUpdateDiet(dietEditingId, data);
+                              setIsDietEditing(false);
+                              setDietEditingId(null);
+                            } else {
+                              await handleAddDiet(data);
+                            }
+                            setDietFormData(initialDietForm);
+                          }}
+                          onCancel={() => { setIsDietEditing(false); setDietEditingId(null); setDietFormData(initialDietForm); }}
+                          initialData={dietFormData}
+                        />
+                      </Box>
+                    </VStack>
+                    <RecentLog
+                      title="Recent meals"
+                      records={recentDiets}
+                      total={diets.length}
+                      emptyText="No meals yet. Add one with the form and it will show up here."
+                      renderItem={(diet) => (
+                        <DietCard
+                          key={diet._id}
+                          diet={diet}
+                          onEdit={(d) => {
+                            setIsDietEditing(true);
+                            setDietEditingId(d._id);
+                            setDietFormData({ date: toDayKey(d.date), mealType: d.mealType || '', foodName: d.foodName || '', calories: d.calories?.toString() || '', protein: d.protein?.toString() || '', carbs: d.carbs?.toString() || '', fats: d.fats?.toString() || '', notes: d.notes || '' });
+                            scrollToForm('diet-form');
+                          }}
+                          onDelete={handleDeleteDiet}
+                        />
+                      )}
                     />
-                    <Box id="diet-form" scrollMarginTop="88px">
-                      <DietForm
-                        isEditing={isDietEditing}
-                        onSubmit={async (data) => {
-                          if (isDietEditing) {
-                            await handleUpdateDiet(dietEditingId, data);
-                            setIsDietEditing(false);
-                            setDietEditingId(null);
-                          } else {
-                            await handleAddDiet(data);
-                          }
-                          setDietFormData(initialDietForm);
-                        }}
-                        onCancel={() => { setIsDietEditing(false); setDietEditingId(null); setDietFormData(initialDietForm); }}
-                        initialData={dietFormData}
+                  </Box>
+                </TabPanel>
+                <TabPanel p={0}>
+                  <Box display="grid" gridTemplateColumns={{ base: '1fr', xl: '5fr 7fr' }} gap={6} alignItems="start">
+                    <VStack spacing={6} align="stretch">
+                      <WorkoutDailySummaryCard
+                        workouts={workouts}
+                        selectedDate={workoutSelectedDate}
+                        setSelectedDate={setWorkoutSelectedDate}
                       />
-                    </Box>
-                  </VStack>
-                  <RecentLog
-                    title="Recent meals"
-                    records={recentDiets}
-                    total={diets.length}
-                    emptyText="No meals yet. Add one with the form and it will show up here."
-                    renderItem={(diet) => (
-                      <DietCard
-                        key={diet._id}
-                        diet={diet}
-                        onEdit={(d) => {
-                          setIsDietEditing(true);
-                          setDietEditingId(d._id);
-                          setDietFormData({ date: toDayKey(d.date), mealType: d.mealType || '', foodName: d.foodName || '', calories: d.calories?.toString() || '', protein: d.protein?.toString() || '', carbs: d.carbs?.toString() || '', fats: d.fats?.toString() || '', notes: d.notes || '' });
-                          scrollToForm('diet-form');
-                        }}
-                        onDelete={handleDeleteDiet}
-                      />
-                    )}
-                  />
-                </Box>
-              </TabPanel>
-              <TabPanel p={0}>
-                <Box display="grid" gridTemplateColumns={{ base: '1fr', xl: '5fr 7fr' }} gap={6} alignItems="start">
-                  <VStack spacing={6} align="stretch">
-                    <WorkoutDailySummaryCard
-                      workouts={workouts}
-                      selectedDate={workoutSelectedDate}
-                      setSelectedDate={setWorkoutSelectedDate}
+                      <Box id="workout-form" scrollMarginTop="88px">
+                        <WorkoutForm
+                          isEditing={isWorkoutEditing}
+                          onSubmit={async (data) => {
+                            if (isWorkoutEditing) {
+                              await handleUpdateWorkout(workoutEditingId, data);
+                              setIsWorkoutEditing(false);
+                              setWorkoutEditingId(null);
+                            } else {
+                              await handleAddWorkout(data);
+                            }
+                            setWorkoutFormData(initialWorkoutForm);
+                          }}
+                          onCancel={() => { setIsWorkoutEditing(false); setWorkoutEditingId(null); setWorkoutFormData(initialWorkoutForm); }}
+                          initialData={workoutFormData}
+                        />
+                      </Box>
+                    </VStack>
+                    <RecentLog
+                      title="Recent workouts"
+                      records={recentWorkouts}
+                      total={workouts.length}
+                      emptyText="No workouts yet. Add one with the form and it will show up here."
+                      renderItem={(workout) => (
+                        <WorkoutCard
+                          key={workout._id}
+                          workout={workout}
+                          onEdit={(w) => {
+                            setIsWorkoutEditing(true);
+                            setWorkoutEditingId(w._id);
+                            setWorkoutFormData({ date: toDayKey(w.date), type: w.type || '', workoutName: w.workoutName || w.type || '', duration: w.duration?.toString() || '', caloriesBurned: w.caloriesBurned?.toString() || '', intensity: w.intensity || '', equipment: w.equipment || '', notes: w.notes || '' });
+                            scrollToForm('workout-form');
+                          }}
+                          onDelete={handleDeleteWorkout}
+                        />
+                      )}
                     />
-                    <Box id="workout-form" scrollMarginTop="88px">
-                      <WorkoutForm
-                        isEditing={isWorkoutEditing}
-                        onSubmit={async (data) => {
-                          if (isWorkoutEditing) {
-                            await handleUpdateWorkout(workoutEditingId, data);
-                            setIsWorkoutEditing(false);
-                            setWorkoutEditingId(null);
-                          } else {
-                            await handleAddWorkout(data);
-                          }
-                          setWorkoutFormData(initialWorkoutForm);
-                        }}
-                        onCancel={() => { setIsWorkoutEditing(false); setWorkoutEditingId(null); setWorkoutFormData(initialWorkoutForm); }}
-                        initialData={workoutFormData}
-                      />
-                    </Box>
-                  </VStack>
-                  <RecentLog
-                    title="Recent workouts"
-                    records={recentWorkouts}
-                    total={workouts.length}
-                    emptyText="No workouts yet. Add one with the form and it will show up here."
-                    renderItem={(workout) => (
-                      <WorkoutCard
-                        key={workout._id}
-                        workout={workout}
-                        onEdit={(w) => {
-                          setIsWorkoutEditing(true);
-                          setWorkoutEditingId(w._id);
-                          setWorkoutFormData({ date: toDayKey(w.date), type: w.type || '', workoutName: w.workoutName || w.type || '', duration: w.duration?.toString() || '', caloriesBurned: w.caloriesBurned?.toString() || '', intensity: w.intensity || '', equipment: w.equipment || '', notes: w.notes || '' });
-                          scrollToForm('workout-form');
-                        }}
-                        onDelete={handleDeleteWorkout}
-                      />
-                    )}
-                  />
-                </Box>
-              </TabPanel>
-            </TabPanels>
-          </Tabs>
-        </Box>
+                  </Box>
+                </TabPanel>
+              </TabPanels>
+            </Tabs>
+          </MotionBox>
 
-        <GoalsModal
-          isOpen={isOpen}
-          onClose={onClose}
-          editingGoals={editingGoals}
-          onEditingGoalsChange={setEditingGoals}
-          onSave={handleSaveGoals}
-        />
-      </VStack>
-    </Container>
+          <GoalsModal
+            isOpen={isOpen}
+            onClose={onClose}
+            editingGoals={editingGoals}
+            onEditingGoalsChange={setEditingGoals}
+            onSave={handleSaveGoals}
+          />
+        </VStack>
+      </Container>
+    </Box>
   );
 }
 

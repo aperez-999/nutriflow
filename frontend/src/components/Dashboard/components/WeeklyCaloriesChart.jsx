@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   ReferenceLine,
 } from 'recharts';
+import { CountUp } from '../../Motion';
 
 const AXIS_TICK = { fontSize: 12, fill: 'var(--chakra-colors-fg-muted)' };
 
@@ -44,7 +45,7 @@ export default function WeeklyCaloriesChart({ data = [], goal = 0 }) {
             <Text fontSize="sm" color="fg.muted" mt={1}>Calories per day, dashed line is your goal.</Text>
           </Box>
           <Box textAlign="right">
-            <Text textStyle="figure" fontSize="4xl">{average.toLocaleString()}</Text>
+            <Text textStyle="figure" fontSize="4xl"><CountUp value={average} /></Text>
             <Text fontSize="xs" color="fg.muted">avg on logged days</Text>
           </Box>
         </Flex>
