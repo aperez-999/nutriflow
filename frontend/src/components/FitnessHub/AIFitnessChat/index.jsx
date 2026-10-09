@@ -476,7 +476,15 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
           </VStack>
         </Box>
 
-        <Flex gap={2} px={{ base: 3, md: 4 }} pb={2} overflowX="auto" sx={{ scrollbarWidth: 'none' }}>
+        {/* Side-scrolls on phones, wraps on wider screens so no suggestion is cut off. */}
+        <Flex
+          gap={2}
+          px={{ base: 3, md: 4 }}
+          pb={2}
+          flexWrap={{ base: 'nowrap', md: 'wrap' }}
+          overflowX={{ base: 'auto', md: 'visible' }}
+          sx={{ scrollbarWidth: 'none' }}
+        >
           {QUICK_ACTIONS.map((suggestion) => (
             <Button
               key={suggestion}

@@ -8,7 +8,9 @@ import {
   Wrap,
   WrapItem,
 } from '@chakra-ui/react';
+import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
+import { DURATION, EASE_OUT } from '../../../Motion/tokens';
 import remarkGfm from 'remark-gfm';
 import { QUICK_ACTIONS, PRIMARY_SUGGESTIONS, CHAT_ACTION_BUTTON_PROPS, QUICK_ACTION_LABELS } from '../constants';
 
@@ -99,9 +101,15 @@ const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick
   );
   const time = new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
+  const enter = {
+    initial: { opacity: 0, y: 8 },
+    animate: { opacity: 1, y: 0 },
+    transition: { duration: DURATION.base, ease: EASE_OUT },
+  };
+
   if (isUser) {
     return (
-      <Flex justify="flex-end">
+      <Flex as={motion.div} {...enter} justify="flex-end">
         <Box maxW={{ base: '88%', md: '75%' }}>
           <Box bg="bg.muted" px={4} py={2.5} borderRadius="panel" borderBottomRightRadius="4px">
             <Text fontSize="sm" lineHeight="1.6" whiteSpace="pre-line" overflowWrap="anywhere">{message.content}</Text>
@@ -113,7 +121,7 @@ const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick
   }
 
   return (
-    <Box maxW={{ base: '100%', md: '92%' }}>
+    <Box as={motion.div} {...enter} maxW={{ base: '100%', md: '92%' }}>
       <Text fontSize="xs" fontWeight="700" mb={1}>Coach <Text as="span" color="fg.muted" fontWeight="400">{time}</Text></Text>
       {structuredContent ? (
         <VStack align="stretch" spacing={3}>

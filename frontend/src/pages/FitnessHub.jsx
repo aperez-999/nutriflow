@@ -2,8 +2,6 @@ import { useState, useCallback, useEffect, useMemo, useRef, useContext } from 'r
 import {
   Box,
   Container,
-  Heading,
-  Text,
   VStack,
   useDisclosure,
   useToast,
@@ -13,6 +11,7 @@ import FitnessHubInsightsSection from '../components/FitnessHub/FitnessHubInsigh
 import FitnessHubPlansSection from '../components/FitnessHub/FitnessHubPlansSection';
 import FitnessHubDiscoverySection from '../components/FitnessHub/FitnessHubDiscoverySection';
 import ExerciseDetailsModal from '../components/FitnessHub/ExerciseDetailsModal';
+import PageBand from '../components/Global/PageBand';
 import { addDiet, addWorkout, getWorkouts, getDiets, searchFoods } from '../services/api';
 import { handleApiError } from '../utils/apiErrorHandler';
 import { AuthContext } from '../context/AuthContext';
@@ -730,15 +729,12 @@ function FitnessHub() {
 
   return (
     <Box>
+      <PageBand
+        title="Coach"
+        description="Ask anything, get training and meal plans built from your log, and browse exercises."
+      />
       <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
         <VStack spacing={8} align="stretch">
-          <Box>
-            <Heading as="h1" size="xl">Coach</Heading>
-            <Text color="fg.muted" mt={1} maxW="65ch">
-              Ask anything, get training and meal plans built from your log, and browse exercises.
-            </Text>
-          </Box>
-
           {/* ─── Top Row: AI Chat (left) + Insights + Meal Plans (right) ─── */}
           <Box
             display="grid"

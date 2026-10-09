@@ -21,6 +21,7 @@ import { AuthContext } from '../context/AuthContext';
 import { changePassword, updateProfile } from '../services/api';
 import { handleApiError } from '../utils/apiErrorHandler';
 import PasswordInput from '../components/Auth/PasswordInput';
+import PageBand from '../components/Global/PageBand';
 
 const getAccount = (user) => user?.user || user?.result || user || {};
 
@@ -137,85 +138,85 @@ function ProfileSettings() {
   const passwordMismatch = Boolean(passwordForm.confirmPassword) && passwordForm.newPassword !== passwordForm.confirmPassword;
 
   return (
-    <Container maxW="880px" px={{ base: 4, md: 6 }} py={{ base: 6, md: 10 }}>
-      <Heading as="h1" size="xl">Settings</Heading>
-      <Text color="fg.muted" mt={1}>Signed in as {account.email}</Text>
-
-      <Box mt={8} borderTopWidth="1px" borderColor="border">
-        <SettingsSection title="Profile" description="How you appear in the app.">
-          <VStack spacing={4} align="stretch">
-            <FormControl>
-              <FormLabel>Name</FormLabel>
-              <Input value={profileForm.username} autoComplete="nickname" onChange={(e) => handleProfileChange('username', e.target.value)} />
-            </FormControl>
-            <FormControl>
-              <FormLabel>Email</FormLabel>
-              <Input type="email" value={profileForm.email} autoComplete="email" onChange={(e) => handleProfileChange('email', e.target.value)} />
-            </FormControl>
-            <Flex justify="space-between" align="center" gap={4}>
+    <Box>
+      <PageBand title="Settings" description={`Signed in as ${account.email}`} />
+      <Container maxW="880px" px={{ base: 4, md: 6 }} py={{ base: 2, md: 4 }}>
+        <Box>
+          <SettingsSection title="Profile" description="How you appear in the app.">
+            <VStack spacing={4} align="stretch">
+              <FormControl>
+                <FormLabel>Name</FormLabel>
+                <Input value={profileForm.username} autoComplete="nickname" onChange={(e) => handleProfileChange('username', e.target.value)} />
+              </FormControl>
+              <FormControl>
+                <FormLabel>Email</FormLabel>
+                <Input type="email" value={profileForm.email} autoComplete="email" onChange={(e) => handleProfileChange('email', e.target.value)} />
+              </FormControl>
+              <Flex justify="space-between" align="center" gap={4}>
+                <Box>
+                  <Text fontWeight="600" fontSize="sm">Account notifications</Text>
+                  <Text fontSize="sm" color="fg.muted">Emails about your account, like password changes.</Text>
+                </Box>
+                <Switch
+                  colorScheme="gray"
+                  isChecked={profileForm.notificationsEnabled}
+                  onChange={(e) => handleProfileChange('notificationsEnabled', e.target.checked)}
+                  aria-label="Account notifications"
+                />
+              </Flex>
               <Box>
-                <Text fontWeight="600" fontSize="sm">Account notifications</Text>
-                <Text fontSize="sm" color="fg.muted">Emails about your account, like password changes.</Text>
+                <Button onClick={handleSaveProfile} isLoading={isSavingProfile}>Save profile</Button>
               </Box>
-              <Switch
-                colorScheme="gray"
-                isChecked={profileForm.notificationsEnabled}
-                onChange={(e) => handleProfileChange('notificationsEnabled', e.target.checked)}
-                aria-label="Account notifications"
-              />
-            </Flex>
-            <Box>
-              <Button onClick={handleSaveProfile} isLoading={isSavingProfile}>Save profile</Button>
-            </Box>
-          </VStack>
-        </SettingsSection>
+            </VStack>
+          </SettingsSection>
 
-        <SettingsSection title="Appearance" description="Follows your device until you choose.">
-          <ButtonGroup isAttached size="sm" variant="outline" role="radiogroup" aria-label="Theme">
-            {['light', 'dark'].map((mode) => (
-              <Button
-                key={mode}
-                role="radio"
-                aria-checked={colorMode === mode}
-                onClick={() => setColorMode(mode)}
-                bg={colorMode === mode ? 'fg' : 'bg.surface'}
-                color={colorMode === mode ? 'bg.surface' : 'fg'}
-                borderColor={colorMode === mode ? 'fg' : 'border'}
-                _hover={{ bg: colorMode === mode ? 'fg' : 'bg.muted' }}
-                minW="88px"
-              >
-                {mode === 'light' ? 'Light' : 'Dark'}
-              </Button>
-            ))}
-          </ButtonGroup>
-        </SettingsSection>
+          <SettingsSection title="Appearance" description="Follows your device until you choose.">
+            <ButtonGroup isAttached size="sm" variant="outline" role="radiogroup" aria-label="Theme">
+              {['light', 'dark'].map((mode) => (
+                <Button
+                  key={mode}
+                  role="radio"
+                  aria-checked={colorMode === mode}
+                  onClick={() => setColorMode(mode)}
+                  bg={colorMode === mode ? 'fg' : 'bg.surface'}
+                  color={colorMode === mode ? 'bg.surface' : 'fg'}
+                  borderColor={colorMode === mode ? 'fg' : 'border'}
+                  _hover={{ bg: colorMode === mode ? 'fg' : 'bg.muted' }}
+                  minW="88px"
+                >
+                  {mode === 'light' ? 'Light' : 'Dark'}
+                </Button>
+              ))}
+            </ButtonGroup>
+          </SettingsSection>
 
-        <SettingsSection title="Password" description="Use at least 6 characters.">
-          <VStack spacing={4} align="stretch" as="form" onSubmit={(e) => { e.preventDefault(); handleSavePassword(); }}>
-            <FormControl isRequired>
-              <FormLabel>Current password</FormLabel>
-              <PasswordInput autoComplete="current-password" value={passwordForm.currentPassword} onChange={(e) => handlePasswordChange('currentPassword', e.target.value)} />
-            </FormControl>
-            <FormControl isRequired>
-              <FormLabel>New password</FormLabel>
-              <PasswordInput autoComplete="new-password" minLength={6} value={passwordForm.newPassword} onChange={(e) => handlePasswordChange('newPassword', e.target.value)} />
-            </FormControl>
-            <FormControl isRequired isInvalid={passwordMismatch}>
-              <FormLabel>Confirm new password</FormLabel>
-              <PasswordInput autoComplete="new-password" value={passwordForm.confirmPassword} onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)} />
-              <FormErrorMessage>The passwords don’t match.</FormErrorMessage>
-            </FormControl>
-            <Box>
-              <Button type="submit" variant="outline" isLoading={isSavingPassword} isDisabled={passwordMismatch}>Update password</Button>
-            </Box>
-          </VStack>
-        </SettingsSection>
+          <SettingsSection title="Password" description="Use at least 6 characters.">
+            <VStack spacing={4} align="stretch" as="form" onSubmit={(e) => { e.preventDefault(); handleSavePassword(); }}>
+              <FormControl isRequired>
+                <FormLabel>Current password</FormLabel>
+                <PasswordInput autoComplete="current-password" value={passwordForm.currentPassword} onChange={(e) => handlePasswordChange('currentPassword', e.target.value)} />
+              </FormControl>
+              <FormControl isRequired>
+                <FormLabel>New password</FormLabel>
+                <PasswordInput autoComplete="new-password" minLength={6} value={passwordForm.newPassword} onChange={(e) => handlePasswordChange('newPassword', e.target.value)} />
+              </FormControl>
+              <FormControl isRequired isInvalid={passwordMismatch}>
+                <FormLabel>Confirm new password</FormLabel>
+                <PasswordInput autoComplete="new-password" value={passwordForm.confirmPassword} onChange={(e) => handlePasswordChange('confirmPassword', e.target.value)} />
+                <FormErrorMessage>The passwords don’t match.</FormErrorMessage>
+              </FormControl>
+              <Box>
+                <Button type="submit" variant="outline" isLoading={isSavingPassword} isDisabled={passwordMismatch}>Update password</Button>
+              </Box>
+            </VStack>
+          </SettingsSection>
 
-        <SettingsSection title="Session" description="Log out of NutriFlow on this device.">
-          <Button variant="outline" onClick={handleLogout}>Log out</Button>
-        </SettingsSection>
-      </Box>
-    </Container>
+          <SettingsSection title="Session" description="Log out of NutriFlow on this device.">
+            <Button variant="outline" onClick={handleLogout}>Log out</Button>
+          </SettingsSection>
+        </Box>
+      </Container>
+    </Box>
   );
 }
 
