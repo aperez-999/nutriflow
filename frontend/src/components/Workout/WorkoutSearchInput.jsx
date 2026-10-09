@@ -195,7 +195,7 @@ const WorkoutSearchInput = ({ value, onChange, onWorkoutSelect, placeholder = 'S
               >
                 <Flex justify="space-between" gap={4} align="baseline">
                   <Text fontSize="sm" fontWeight="600" noOfLines={1}>{workout.name}</Text>
-                  <Text fontSize="sm" fontWeight="700" flexShrink={0} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <Text fontSize="sm" fontWeight="700" flexShrink={0}>
                     {workout.caloriesPerMinute} kcal/min
                   </Text>
                 </Flex>

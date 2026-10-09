@@ -48,8 +48,8 @@ function EntryRow({ title, meta, primary, secondary, notes, onEdit, onDelete }) 
         {notes && <Text fontSize="sm" color="fg.muted" mt={1} noOfLines={2}>{notes}</Text>}
       </Box>
       <Box textAlign="right" flexShrink={0}>
-        <Text fontWeight="700" sx={{ fontVariantNumeric: 'tabular-nums' }}>{primary}</Text>
-        {secondary && <Text fontSize="sm" color="fg.muted" sx={{ fontVariantNumeric: 'tabular-nums' }}>{secondary}</Text>}
+        <Text fontWeight="700">{primary}</Text>
+        {secondary && <Text fontSize="sm" color="fg.muted">{secondary}</Text>}
       </Box>
       <HStack spacing={0} flexShrink={0}>
         <IconButton size="sm" variant="ghost" aria-label={`Edit ${title}`} icon={<FiEdit2 />} color="fg.muted" onClick={onEdit} />

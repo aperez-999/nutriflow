@@ -2,7 +2,11 @@ import { useContext } from 'react';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { FiActivity, FiCoffee, FiMessageCircle, FiSun, FiUser } from 'react-icons/fi';
+import { motion } from 'framer-motion';
 import { AuthContext } from '../../context/AuthContext';
+import { DURATION, EASE_OUT } from '../Motion/tokens';
+
+const MotionBox = motion(Box);
 
 export const TAB_BAR_HEIGHT = '64px';
 
@@ -52,10 +56,23 @@ export default function MobileTabBar() {
               align="center"
               justify="center"
               gap={1}
+              position="relative"
               color={active ? (tab.flow ? `${tab.flow}.fg` : 'fg') : 'fg.muted'}
               transition="color 0.15s ease"
               _focusVisible={{ outline: '2px solid', outlineColor: 'brand.500', outlineOffset: '-4px', borderRadius: 'md' }}
             >
+              {active && (
+                <MotionBox
+                  layoutId="tab-active"
+                  position="absolute"
+                  top={0}
+                  w="28px"
+                  h="3px"
+                  borderBottomRadius="3px"
+                  bg="currentColor"
+                  transition={{ duration: DURATION.base, ease: EASE_OUT }}
+                />
+              )}
               <Icon as={tab.icon} boxSize={5} strokeWidth={active ? 2.5 : 2} />
               <Text fontSize="11px" fontWeight={active ? 700 : 500}>{tab.label}</Text>
             </Flex>

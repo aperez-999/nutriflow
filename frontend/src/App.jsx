@@ -1,5 +1,7 @@
 import { useContext, useEffect } from 'react'
 import { Box, Flex } from '@chakra-ui/react'
+import { motion } from 'framer-motion'
+import { DURATION, EASE_OUT } from './components/Motion/tokens'
 import { useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import AppRoutes from './routes'
@@ -90,7 +92,15 @@ function App() {
       <Navbar />
       <Box flex="1">
         <ErrorBoundary>
-          <AppRoutes />
+          {/* Enter-only route transition: no exit animation, so navigation never waits. */}
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: DURATION.base, ease: EASE_OUT }}
+          >
+            <AppRoutes />
+          </motion.div>
         </ErrorBoundary>
       </Box>
       <Footer />

@@ -197,7 +197,7 @@ const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = 'Search 
               >
                 <Flex justify="space-between" gap={4} align="baseline">
                   <Text fontSize="sm" fontWeight="600" noOfLines={1}>{food.description}</Text>
-                  <Text fontSize="sm" fontWeight="700" flexShrink={0} sx={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <Text fontSize="sm" fontWeight="700" flexShrink={0}>
                     {food.nutrition.calories} kcal
                   </Text>
                 </Flex>

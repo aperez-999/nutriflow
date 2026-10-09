@@ -65,9 +65,11 @@ const flowTokens = (name, solidDark) => ({
 
 const theme = extendTheme({
   config,
+  // Big Shoulders (Chicago signage, scoreboard figures) for display and numbers;
+  // Schibsted Grotesk (newspaper grotesk) for text and UI. Both self-hosted via Fontsource.
   fonts: {
-    heading: `'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif`,
-    body: `'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif`,
+    heading: `'Big Shoulders Variable', 'Arial Narrow', ui-sans-serif, system-ui, sans-serif`,
+    body: `'Schibsted Grotesk Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif`,
   },
   colors: {
     gray,
@@ -115,19 +117,21 @@ const theme = extendTheme({
   textStyles: {
     // Condensed tabular numerals: scoreboard / nutrition-label figures.
     figure: {
-      fontStretch: '75%',
-      fontWeight: 700,
+      fontFamily: 'heading',
+      fontWeight: 800,
       fontVariantNumeric: 'tabular-nums',
-      letterSpacing: '-0.01em',
-      lineHeight: 1,
+      letterSpacing: 0,
+      lineHeight: 0.9,
     },
   },
   styles: {
     global: {
+      html: {
+        '@media (prefers-reduced-motion: no-preference)': { scrollBehavior: 'smooth' },
+      },
       body: {
         bg: 'bg.canvas',
         color: 'fg',
-        fontFeatureSettings: '"ss01"',
         WebkitFontSmoothing: 'antialiased',
         WebkitTapHighlightColor: 'transparent',
       },
@@ -150,21 +154,28 @@ const theme = extendTheme({
   components: {
     Heading: {
       baseStyle: {
-        fontWeight: 700,
-        letterSpacing: '-0.015em',
+        fontWeight: 800,
+        letterSpacing: 0,
+        lineHeight: 0.95,
         color: 'fg',
       },
-    },
-    Text: {
-      baseStyle: {
-        fontVariantNumeric: 'tabular-nums',
+      // Small headings are UI labels, so they use the text face; larger ones use the display face.
+      sizes: {
+        xs: { fontFamily: 'body', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.3 },
+        sm: { fontFamily: 'body', fontWeight: 700, letterSpacing: '-0.01em', lineHeight: 1.3, fontSize: 'md' },
+        md: { fontSize: '2xl' },
+        lg: { fontSize: '4xl' },
+        xl: { fontSize: { base: '4xl', md: '5xl' } },
+        '2xl': { fontSize: { base: '5xl', md: '6xl' } },
       },
     },
     Button: {
       baseStyle: {
         borderRadius: 'control',
         fontWeight: 600,
-        transition: 'background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease',
+        transition: 'background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease',
+        // Pressed feedback; scale is disabled with the rest of motion under reduced motion.
+        _active: { transform: 'scale(0.97)' },
       },
       variants: {
         // Any legacy "teal"/"brand" solid button renders as the ink primary.

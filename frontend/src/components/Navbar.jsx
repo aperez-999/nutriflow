@@ -1,7 +1,8 @@
-import { useContext } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import {
   Avatar,
   Box,
+  DarkMode,
   Button,
   Container,
   Flex,
@@ -19,6 +20,8 @@ import {
 import { MoonIcon, SunIcon } from '@chakra-ui/icons';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { FiLogOut, FiMenu, FiUser } from 'react-icons/fi';
+import { motion } from 'framer-motion';
+import { DURATION, EASE_OUT } from './Motion/tokens';
 import { AuthContext } from '../context/AuthContext';
 import Logo from './Global/Logo';
 
@@ -30,6 +33,19 @@ const NAV_ITEMS = [
 
 const getAccount = (user) => user?.user || user?.result || user || {};
 
+const MotionBox = motion(Box);
+
+function useScrolled(threshold = 8) {
+  const [scrolled, setScrolled] = useState(() => typeof window !== 'undefined' && window.scrollY > threshold);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > threshold);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [threshold]);
+  return scrolled;
+}
+
 function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -40,6 +56,9 @@ function Navbar() {
 
   const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname) || location.pathname.startsWith('/reset-password/');
   const isLoggedIn = Boolean(user);
+  const scrolled = useScrolled();
+  // On the public landing page the bar floats over the dark hero until you scroll.
+  const overHero = !isLoggedIn && location.pathname === '/' && !scrolled;
 
   const handleLogout = () => {
     logout();
@@ -47,16 +66,18 @@ function Navbar() {
     toast({ title: 'Logged out', status: 'success', duration: 2500, isClosable: true });
   };
 
-  return (
+  const bar = (
     <Box
       as="header"
-      position="sticky"
+      position={!isLoggedIn && location.pathname === '/' ? 'fixed' : 'sticky'}
       top={0}
+      insetX={0}
       zIndex="sticky"
-      bg="bg.surface"
+      bg={overHero ? 'transparent' : 'bg.surface'}
       borderBottomWidth="1px"
-      borderColor="border"
+      borderColor={overHero ? 'transparent' : 'border'}
       pt="env(safe-area-inset-top)"
+      transition={`background-color ${DURATION.base}s ease, border-color ${DURATION.base}s ease`}
     >
       <Container maxW="container.xl" px={{ base: 4, md: 6 }}>
         <Flex h="56px" align="center" justify="space-between" gap={4}>
@@ -80,13 +101,23 @@ function Navbar() {
                       px={3}
                       fontSize="sm"
                       fontWeight={600}
+                      position="relative"
                       color={isActive ? 'fg' : 'fg.muted'}
-                      borderBottomWidth="2px"
-                      borderColor={isActive ? 'border.strong' : 'transparent'}
-                      mb="-1px"
+                      transition={`color ${DURATION.fast}s ease`}
                       _hover={{ color: 'fg' }}
                     >
                       {item.label}
+                      {isActive && (
+                        <MotionBox
+                          layoutId="nav-active"
+                          position="absolute"
+                          insetX={3}
+                          bottom="-1px"
+                          h="2px"
+                          bg="border.strong"
+                          transition={{ duration: DURATION.base, ease: EASE_OUT }}
+                        />
+                      )}
                     </Flex>
                   );
                 })}
@@ -162,6 +193,8 @@ function Navbar() {
       </Container>
     </Box>
   );
+
+  return overHero ? <DarkMode>{bar}</DarkMode> : bar;
 }
 
 export default Navbar;

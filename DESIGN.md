@@ -21,9 +21,27 @@ NutriFlow is used in two moments: a quick check-in before training and a log at 
 
 Neutrals carry no tint. Flow colors were validated for color-vision deficiency (protan/deutan ΔE ≥ 10) and ≥ 3:1 against the surface in both modes.
 
-**Type:** Archivo for everything. Normal width for UI and prose; condensed (`font-stretch: 75%`), bold, tabular figures for numbers. One family, two widths.
+**Type:** Two self-hosted families (Fontsource, so they also work offline in the iOS build):
+
+- **Big Shoulders** for display headings and every big number (`textStyle="figure"`). Drawn for Chicago's city signage; it reads like a scoreboard or race bib.
+- **Schibsted Grotesk** for text, labels and small headings (`Heading size="sm"`/`"xs"` switch to it). A sturdy newspaper grotesk that contrasts with the condensed display face on width.
+
+Tabular figures are only applied to display figures; in Schibsted they widen commas and periods.
 
 **Shape:** 6px radius on controls, 10px on panels. Panels are separated by 1px borders, not shadows. Only modals and menus float, so only they get a shadow.
+
+**Bands:** Each main screen opens with a black band (`DarkMode` + `bg.canvas`): the landing hero, the dashboard scoreboard, the Coach and Settings headers, and the brand side of the auth split screen. The flow colors are at their most vivid on black, so that is where they carry the identity: the flow band (the logo mark at billboard scale) and the scoreboard bars. The landing page ends on a full-bleed `train.500` band.
+
+## Motion
+
+Shared values live in `components/Motion/tokens.js` (one ease-out curve, 150/250/600 ms). Motion always shows data arriving or changing, never decoration:
+
+- Numbers count up (`CountUp`); screen readers get only the final value.
+- Bars, meters, the readiness ring and rhythm cells fill from zero.
+- Routes fade in (enter only, never delaying navigation); list rows slide in and collapse out.
+- Nav and tab indicators slide between items (`layoutId`, `TabIndicator`).
+- The landing page alone gets an orchestrated entrance and Lenis smooth scrolling; the app keeps native scrolling.
+- Reduced motion: `MotionConfig reducedMotion="user"` removes movement, `CountUp` shows final values, Lenis disables itself, and the landing hero renders without fades.
 
 ## Rules
 
@@ -33,7 +51,7 @@ Neutrals carry no tint. Flow colors were validated for color-vision deficiency (
 - No uppercase tracked eyebrows. Section titles are sentence case, bold, and say what the section is.
 - No hover lift. Hover changes background or border on interactive elements only.
 - No arrows appended to buttons, no middle-dot meta strings, no emoji.
-- Motion only in response to an action (save, tab switch, progress filling). 150-250 ms, ease-out. Respect reduced motion.
+- Motion follows the Motion section above. Respect reduced motion.
 - Numbers line up: tabular figures, right-aligned in tables, units in muted text.
 - Empty states say what to do next in one sentence.
 

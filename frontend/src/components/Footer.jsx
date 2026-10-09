@@ -1,5 +1,5 @@
 import { Box, Container, Flex, HStack, Icon, Link, Text } from '@chakra-ui/react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { FaGithub, FaLinkedin, FaInstagram, FaTwitter } from 'react-icons/fa';
 import Logo from './Global/Logo';
 
@@ -17,8 +17,11 @@ const legalLinks = [
 ];
 
 function Footer() {
+  // Full-bleed pages (landing, auth split screens) run straight into the footer.
+  const { pathname } = useLocation();
+  const flush = ['/', '/login', '/register', '/forgot-password'].includes(pathname) || pathname.startsWith('/reset-password');
   return (
-    <Box as="footer" borderTopWidth="1px" borderColor="border" bg="bg.surface" mt={{ base: 10, md: 16 }}>
+    <Box as="footer" borderTopWidth="1px" borderColor="border" bg="bg.surface" mt={flush ? 0 : { base: 10, md: 16 }}>
       <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={6}>
         <Flex direction={{ base: 'column', md: 'row' }} gap={4} justify="space-between" align={{ base: 'flex-start', md: 'center' }}>
           <HStack spacing={4}>
