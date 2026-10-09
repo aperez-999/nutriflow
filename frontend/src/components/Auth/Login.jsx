@@ -43,7 +43,8 @@ function Login() {
   return (
     <AuthLayout
       title="Log in"
-      description="Pick up where you left off."
+      description="See today’s readiness and pick up where you left off."
+      statement="Welcome back."
       footer={<>New to NutriFlow? <Link as={RouterLink} to="/register" color="fg" fontWeight="600" textDecoration="underline">Create an account</Link></>}
     >
       <form onSubmit={handleSubmit}>
