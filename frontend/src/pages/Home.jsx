@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { Box, Button, Container, DarkMode, Flex, Grid, Heading, HStack, LightMode, Stack, Text } from '@chakra-ui/react';
+import { Box, Button, Container, Flex, Grid, Heading, HStack, Stack, Text, VStack } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import Lenis from 'lenis';
@@ -32,21 +32,6 @@ const STEPS = [
     flow: 'train',
     title: 'Do the one thing that matters',
     body: 'NutriFlow tells you whether today is for pushing, holding steady or recovering, and what to eat around it.',
-  },
-];
-
-const DIFFERENCES = [
-  {
-    title: 'Readiness without a wearable',
-    body: 'Most readiness scores need a watch or a ring. NutriFlow combines your training load, what you ate and a quick check-in into one honest number.',
-  },
-  {
-    title: 'Food is fuel, not a test',
-    body: 'Meals are compared with the training ahead, not with a diet. Nothing is labeled good or bad. Under-fueled before a hard session? You will know.',
-  },
-  {
-    title: 'A coach that has read your log',
-    body: 'Ask for a training week or a meal plan and the answer is built from your own entries. Only you, signed in, can see that data.',
   },
 ];
 
@@ -87,27 +72,55 @@ function HeadlineLine({ children, delay }) {
   );
 }
 
+function ScrollReveal({ children, delay = 0, ...props }) {
+  // Transform only: content is visible even if the in-view observer never fires.
+  return (
+    <MotionBox
+      initial={{ y: 28 }}
+      whileInView={{ y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: DURATION.slow, ease: EASE_OUT, delay }}
+      {...props}
+    >
+      {children}
+    </MotionBox>
+  );
+}
+
+/** A small product surface used as an illustration (card on the page's surface color). */
+function Specimen({ children, label, ...props }) {
+  return (
+    <Box
+      bg="bg.surface"
+      color="fg"
+      borderWidth="1px"
+      borderColor="border"
+      borderRadius="panel"
+      p={{ base: 4, md: 5 }}
+      w="100%"
+      maxW="420px"
+      boxShadow="overlay"
+      role="img"
+      aria-label={label}
+      {...props}
+    >
+      {children}
+    </Box>
+  );
+}
+
 function SampleDayLabel() {
   const reduceMotion = useReducedMotion();
   return (
-    <LightMode>
-      <MotionBox
-        bg="bg.surface"
-        color="fg"
-        borderRadius="panel"
-        px={{ base: 5, md: 6 }}
-        pt={5}
-        pb={4}
-        w="100%"
-        maxW="420px"
-        role="img"
-        aria-label="Example day: readiness 78, fuel 1,840 of 2,200 kcal, 45 minutes of strength training, 7.5 hours of sleep."
-        // Under reduced motion the label is simply there; no fade or delay.
-        initial={reduceMotion ? false : { opacity: 0, y: 24, rotate: -1.5 }}
-        animate={{ opacity: 1, y: 0, rotate: -1.5 }}
-        transition={{ duration: 0.7, ease: EASE_OUT, delay: 0.25 }}
-        boxShadow="0 24px 60px rgba(0, 0, 0, 0.45)"
-      >
+    <MotionBox
+      // Under reduced motion the label is simply there; no fade or delay.
+      initial={reduceMotion ? false : { opacity: 0, y: 24, rotate: -1.5 }}
+      animate={{ opacity: 1, y: 0, rotate: -1.5 }}
+      transition={{ duration: 0.7, ease: EASE_OUT, delay: 0.25 }}
+      w="100%"
+      maxW="420px"
+    >
+      <Specimen label="Example day: readiness 78, fuel 1,840 of 2,200 kcal, 45 minutes of strength training, 7.5 hours of sleep." p={0} px={{ base: 5, md: 6 }} pt={5} pb={4}>
         <Flex justify="space-between" align="baseline">
           <Text fontFamily="heading" fontWeight="800" fontSize="3xl" lineHeight="1">Today</Text>
           <Text fontSize="sm" color="fg.muted">Tuesday</Text>
@@ -148,8 +161,165 @@ function SampleDayLabel() {
             Good day to push your main lift. Have a carb-forward meal about two hours before.
           </Text>
         </Box>
-      </MotionBox>
-    </LightMode>
+      </Specimen>
+    </MotionBox>
+  );
+}
+
+function FuelSpecimen() {
+  const rows = [['Protein', '42 g'], ['Carbohydrate', '68 g'], ['Fat', '14 g']];
+  return (
+    <Specimen label="Example meal: chicken rice bowl, 560 kcal, 42 grams of protein.">
+      <Text fontWeight="800" fontSize="lg">Chicken rice bowl</Text>
+      <Text fontSize="xs" color="fg.muted">Lunch, from the USDA database</Text>
+      <Box h="6px" bg="border.strong" mt={3} />
+      <Flex justify="space-between" align="baseline" py={2} borderBottomWidth="3px" borderColor="border.strong">
+        <Text fontWeight="800">Calories</Text>
+        <Text textStyle="figure" fontSize="5xl" color="fuel.fg">560</Text>
+      </Flex>
+      {rows.map(([label, value]) => (
+        <Flex key={label} justify="space-between" py={1.5} borderBottomWidth="1px" borderColor="border" _last={{ borderBottomWidth: 0 }}>
+          <Text fontSize="sm">{label}</Text>
+          <Text fontSize="sm" fontWeight="700">{value}</Text>
+        </Flex>
+      ))}
+    </Specimen>
+  );
+}
+
+function TrainSpecimen() {
+  const days = [
+    ['Mon', 'Upper body push', '50 min', 'High'],
+    ['Wed', 'Easy run', '35 min', 'Low'],
+    ['Fri', 'Legs and core', '55 min', 'Medium'],
+  ];
+  return (
+    <Specimen label="Example training week: three sessions with duration and intensity.">
+      <Text fontWeight="800" fontSize="lg">Your week</Text>
+      <Text fontSize="xs" color="fg.muted">Built by your coach from your log</Text>
+      {days.map(([day, name, time, effort]) => (
+        <Flex key={day} align="center" gap={3} py={2.5} borderTopWidth="1px" borderColor="border" mt={2}>
+          <Text textStyle="figure" fontSize="2xl" w="44px" color="train.fg">{day}</Text>
+          <Box flex="1" minW={0}>
+            <Text fontSize="sm" fontWeight="700">{name}</Text>
+            <Text fontSize="xs" color="fg.muted">{effort} intensity</Text>
+          </Box>
+          <Text fontSize="sm" fontWeight="700">{time}</Text>
+        </Flex>
+      ))}
+    </Specimen>
+  );
+}
+
+function RecoverSpecimen() {
+  const ratings = [['Energy', 4], ['Soreness', 2]];
+  return (
+    <Specimen label="Example check-in: 7.5 hours of sleep, energy 4 of 5, soreness 2 of 5.">
+      <Text fontWeight="800" fontSize="lg">Morning check-in</Text>
+      <Flex justify="space-between" mt={3} fontSize="sm">
+        <Text fontWeight="600">Sleep last night</Text>
+        <Text fontWeight="700" color="recover.fg">7.5 h</Text>
+      </Flex>
+      <Box h="6px" bg="bg.muted" borderRadius="full" mt={2}>
+        <Box h="100%" w="50%" bg="recover.solid" borderRadius="full" />
+      </Box>
+      {ratings.map(([label, value]) => (
+        <Box key={label} mt={4}>
+          <Text fontSize="sm" fontWeight="600" mb={1.5}>{label}</Text>
+          <Grid templateColumns="repeat(5, 1fr)" borderWidth="1px" borderColor="border" borderRadius="control" overflow="hidden">
+            {[1, 2, 3, 4, 5].map((n) => (
+              <Box
+                key={n}
+                textAlign="center"
+                py={1.5}
+                fontSize="sm"
+                borderLeftWidth={n === 1 ? 0 : '1px'}
+                borderColor="border"
+                bg={n === value ? 'recover.subtle' : 'transparent'}
+                color={n === value ? 'recover.fg' : 'fg.muted'}
+                fontWeight={n === value ? 700 : 500}
+              >
+                {n}
+              </Box>
+            ))}
+          </Grid>
+        </Box>
+      ))}
+    </Specimen>
+  );
+}
+
+function CoachSpecimen() {
+  return (
+    <Specimen label="Example coach conversation about a leg day after short sleep.">
+      <Flex justify="flex-end">
+        <Box bg="bg.muted" px={3.5} py={2} borderRadius="panel" borderBottomRightRadius="4px" maxW="80%">
+          <Text fontSize="sm">Slept badly. Should I still do legs today?</Text>
+        </Box>
+      </Flex>
+      <Text fontSize="xs" fontWeight="700" mt={4}>Coach</Text>
+      <Text fontSize="sm" mt={1}>
+        Your readiness is 52 after 5.5 h of sleep. Keep legs, but drop to two working sets and stay a rep or two
+        short of failure. Eat about 40 g of carbs an hour before.
+      </Text>
+    </Specimen>
+  );
+}
+
+const FEATURES = [
+  {
+    flow: 'fuel',
+    title: 'Log a meal in seconds.',
+    body: 'Search real foods from the USDA database and the numbers fill in for you. Meals are compared with your training, not judged against a diet.',
+    points: ['Calories and protein against your own targets', 'Nutrition-label summary for any day', 'No food is labeled good or bad'],
+    Specimen: FuelSpecimen,
+  },
+  {
+    flow: 'train',
+    title: 'Training that fits the day.',
+    body: 'Log sessions as you go, or ask the coach to plan your week. Intensity follows how ready you are, so hard days land on good days.',
+    points: ['Real exercise search with burn estimates', 'Weekly plans built from your log', 'One tap to log a planned session'],
+    Specimen: TrainSpecimen,
+  },
+  {
+    flow: 'recover',
+    title: 'Readiness without a wearable.',
+    body: 'A twenty-second morning check-in plus your logs gives one honest score and a verdict: push day, steady day or recovery day.',
+    points: ['Sleep, energy, soreness and water', 'Short sleep or high soreness? It tells you to ease off', 'No watch, ring or subscription needed'],
+    Specimen: RecoverSpecimen,
+  },
+];
+
+function FeatureSection({ feature, index }) {
+  const { flow, title, body, points, Specimen: Visual } = feature;
+  const flip = index % 2 === 1;
+  return (
+    <Box as="section" bg={`${flow}.subtle`}>
+      <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 14, md: 20 }}>
+        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={{ base: 10, lg: 16 }} alignItems="center">
+          <ScrollReveal order={{ lg: flip ? 2 : 1 }}>
+            <Text fontFamily="heading" fontWeight="800" fontSize={{ base: '2xl', md: '3xl' }} color={`${flow}.fg`} textTransform="capitalize">
+              {flow}
+            </Text>
+            <Heading as="h2" fontSize={{ base: '5xl', md: '6xl' }} mt={1} maxW="14ch">{title}</Heading>
+            <Text fontSize={{ base: 'md', md: 'lg' }} color="fg.muted" mt={4} maxW="46ch">{body}</Text>
+            <VStack as="ul" listStyleType="none" align="start" spacing={2} mt={6}>
+              {points.map((point) => (
+                <HStack as="li" key={point} spacing={3} align="center">
+                  <Box boxSize="8px" borderRadius="2px" bg={`${flow}.solid`} flexShrink={0} />
+                  <Text fontWeight="600">{point}</Text>
+                </HStack>
+              ))}
+            </VStack>
+          </ScrollReveal>
+          <Flex justify={{ base: 'flex-start', lg: flip ? 'flex-start' : 'flex-end' }} order={{ lg: flip ? 1 : 2 }}>
+            <ScrollReveal delay={0.1} w="100%" maxW="420px">
+              <Visual />
+            </ScrollReveal>
+          </Flex>
+        </Grid>
+      </Container>
+    </Box>
   );
 }
 
@@ -188,81 +358,82 @@ function RhythmDemo() {
   );
 }
 
-function ScrollReveal({ children, delay = 0, ...props }) {
-  // Transform only: content is visible even if the in-view observer never fires.
-  return (
-    <MotionBox
-      initial={{ y: 28 }}
-      whileInView={{ y: 0 }}
-      viewport={{ once: true, amount: 0.2 }}
-      transition={{ duration: DURATION.slow, ease: EASE_OUT, delay }}
-      {...props}
-    >
-      {children}
-    </MotionBox>
-  );
-}
-
 function Home() {
   useSmoothScroll();
   const reduceMotion = useReducedMotion();
 
   return (
     <Box>
-      <DarkMode>
-        <Box as="section" bg="bg.canvas" color="fg" pt={{ base: '104px', md: '136px' }} pb={{ base: 10, md: 14 }} overflow="hidden">
-          <Container maxW="container.xl" px={{ base: 4, md: 6 }}>
-            <Grid templateColumns={{ base: '1fr', lg: '1.15fr 1fr' }} gap={{ base: 12, lg: 16 }} alignItems="center">
-              <Box>
-                <Heading as="h1" fontSize={{ base: '5xl', sm: '6xl', md: '8xl' }} lineHeight="0.88" letterSpacing="-0.005em">
-                  <HeadlineLine delay={0.05}>Know what</HeadlineLine>
-                  <HeadlineLine delay={0.15}>today needs.</HeadlineLine>
-                </Heading>
-                <MotionBox
-                  initial={reduceMotion ? false : { opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: DURATION.slow, ease: EASE_OUT, delay: 0.35 }}
-                >
-                  <Text fontSize={{ base: 'lg', md: 'xl' }} color="fg.muted" mt={6} maxW="46ch">
-                    NutriFlow reads what you ate, how you trained and how you slept, then gives you one readiness score and
-                    one next step. No wearable required.
-                  </Text>
-                  <Stack direction={{ base: 'column', sm: 'row' }} spacing={3} mt={8}>
-                    <Button as={RouterLink} to="/register" size="lg">Create an account</Button>
-                    <Button as={RouterLink} to="/login" size="lg" variant="outline" bg="transparent">Log in</Button>
-                  </Stack>
-                </MotionBox>
-              </Box>
-              <Flex justify={{ base: 'flex-start', lg: 'flex-end' }} pr={{ lg: 4 }}>
-                <SampleDayLabel />
-              </Flex>
-            </Grid>
-            <Box mt={{ base: 14, md: 20 }}>
-              <FlowBand />
+      <Box as="section" bg="bg.canvas" pt={{ base: 10, md: 20 }} pb={{ base: 10, md: 14 }} overflow="hidden">
+        <Container maxW="container.xl" px={{ base: 4, md: 6 }}>
+          <Grid templateColumns={{ base: '1fr', lg: '1.15fr 1fr' }} gap={{ base: 12, lg: 16 }} alignItems="center">
+            <Box>
+              <Heading as="h1" fontSize={{ base: '5xl', sm: '6xl', md: '8xl' }} lineHeight="0.88" letterSpacing="-0.005em">
+                <HeadlineLine delay={0.05}>Know what</HeadlineLine>
+                <HeadlineLine delay={0.15}>today needs.</HeadlineLine>
+              </Heading>
+              <MotionBox
+                initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: DURATION.slow, ease: EASE_OUT, delay: 0.35 }}
+              >
+                <Text fontSize={{ base: 'lg', md: 'xl' }} color="fg.muted" mt={6} maxW="46ch">
+                  NutriFlow reads what you ate, how you trained and how you slept, then gives you one readiness score and
+                  one next step. No wearable required.
+                </Text>
+                <Stack direction={{ base: 'column', sm: 'row' }} spacing={3} mt={8}>
+                  <Button as={RouterLink} to="/register" size="lg">Create an account</Button>
+                  <Button as={RouterLink} to="/login" size="lg" variant="outline">Log in</Button>
+                </Stack>
+              </MotionBox>
             </Box>
-          </Container>
-        </Box>
-      </DarkMode>
+            <Flex justify={{ base: 'flex-start', lg: 'flex-end' }} pr={{ lg: 4 }}>
+              <SampleDayLabel />
+            </Flex>
+          </Grid>
+          <Box mt={{ base: 14, md: 20 }}>
+            <FlowBand />
+          </Box>
+        </Container>
+      </Box>
+
+      {FEATURES.map((feature, i) => <FeatureSection key={feature.flow} feature={feature} index={i} />)}
 
       <Box as="section" bg="bg.surface" borderBottomWidth="1px" borderColor="border">
-        <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 16, md: 24 }}>
-          <ScrollReveal>
-            <Heading as="h2" size="2xl" maxW="16ch">How a day works</Heading>
-          </ScrollReveal>
-          <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={{ base: 10, md: 10 }} mt={12} as="ol" listStyleType="none">
-            {STEPS.map((step, i) => (
-              <ScrollReveal as="li" key={step.title} delay={i * 0.08} borderTopWidth="3px" borderColor="border.strong" pt={4}>
-                <Text textStyle="figure" fontSize="7xl" color={`${step.flow}.fg`} aria-hidden="true">{i + 1}</Text>
-                <Heading as="h3" size="md" mt={3}>{step.title}</Heading>
-                <Text color="fg.muted" mt={2} maxW="40ch">{step.body}</Text>
+        <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 14, md: 20 }}>
+          <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={{ base: 10, lg: 16 }} alignItems="center">
+            <ScrollReveal>
+              <Text fontFamily="heading" fontWeight="800" fontSize={{ base: '2xl', md: '3xl' }} color="fg.muted">Coach</Text>
+              <Heading as="h2" fontSize={{ base: '5xl', md: '6xl' }} mt={1} maxW="14ch">A coach that has read your log.</Heading>
+              <Text fontSize={{ base: 'md', md: 'lg' }} color="fg.muted" mt={4} maxW="46ch">
+                Ask anything, or tap for a training week, a meal plan or a readiness check. Answers come from your own
+                entries, and only you, signed in, can see that data.
+              </Text>
+            </ScrollReveal>
+            <Flex justify={{ base: 'flex-start', lg: 'flex-end' }}>
+              <ScrollReveal delay={0.1} w="100%" maxW="420px">
+                <CoachSpecimen />
               </ScrollReveal>
-            ))}
+            </Flex>
           </Grid>
         </Container>
       </Box>
 
-      <Container as="section" maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 16, md: 24 }}>
-        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={{ base: 10, lg: 16 }} alignItems="center">
+      <Container as="section" maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 14, md: 20 }}>
+        <ScrollReveal>
+          <Heading as="h2" size="2xl" maxW="16ch">How a day works</Heading>
+        </ScrollReveal>
+        <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={10} mt={12} as="ol" listStyleType="none">
+          {STEPS.map((step, i) => (
+            <ScrollReveal as="li" key={step.title} delay={i * 0.08} borderTopWidth="3px" borderColor="border.strong" pt={4}>
+              <Text textStyle="figure" fontSize="7xl" color={`${step.flow}.fg`} aria-hidden="true">{i + 1}</Text>
+              <Heading as="h3" size="md" mt={3}>{step.title}</Heading>
+              <Text color="fg.muted" mt={2} maxW="40ch">{step.body}</Text>
+            </ScrollReveal>
+          ))}
+        </Grid>
+
+        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={{ base: 10, lg: 16 }} alignItems="center" mt={{ base: 16, md: 24 }}>
           <ScrollReveal>
             <Heading as="h2" size="2xl" maxW="14ch">Streaks that forgive.</Heading>
             <Text color="fg.muted" fontSize="lg" mt={4} maxW="44ch">
@@ -280,29 +451,30 @@ function Home() {
           </ScrollReveal>
           <RhythmDemo />
         </Grid>
-
-        <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} columnGap={10} mt={{ base: 16, md: 24 }}>
-          {DIFFERENCES.map((item, i) => (
-            <ScrollReveal key={item.title} delay={i * 0.08} borderTopWidth="1px" borderColor="border" py={5}>
-              <Heading as="h3" size="md">{item.title}</Heading>
-              <Text color="fg.muted" mt={2}>{item.body}</Text>
-            </ScrollReveal>
-          ))}
-        </Grid>
       </Container>
 
-      <LightMode>
-        <Box as="section" bg="train.500" color="gray.900">
-          <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 14, md: 20 }}>
-            <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'flex-start', md: 'flex-end' }} gap={8}>
-              <Heading as="h2" fontSize={{ base: '5xl', md: '7xl' }} color="gray.900" maxW="14ch" lineHeight="0.9">
-                Start with tomorrow morning’s check-in.
-              </Heading>
-              <Button as={RouterLink} to="/register" size="lg" flexShrink={0}>Create an account</Button>
-            </Flex>
-          </Container>
-        </Box>
-      </LightMode>
+      {/* Solid brand color: identical in light and dark mode. */}
+      <Box as="section" bg="train.500" color="gray.900">
+        <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 14, md: 20 }}>
+          <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align={{ base: 'flex-start', md: 'flex-end' }} gap={8}>
+            <Heading as="h2" fontSize={{ base: '5xl', md: '7xl' }} color="gray.900" maxW="14ch" lineHeight="0.9">
+              Start with tomorrow morning’s check-in.
+            </Heading>
+            <Button
+              as={RouterLink}
+              to="/register"
+              size="lg"
+              flexShrink={0}
+              bg="gray.900"
+              color="white"
+              _hover={{ bg: 'black' }}
+              _active={{ bg: 'black', transform: 'scale(0.97)' }}
+            >
+              Create an account
+            </Button>
+          </Flex>
+        </Container>
+      </Box>
     </Box>
   );
 }
