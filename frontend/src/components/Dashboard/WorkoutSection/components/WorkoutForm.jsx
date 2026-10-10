@@ -6,7 +6,6 @@ import {
   FormControl,
   FormHelperText,
   FormLabel,
-  Heading,
   HStack,
   Input,
   InputGroup,
@@ -111,8 +110,7 @@ const WorkoutForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
   const canSubmit = Boolean(formData.type && formData.duration !== '' && Number(formData.duration) > 0);
 
   return (
-    <Box bg="bg.surface" borderWidth="1px" borderColor="border" borderRadius="panel" p={{ base: 4, md: 5 }}>
-      <Heading as="h3" size="sm" mb={4}>{isEditing ? 'Edit workout' : 'Log a workout'}</Heading>
+    <Box>
 
       <form onSubmit={handleSubmit}>
         <VStack spacing={4} align="stretch">

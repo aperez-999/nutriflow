@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useContext } from 'react';
 import {
   Box,
+  Button,
   Card,
   CardBody,
   Container,
@@ -41,8 +42,10 @@ import { DailySummaryCard as DietDailySummaryCard, DietForm, DietCard } from '..
 // Workout sub-components
 import { DailySummaryCard as WorkoutDailySummaryCard, WorkoutForm, WorkoutCard } from '../components/Dashboard/WorkoutSection/components';
 import {
+  CheckInForm,
+  GettingStarted,
   GoalsModal,
-  ReadinessCheckInCard,
+  QuickPanel,
   RhythmCard,
   TodayFlowsCard,
   TodayScoreboard,
@@ -57,6 +60,7 @@ import {
   calculateDailyReadiness,
   handleApiError,
   handleApiSuccess,
+  hasAskedCoach,
   transformDietData,
   transformWorkoutData,
   getDailyActionPlan,
@@ -67,7 +71,7 @@ const DEFAULT_GOALS = { dailyCalories: 2000, dailyProtein: 150, weeklyWorkouts: 
 const RECENT_LOG_LIMIT = 6;
 const MotionBox = motion(Box);
 
-// Dashboard bands rise in once, in reading order.
+// Dashboard sections rise in once, in reading order.
 const enter = (index) => ({
   initial: { opacity: 0, y: 14 },
   animate: { opacity: 1, y: 0 },
@@ -76,7 +80,13 @@ const enter = (index) => ({
 // The mobile tab bar deep-links into the log tabs with these hashes.
 const LOG_TABS = ['#log-fuel', '#log-train'];
 
-const initialDietForm = {
+const PANELS = {
+  checkin: { title: 'Daily check-in', description: 'Twenty seconds. It sharpens today’s readiness score.' },
+  meal: { title: 'Log a meal', description: 'Search a food and the numbers fill in for you.' },
+  workout: { title: 'Log a workout', description: 'Pick an exercise or type your own.' },
+};
+
+const initialDietForm = () => ({
   date: getTodayDayKey(),
   mealType: '',
   foodName: '',
@@ -85,9 +95,9 @@ const initialDietForm = {
   carbs: '',
   fats: '',
   notes: ''
-};
+});
 
-const initialWorkoutForm = {
+const initialWorkoutForm = () => ({
   date: getTodayDayKey(),
   type: '',
   workoutName: '',
@@ -96,7 +106,7 @@ const initialWorkoutForm = {
   intensity: '',
   equipment: '',
   notes: ''
-};
+});
 
 const greetingFor = (date) => {
   const hour = date.getHours();
@@ -108,17 +118,17 @@ const greetingFor = (date) => {
 const newestFirst = (records) =>
   [...records].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, RECENT_LOG_LIMIT);
 
-const scrollToForm = (id) =>
-  document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-/** Recent entries for one flow, with an empty state that tells the user what to do next. */
-function RecentLog({ title, records, total, emptyText, renderItem }) {
+/** Recent entries for one flow, with an add button and an empty state that says what to do. */
+function RecentLog({ title, records, total, emptyText, renderItem, addLabel, onAdd }) {
   return (
     <Card>
       <CardBody py={4}>
-        <Flex justify="space-between" align="baseline" gap={3} pb={1}>
-          <Heading as="h3" size="sm">{title}</Heading>
-          <Text fontSize="sm" color="fg.muted">{total} logged</Text>
+        <Flex justify="space-between" align="center" gap={3} pb={1}>
+          <Box>
+            <Heading as="h3" size="sm">{title}</Heading>
+            <Text fontSize="xs" color="fg.muted">{total} logged</Text>
+          </Box>
+          <Button size="sm" variant="outline" onClick={onAdd}>{addLabel}</Button>
         </Flex>
         {records.length === 0 ? (
           <Text fontSize="sm" color="fg.muted" py={6}>{emptyText}</Text>
@@ -157,13 +167,13 @@ function RecentLog({ title, records, total, emptyText, renderItem }) {
 function DashboardSkeleton() {
   return (
     <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
-      <Skeleton h="48px" w="280px" borderRadius="lg" mb={8} />
-      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
-        <Skeleton h="340px" borderRadius="2xl" />
-        <Skeleton h="340px" borderRadius="2xl" />
-        <Skeleton h="260px" borderRadius="2xl" />
-        <Skeleton h="260px" borderRadius="2xl" />
+      <Skeleton h="72px" w="320px" borderRadius="lg" mb={6} />
+      <SimpleGrid columns={{ base: 1, lg: 3 }} spacing={4}>
+        <Skeleton h="160px" borderRadius="panel" />
+        <Skeleton h="160px" borderRadius="panel" />
+        <Skeleton h="160px" borderRadius="panel" />
       </SimpleGrid>
+      <Skeleton h="220px" borderRadius="panel" mt={8} />
     </Container>
   );
 }
@@ -173,6 +183,7 @@ function Dashboard() {
   const location = useLocation();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const { user, updateUser } = useContext(AuthContext);
+  const userId = user?.user?._id || 'anonymous';
   const goals = useMemo(() => ({ ...DEFAULT_GOALS, ...user?.user?.goals }), [user]);
   const [editingGoals, setEditingGoals] = useState(goals);
 
@@ -182,16 +193,16 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingCheckIn, setIsSavingCheckIn] = useState(false);
   const [logTab, setLogTab] = useState(Math.max(LOG_TABS.indexOf(location.hash), 0));
+  // Which quick panel is open: 'checkin' | 'meal' | 'workout' | null.
+  const [panel, setPanel] = useState(null);
 
   // Diet form state
   const [dietFormData, setDietFormData] = useState(initialDietForm);
-  const [isDietEditing, setIsDietEditing] = useState(false);
   const [dietEditingId, setDietEditingId] = useState(null);
   const [dietSelectedDate, setDietSelectedDate] = useState(getTodayDayKey());
 
   // Workout form state
   const [workoutFormData, setWorkoutFormData] = useState(initialWorkoutForm);
-  const [isWorkoutEditing, setIsWorkoutEditing] = useState(false);
   const [workoutEditingId, setWorkoutEditingId] = useState(null);
   const [workoutSelectedDate, setWorkoutSelectedDate] = useState(getTodayDayKey());
 
@@ -224,8 +235,26 @@ function Dashboard() {
     const index = LOG_TABS.indexOf(location.hash);
     if (index === -1 || isLoading) return;
     setLogTab(index);
-    document.getElementById('log')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('log')?.scrollIntoView({ block: 'start' });
   }, [location.hash, location.key, isLoading]);
+
+  const openPanel = useCallback((key) => {
+    if (key === 'meal') {
+      setDietEditingId(null);
+      setDietFormData(initialDietForm());
+    }
+    if (key === 'workout') {
+      setWorkoutEditingId(null);
+      setWorkoutFormData(initialWorkoutForm());
+    }
+    setPanel(key);
+  }, []);
+
+  const closePanel = useCallback(() => {
+    setPanel(null);
+    setDietEditingId(null);
+    setWorkoutEditingId(null);
+  }, []);
 
   const handleAddDiet = useCallback(async (dietData) => {
     try {
@@ -233,8 +262,10 @@ function Dashboard() {
       const newDiet = await addDiet(transformedData);
       setDiets((prev) => [...prev, newDiet]);
       handleApiSuccess(toast, 'Meal logged');
+      return true;
     } catch (error) {
       handleApiError(error, toast, 'adding diet');
+      return false;
     }
   }, [toast]);
 
@@ -244,8 +275,10 @@ function Dashboard() {
       const updatedDiet = await updateDiet(id, transformedData);
       setDiets((prev) => prev.map((diet) => (diet._id === id ? updatedDiet : diet)));
       handleApiSuccess(toast, 'Meal updated');
+      return true;
     } catch (error) {
       handleApiError(error, toast, 'updating diet');
+      return false;
     }
   }, [toast]);
 
@@ -265,8 +298,10 @@ function Dashboard() {
       const newWorkout = await addWorkout(transformedData);
       setWorkouts((prev) => [...prev, newWorkout]);
       handleApiSuccess(toast, 'Workout logged');
+      return true;
     } catch (error) {
       handleApiError(error, toast, 'adding workout');
+      return false;
     }
   }, [toast]);
 
@@ -276,8 +311,10 @@ function Dashboard() {
       const updatedWorkout = await updateWorkout(id, transformedData);
       setWorkouts((prev) => prev.map((w) => (w._id === id ? updatedWorkout : w)));
       handleApiSuccess(toast, 'Workout updated');
+      return true;
     } catch (error) {
       handleApiError(error, toast, 'updating workout');
+      return false;
     }
   }, [toast]);
 
@@ -316,10 +353,9 @@ function Dashboard() {
       const saved = await saveCheckIn(todayKey, values);
       setCheckIns((prev) => [saved, ...prev.filter((c) => c.dayKey !== saved.dayKey)]);
       handleApiSuccess(toast, 'Check-in saved');
-      return true;
+      setPanel(null);
     } catch (error) {
       handleApiError(error, toast, 'saving check-in');
-      return false;
     } finally {
       setIsSavingCheckIn(false);
     }
@@ -342,6 +378,12 @@ function Dashboard() {
   );
   const recentDiets = useMemo(() => newestFirst(diets), [diets]);
   const recentWorkouts = useMemo(() => newestFirst(workouts), [workouts]);
+  const onboardingSteps = useMemo(() => [
+    { key: 'checkin', label: 'Do your first check-in', flow: 'recover', done: checkIns.length > 0 },
+    { key: 'meal', label: 'Log a meal', flow: 'fuel', done: diets.length > 0 },
+    { key: 'workout', label: 'Log a workout', flow: 'train', done: workouts.length > 0 },
+    { key: 'coach', label: 'Ask your coach', flow: 'recover', done: hasAskedCoach(userId), to: '/fitness-hub' },
+  ], [checkIns.length, diets.length, workouts.length, userId]);
 
   if (isLoading) {
     return <DashboardSkeleton />;
@@ -349,161 +391,158 @@ function Dashboard() {
 
   const firstName = (user?.user?.username || '').split(/[\s._]/)[0];
 
+  const submitDiet = async (data) => {
+    const ok = dietEditingId ? await handleUpdateDiet(dietEditingId, data) : await handleAddDiet(data);
+    if (ok) closePanel();
+  };
+  const submitWorkout = async (data) => {
+    const ok = workoutEditingId ? await handleUpdateWorkout(workoutEditingId, data) : await handleAddWorkout(data);
+    if (ok) closePanel();
+  };
+
   return (
-    <Box>
-      <TodayScoreboard
-        dateLabel={formatDayKey(todayKey, { weekday: 'long', month: 'long', day: 'numeric' })}
-        greeting={`${greetingFor(new Date())}${firstName ? `, ${firstName}` : ''}.`}
-        today={today}
-        goals={goals}
-        checkIn={todayCheckIn}
-        onCheckIn={() => document.getElementById('check-in')?.scrollIntoView({ block: 'center' })}
-      />
-      <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
-        <VStack spacing={{ base: 6, md: 8 }} align="stretch">
-          <MotionBox {...enter(1)} display="grid" gridTemplateColumns={{ base: '1fr', lg: '5fr 7fr' }} gap={6} id="check-in" scrollMarginTop="88px">
-            <ReadinessCheckInCard
-              key={todayCheckIn?.updatedAt || 'no-check-in'}
-              readiness={readiness}
-              checkIn={todayCheckIn}
-              onSaveCheckIn={handleSaveCheckIn}
-              isSaving={isSavingCheckIn}
-            />
-            <TodayFlowsCard
-              goals={goals}
-              today={today}
-              actions={dailyActions}
-              hasCheckIn={Boolean(todayCheckIn)}
-              onEditGoals={openGoalsEditor}
-            />
-          </MotionBox>
+    <Container maxW="container.xl" py={{ base: 6, md: 10 }} px={{ base: 4, md: 6 }}>
+      <VStack spacing={{ base: 8, md: 10 }} align="stretch">
+        <TodayScoreboard
+          greeting={`${greetingFor(new Date())}${firstName ? `, ${firstName}` : ''}.`}
+          dateLabel={formatDayKey(todayKey, { weekday: 'long', month: 'long', day: 'numeric' })}
+          readiness={readiness}
+          today={today}
+          goals={goals}
+          checkIn={todayCheckIn}
+          onAction={openPanel}
+        />
 
-          <MotionBox {...enter(2)} display="grid" gridTemplateColumns={{ base: '1fr', lg: '7fr 5fr' }} gap={6}>
-            <RhythmCard rhythm={rhythm} />
-            <WeeklyCaloriesChart data={weeklyCaloriesByDay} goal={goals.dailyCalories} />
-          </MotionBox>
+        <GettingStarted userId={userId} steps={onboardingSteps} onAction={openPanel} />
 
-          <MotionBox {...enter(3)} id="log" scrollMarginTop="88px">
-            <Heading as="h2" size="lg" mb={4}>Log</Heading>
-            <Tabs index={logTab} onChange={setLogTab} variant="unstyled" position="relative">
-              <TabList mb={5} borderBottomWidth="1px" borderColor="border">
-                {['Meals', 'Workouts'].map((label) => (
-                  <Tab key={label} px={4} py={2.5} fontWeight={600} color="fg.muted" _selected={{ color: 'fg' }} _hover={{ color: 'fg' }}>
-                    {label}
-                  </Tab>
-                ))}
-              </TabList>
-              {/* Sliding underline between the two tabs. */}
-              <TabIndicator mt="-22px" height="2px" bg="border.strong" borderRadius="1px" />
-              <TabPanels>
-                <TabPanel p={0}>
-                  <Box display="grid" gridTemplateColumns={{ base: '1fr', xl: '5fr 7fr' }} gap={6} alignItems="start">
-                    <VStack spacing={6} align="stretch">
-                      <DietDailySummaryCard
-                        diets={diets}
-                        selectedDate={dietSelectedDate}
-                        setSelectedDate={setDietSelectedDate}
-                      />
-                      <Box id="diet-form" scrollMarginTop="88px">
-                        <DietForm
-                          isEditing={isDietEditing}
-                          onSubmit={async (data) => {
-                            if (isDietEditing) {
-                              await handleUpdateDiet(dietEditingId, data);
-                              setIsDietEditing(false);
-                              setDietEditingId(null);
-                            } else {
-                              await handleAddDiet(data);
-                            }
-                            setDietFormData(initialDietForm);
-                          }}
-                          onCancel={() => { setIsDietEditing(false); setDietEditingId(null); setDietFormData(initialDietForm); }}
-                          initialData={dietFormData}
-                        />
-                      </Box>
-                    </VStack>
-                    <RecentLog
-                      title="Recent meals"
-                      records={recentDiets}
-                      total={diets.length}
-                      emptyText="No meals yet. Add one with the form and it will show up here."
-                      renderItem={(diet) => (
-                        <DietCard
-                          key={diet._id}
-                          diet={diet}
-                          onEdit={(d) => {
-                            setIsDietEditing(true);
-                            setDietEditingId(d._id);
-                            setDietFormData({ date: toDayKey(d.date), mealType: d.mealType || '', foodName: d.foodName || '', calories: d.calories?.toString() || '', protein: d.protein?.toString() || '', carbs: d.carbs?.toString() || '', fats: d.fats?.toString() || '', notes: d.notes || '' });
-                            scrollToForm('diet-form');
-                          }}
-                          onDelete={handleDeleteDiet}
-                        />
-                      )}
-                    />
-                  </Box>
-                </TabPanel>
-                <TabPanel p={0}>
-                  <Box display="grid" gridTemplateColumns={{ base: '1fr', xl: '5fr 7fr' }} gap={6} alignItems="start">
-                    <VStack spacing={6} align="stretch">
-                      <WorkoutDailySummaryCard
-                        workouts={workouts}
-                        selectedDate={workoutSelectedDate}
-                        setSelectedDate={setWorkoutSelectedDate}
-                      />
-                      <Box id="workout-form" scrollMarginTop="88px">
-                        <WorkoutForm
-                          isEditing={isWorkoutEditing}
-                          onSubmit={async (data) => {
-                            if (isWorkoutEditing) {
-                              await handleUpdateWorkout(workoutEditingId, data);
-                              setIsWorkoutEditing(false);
-                              setWorkoutEditingId(null);
-                            } else {
-                              await handleAddWorkout(data);
-                            }
-                            setWorkoutFormData(initialWorkoutForm);
-                          }}
-                          onCancel={() => { setIsWorkoutEditing(false); setWorkoutEditingId(null); setWorkoutFormData(initialWorkoutForm); }}
-                          initialData={workoutFormData}
-                        />
-                      </Box>
-                    </VStack>
-                    <RecentLog
-                      title="Recent workouts"
-                      records={recentWorkouts}
-                      total={workouts.length}
-                      emptyText="No workouts yet. Add one with the form and it will show up here."
-                      renderItem={(workout) => (
-                        <WorkoutCard
-                          key={workout._id}
-                          workout={workout}
-                          onEdit={(w) => {
-                            setIsWorkoutEditing(true);
-                            setWorkoutEditingId(w._id);
-                            setWorkoutFormData({ date: toDayKey(w.date), type: w.type || '', workoutName: w.workoutName || w.type || '', duration: w.duration?.toString() || '', caloriesBurned: w.caloriesBurned?.toString() || '', intensity: w.intensity || '', equipment: w.equipment || '', notes: w.notes || '' });
-                            scrollToForm('workout-form');
-                          }}
-                          onDelete={handleDeleteWorkout}
-                        />
-                      )}
-                    />
-                  </Box>
-                </TabPanel>
-              </TabPanels>
-            </Tabs>
-          </MotionBox>
-
-          <GoalsModal
-            isOpen={isOpen}
-            onClose={onClose}
-            editingGoals={editingGoals}
-            onEditingGoalsChange={setEditingGoals}
-            onSave={handleSaveGoals}
+        <MotionBox {...enter(1)}>
+          <TodayFlowsCard
+            goals={goals}
+            today={today}
+            actions={dailyActions}
+            hasCheckIn={Boolean(todayCheckIn)}
+            onEditGoals={openGoalsEditor}
           />
-        </VStack>
-      </Container>
-    </Box>
+        </MotionBox>
+
+        <MotionBox {...enter(2)} display="grid" gridTemplateColumns={{ base: '1fr', lg: '7fr 5fr' }} gap={6}>
+          <RhythmCard rhythm={rhythm} />
+          <WeeklyCaloriesChart data={weeklyCaloriesByDay} goal={goals.dailyCalories} />
+        </MotionBox>
+
+        <MotionBox {...enter(3)} id="log" scrollMarginTop="88px">
+          <Heading as="h2" size="lg" mb={4}>Log</Heading>
+          <Tabs index={logTab} onChange={setLogTab} variant="unstyled" position="relative">
+            <TabList mb={5} borderBottomWidth="1px" borderColor="border">
+              {['Meals', 'Workouts'].map((label) => (
+                <Tab key={label} px={4} py={2.5} fontWeight={600} color="fg.muted" _selected={{ color: 'fg' }} _hover={{ color: 'fg' }}>
+                  {label}
+                </Tab>
+              ))}
+            </TabList>
+            {/* Sliding underline between the two tabs. */}
+            <TabIndicator mt="-22px" height="2px" bg="border.strong" borderRadius="1px" />
+            <TabPanels>
+              <TabPanel p={0}>
+                <Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '5fr 7fr' }} gap={6} alignItems="start">
+                  <DietDailySummaryCard
+                    diets={diets}
+                    selectedDate={dietSelectedDate}
+                    setSelectedDate={setDietSelectedDate}
+                  />
+                  <RecentLog
+                    title="Recent meals"
+                    records={recentDiets}
+                    total={diets.length}
+                    addLabel="Log meal"
+                    onAdd={() => openPanel('meal')}
+                    emptyText="No meals yet. Log your first one and your fuel starts filling in."
+                    renderItem={(diet) => (
+                      <DietCard
+                        diet={diet}
+                        onEdit={(d) => {
+                          setDietEditingId(d._id);
+                          setDietFormData({ date: toDayKey(d.date), mealType: d.mealType || '', foodName: d.foodName || '', calories: d.calories?.toString() || '', protein: d.protein?.toString() || '', carbs: d.carbs?.toString() || '', fats: d.fats?.toString() || '', notes: d.notes || '' });
+                          setPanel('meal');
+                        }}
+                        onDelete={handleDeleteDiet}
+                      />
+                    )}
+                  />
+                </Box>
+              </TabPanel>
+              <TabPanel p={0}>
+                <Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '5fr 7fr' }} gap={6} alignItems="start">
+                  <WorkoutDailySummaryCard
+                    workouts={workouts}
+                    selectedDate={workoutSelectedDate}
+                    setSelectedDate={setWorkoutSelectedDate}
+                  />
+                  <RecentLog
+                    title="Recent workouts"
+                    records={recentWorkouts}
+                    total={workouts.length}
+                    addLabel="Log workout"
+                    onAdd={() => openPanel('workout')}
+                    emptyText="No workouts yet. Log your first one and your training starts filling in."
+                    renderItem={(workout) => (
+                      <WorkoutCard
+                        workout={workout}
+                        onEdit={(w) => {
+                          setWorkoutEditingId(w._id);
+                          setWorkoutFormData({ date: toDayKey(w.date), type: w.type || '', workoutName: w.workoutName || w.type || '', duration: w.duration?.toString() || '', caloriesBurned: w.caloriesBurned?.toString() || '', intensity: w.intensity || '', equipment: w.equipment || '', notes: w.notes || '' });
+                          setPanel('workout');
+                        }}
+                        onDelete={handleDeleteWorkout}
+                      />
+                    )}
+                  />
+                </Box>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+        </MotionBox>
+      </VStack>
+
+      <QuickPanel
+        isOpen={panel !== null}
+        onClose={closePanel}
+        title={
+          panel === 'meal' && dietEditingId ? 'Edit meal'
+            : panel === 'workout' && workoutEditingId ? 'Edit workout'
+              : PANELS[panel]?.title
+        }
+        description={PANELS[panel]?.description}
+      >
+        {panel === 'checkin' && (
+          <CheckInForm checkIn={todayCheckIn} onSave={handleSaveCheckIn} isSaving={isSavingCheckIn} />
+        )}
+        {panel === 'meal' && (
+          <DietForm
+            isEditing={Boolean(dietEditingId)}
+            onSubmit={submitDiet}
+            onCancel={closePanel}
+            initialData={dietFormData}
+          />
+        )}
+        {panel === 'workout' && (
+          <WorkoutForm
+            isEditing={Boolean(workoutEditingId)}
+            onSubmit={submitWorkout}
+            onCancel={closePanel}
+            initialData={workoutFormData}
+          />
+        )}
+      </QuickPanel>
+
+      <GoalsModal
+        isOpen={isOpen}
+        onClose={onClose}
+        editingGoals={editingGoals}
+        onEditingGoalsChange={setEditingGoals}
+        onSave={handleSaveGoals}
+      />
+    </Container>
   );
 }
 

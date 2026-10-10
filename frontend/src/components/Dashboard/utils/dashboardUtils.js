@@ -188,3 +188,15 @@ export const getDailyActionPlan = (readiness, dailyCalories = 0, dailyCalorieGoa
     recoverySuggestion,
   };
 };
+
+/** True once the user has sent at least one message to the coach (chat threads are stored per user). */
+export const hasAskedCoach = (userId) => {
+  try {
+    const raw = window.localStorage.getItem(`nutriflow.fitnessHub.chatThreads.${userId}`);
+    const conversations = raw ? JSON.parse(raw)?.conversations : [];
+    return Array.isArray(conversations)
+      && conversations.some((c) => Array.isArray(c?.messages) && c.messages.some((m) => m?.type === 'user'));
+  } catch {
+    return false;
+  }
+};

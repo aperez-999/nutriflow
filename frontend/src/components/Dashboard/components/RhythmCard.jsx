@@ -97,7 +97,7 @@ function RhythmCard({ rhythm }) {
             display="grid"
             gridTemplateColumns={`repeat(${recentColumns.length}, minmax(0, 1fr))`}
             gap={{ base: '3px', md: '5px' }}
-            maxW="640px"
+            maxW="420px"
           >
             {recentColumns.map((column, columnIndex) => (
               <Flex key={column[0].dayKey} direction="column" gap={{ base: '3px', md: '5px' }}>
