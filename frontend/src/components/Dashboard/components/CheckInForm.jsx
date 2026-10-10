@@ -47,7 +47,8 @@ function ScoreRing({ score, level, size = 128 }) {
       </svg>
       <Flex position="absolute" inset={0} direction="column" align="center" justify="center">
         <Text textStyle="figure" fontSize={size >= 120 ? '5xl' : '4xl'}><CountUp value={score} duration={1} /></Text>
-        <Text fontSize="xs" color="fg.muted">{LEVEL_LABEL[level] || 'Readiness'}</Text>
+        {/* Small rings sit beside the verdict headline, so they show the number only. */}
+        {size >= 120 && <Text fontSize="xs" color="fg.muted">{LEVEL_LABEL[level] || 'Readiness'}</Text>}
       </Flex>
     </Box>
   );

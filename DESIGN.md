@@ -40,6 +40,10 @@ Tabular figures are only applied to display figures; in Schibsted they widen com
 
 **Quick actions live in panels.** Check-in and logging open in a `QuickPanel` (bottom sheet on phones, side panel on desktop), so the dashboard stays a calm overview. New users get a four-step `GettingStarted` guide that ticks itself off and can be hidden.
 
+**Navigation:** Today (the daily verdict and logging), Coach (the conversation only), Library (saved plans and exercises) and Me (profile, with Settings inside). The phone tab bar has exactly these four.
+
+**Sign-in screens:** the brand side follows the mode and cycles the three daily verdicts, each in its flow color, with a pause control; it does not rotate under reduced motion.
+
 ## Motion
 
 Shared values live in `components/Motion/tokens.js` (one ease-out curve, 150/250/600 ms). Motion always shows data arriving or changing, never decoration:

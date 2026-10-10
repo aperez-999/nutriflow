@@ -76,6 +76,7 @@ function TodayScoreboard({ greeting, dateLabel, readiness, today, goals, checkIn
         {actions.map((action) => (
           <WrapItem key={action.key}>
             <Button
+              data-guide={action.key}
               variant={action.key === primary ? 'solid' : 'outline'}
               onClick={() => onAction(action.key)}
               leftIcon={<Box boxSize="8px" borderRadius="2px" bg={`${ACTION_DOTS[action.key]}.solid`} />}
