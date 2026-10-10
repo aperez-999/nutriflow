@@ -11,8 +11,11 @@ const BARS = [
   { flow: 'recover', width: '85%' },
 ];
 
-/** The logo mark at billboard scale; the bars sweep in once on mount. */
-export default function FlowBand({ barHeight = { base: '14px', md: '22px' }, gap = { base: 2, md: 3 }, delay = 0.35 }) {
+/**
+ * The logo mark at billboard scale; the bars sweep in once on mount.
+ * tone="ink" draws all three in black for use on a solid color band.
+ */
+export default function FlowBand({ barHeight = { base: '14px', md: '22px' }, gap = { base: 2, md: 3 }, delay = 0.35, tone = 'flow' }) {
   return (
     <Stack spacing={gap} aria-hidden="true">
       {BARS.map((bar, i) => (
@@ -20,7 +23,7 @@ export default function FlowBand({ barHeight = { base: '14px', md: '22px' }, gap
           key={bar.flow}
           h={barHeight}
           w={bar.width}
-          bg={`${bar.flow}.solid`}
+          bg={tone === 'ink' ? 'gray.900' : `${bar.flow}.solid`}
           borderRadius="4px"
           style={{ originX: 0 }}
           initial={{ scaleX: 0 }}

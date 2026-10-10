@@ -30,7 +30,15 @@ Tabular figures are only applied to display figures; in Schibsted they widen com
 
 **Shape:** 6px radius on controls, 10px on panels. Panels are separated by 1px borders, not shadows. Only modals and menus float, so only they get a shadow.
 
-**Bands:** Each main screen opens with a black band (`DarkMode` + `bg.canvas`): the landing hero, the dashboard scoreboard, the Coach and Settings headers, and the brand side of the auth split screen. The flow colors are at their most vivid on black, so that is where they carry the identity: the flow band (the logo mark at billboard scale) and the scoreboard bars. The landing page ends on a full-bleed `train.500` band.
+**Light and dark are consistent.** Nothing forces a mode: every surface follows the user's choice. Color comes from the three flows instead of from black bands:
+
+- Tinted tiles and sections (`<flow>.subtle`) for each flow: the dashboard's Readiness, Fuel and Training tiles, the landing page's Fuel, Train and Recover sections, completed onboarding steps.
+- Solid flow-color blocks for brand moments (`train.500` with ink text, `recover.500` with white text): the sign-in panel, the Coach header and the landing page's closing band. A solid color looks the same in both modes, so it never reads as "the wrong mode".
+- The flow band (the logo mark at billboard scale) on the landing hero; an ink version (`tone="ink"`) on solid color.
+
+**The daily verdict** is the product's headline: the dashboard opens with "Push day.", "Steady day." or "Recovery day." from the readiness level, with the next step underneath.
+
+**Quick actions live in panels.** Check-in and logging open in a `QuickPanel` (bottom sheet on phones, side panel on desktop), so the dashboard stays a calm overview. New users get a four-step `GettingStarted` guide that ticks itself off and can be hidden.
 
 ## Motion
 

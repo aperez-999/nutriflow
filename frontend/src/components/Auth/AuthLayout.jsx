@@ -1,4 +1,4 @@
-import { Box, Container, DarkMode, Grid, Heading, Text } from '@chakra-ui/react';
+import { Box, Container, Grid, Heading, Text } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import FlowBand from '../Global/FlowBand';
 import { DURATION, EASE_OUT } from '../Motion/tokens';
@@ -12,27 +12,26 @@ const MotionBox = motion(Box);
 export default function AuthLayout({ title, description, children, footer, statement = 'Fuel. Train. Recover.' }) {
   return (
     <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} minH={{ lg: 'calc(100vh - 57px)' }}>
-      <DarkMode>
-        <Box
-          display={{ base: 'none', lg: 'flex' }}
-          flexDirection="column"
-          justifyContent="space-between"
-          bg="bg.canvas"
-          color="fg"
-          px={{ lg: 12, xl: 16 }}
-          py={16}
-        >
-          <Heading as="p" fontSize={{ lg: '7xl', xl: '8xl' }} lineHeight="0.88" maxW="10ch">
-            {statement}
-          </Heading>
-          <Box>
-            <FlowBand delay={0.15} />
-            <Text color="fg.muted" mt={6} maxW="40ch">
-              One readiness score from what you ate, how you trained and how you slept.
-            </Text>
-          </Box>
+      {/* Solid brand color: identical in light and dark mode. */}
+      <Box
+        display={{ base: 'none', lg: 'flex' }}
+        flexDirection="column"
+        justifyContent="space-between"
+        bg="train.500"
+        color="gray.900"
+        px={{ lg: 12, xl: 16 }}
+        py={16}
+      >
+        <Heading as="p" fontSize={{ lg: '7xl', xl: '8xl' }} lineHeight="0.88" maxW="10ch" color="gray.900">
+          {statement}
+        </Heading>
+        <Box>
+          <FlowBand tone="ink" delay={0.15} />
+          <Text color="blackAlpha.800" mt={6} maxW="40ch" fontWeight="500">
+            One readiness score from what you ate, how you trained and how you slept.
+          </Text>
         </Box>
-      </DarkMode>
+      </Box>
 
       <Box>
         <Box display={{ base: 'block', lg: 'none' }} px={4} pt={6}>

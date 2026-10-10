@@ -1,8 +1,7 @@
-import { useContext, useEffect, useState } from 'react';
+import { useContext } from 'react';
 import {
   Avatar,
   Box,
-  DarkMode,
   Button,
   Container,
   Flex,
@@ -35,17 +34,6 @@ const getAccount = (user) => user?.user || user?.result || user || {};
 
 const MotionBox = motion(Box);
 
-function useScrolled(threshold = 8) {
-  const [scrolled, setScrolled] = useState(() => typeof window !== 'undefined' && window.scrollY > threshold);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > threshold);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [threshold]);
-  return scrolled;
-}
-
 function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -56,9 +44,6 @@ function Navbar() {
 
   const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname) || location.pathname.startsWith('/reset-password/');
   const isLoggedIn = Boolean(user);
-  const scrolled = useScrolled();
-  // On the public landing page the bar floats over the dark hero until you scroll.
-  const overHero = !isLoggedIn && location.pathname === '/' && !scrolled;
 
   const handleLogout = () => {
     logout();
@@ -66,18 +51,16 @@ function Navbar() {
     toast({ title: 'Logged out', status: 'success', duration: 2500, isClosable: true });
   };
 
-  const bar = (
+  return (
     <Box
       as="header"
-      position={!isLoggedIn && location.pathname === '/' ? 'fixed' : 'sticky'}
+      position="sticky"
       top={0}
-      insetX={0}
       zIndex="sticky"
-      bg={overHero ? 'transparent' : 'bg.surface'}
+      bg="bg.surface"
       borderBottomWidth="1px"
-      borderColor={overHero ? 'transparent' : 'border'}
+      borderColor="border"
       pt="env(safe-area-inset-top)"
-      transition={`background-color ${DURATION.base}s ease, border-color ${DURATION.base}s ease`}
     >
       <Container maxW="container.xl" px={{ base: 4, md: 6 }}>
         <Flex h="56px" align="center" justify="space-between" gap={4}>
@@ -193,8 +176,6 @@ function Navbar() {
       </Container>
     </Box>
   );
-
-  return overHero ? <DarkMode>{bar}</DarkMode> : bar;
 }
 
 export default Navbar;

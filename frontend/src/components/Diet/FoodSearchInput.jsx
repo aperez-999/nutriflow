@@ -132,7 +132,11 @@ const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = 'Search 
             if (searchQuery.trim().length >= 2) setShowResults(true);
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Escape') setShowResults(false);
+            // First Escape closes the results only; it must not also close a surrounding panel.
+            if (e.key === 'Escape' && shouldShowDropdown) {
+              e.stopPropagation();
+              setShowResults(false);
+            }
           }}
           placeholder={placeholder}
           pr={10}

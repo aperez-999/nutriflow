@@ -730,6 +730,7 @@ function FitnessHub() {
   return (
     <Box>
       <PageBand
+        flow="recover"
         title="Coach"
         description="Ask anything, get training and meal plans built from your log, and browse exercises."
       />
