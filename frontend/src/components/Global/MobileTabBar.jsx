@@ -1,7 +1,7 @@
 import { useContext } from 'react';
 import { Box, Flex, Icon, Text } from '@chakra-ui/react';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-import { FiActivity, FiCoffee, FiMessageCircle, FiSun, FiUser } from 'react-icons/fi';
+import { FiBookOpen, FiMessageCircle, FiSun, FiUser } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { AuthContext } from '../../context/AuthContext';
 import { DURATION, EASE_OUT } from '../Motion/tokens';
@@ -11,11 +11,10 @@ const MotionBox = motion(Box);
 export const TAB_BAR_HEIGHT = '64px';
 
 const TABS = [
-  { label: 'Today', icon: FiSun, to: '/dashboard', isActive: (path, hash) => path === '/dashboard' && !hash.startsWith('#log') },
-  { label: 'Fuel', flow: 'fuel', icon: FiCoffee, to: '/dashboard#log-fuel', isActive: (path, hash) => path === '/dashboard' && hash === '#log-fuel' },
-  { label: 'Train', flow: 'train', icon: FiActivity, to: '/dashboard#log-train', isActive: (path, hash) => path === '/dashboard' && hash === '#log-train' },
+  { label: 'Today', icon: FiSun, to: '/dashboard', isActive: (path) => path === '/dashboard' },
   { label: 'Coach', icon: FiMessageCircle, to: '/fitness-hub', isActive: (path) => path === '/fitness-hub' },
-  { label: 'Me', icon: FiUser, to: '/settings', isActive: (path) => path === '/settings' },
+  { label: 'Library', icon: FiBookOpen, to: '/library', isActive: (path) => path === '/library' },
+  { label: 'Me', icon: FiUser, to: '/profile', isActive: (path) => path === '/profile' || path === '/settings' },
 ];
 
 /**
@@ -51,13 +50,14 @@ export default function MobileTabBar() {
               as={RouterLink}
               to={tab.to}
               aria-current={active ? 'page' : undefined}
+              data-guide={tab.to === '/fitness-hub' ? 'coach' : undefined}
               flex="1"
               direction="column"
               align="center"
               justify="center"
               gap={1}
               position="relative"
-              color={active ? (tab.flow ? `${tab.flow}.fg` : 'fg') : 'fg.muted'}
+              color={active ? 'fg' : 'fg.muted'}
               transition="color 0.15s ease"
               _focusVisible={{ outline: '2px solid', outlineColor: 'brand.500', outlineOffset: '-4px', borderRadius: 'md' }}
             >

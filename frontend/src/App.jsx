@@ -38,8 +38,18 @@ const ROUTE_META = [
   },
   {
     match: (pathname) => pathname === '/fitness-hub',
-    title: 'Fitness Hub | NutriFlow',
-    description: 'Use the NutriFlow Fitness Hub for AI coaching, plans, insights, and training discovery.',
+    title: 'Coach | NutriFlow',
+    description: 'Ask the NutriFlow coach about training, food and recovery, with answers from your own log.',
+  },
+  {
+    match: (pathname) => pathname === '/library',
+    title: 'Library | NutriFlow',
+    description: 'Your saved training and meal plans and the NutriFlow exercise library.',
+  },
+  {
+    match: (pathname) => pathname === '/profile',
+    title: 'Profile | NutriFlow',
+    description: 'Your NutriFlow profile: streaks, rhythm and what you log most.',
   },
   {
     match: (pathname) => pathname === '/settings',

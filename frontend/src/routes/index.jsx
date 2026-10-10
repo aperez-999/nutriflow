@@ -11,7 +11,9 @@ const ForgotPassword = lazy(() => import('../components/Auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('../components/Auth/ResetPassword'));
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const FitnessHub = lazy(() => import('../pages/FitnessHub'));
-const ProfileSettings = lazy(() => import('../pages/ProfileSettings'));
+const Settings = lazy(() => import('../pages/Settings'));
+const Library = lazy(() => import('../pages/Library'));
+const Profile = lazy(() => import('../pages/Profile'));
 const Privacy = lazy(() => import('../components/Footer/Privacy'));
 const Terms = lazy(() => import('../components/Footer/Terms'));
 const Contact = lazy(() => import('../components/Footer/Contact'));
@@ -62,10 +64,26 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/library"
+          element={
+            <ProtectedRoute>
+              <Library />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/settings"
           element={
             <ProtectedRoute>
-              <ProfileSettings />
+              <Settings />
             </ProtectedRoute>
           }
         />

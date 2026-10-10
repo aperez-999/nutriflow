@@ -8,9 +8,11 @@ import { extendTheme } from '@chakra-ui/react';
  * rather than raw palette steps or useColorModeValue.
  */
 
+// First visit follows the device; after that useAppearance owns the choice
+// (light, dark, or follow device), so Chakra must not override it on OS changes.
 const config = {
   initialColorMode: 'system',
-  useSystemColorMode: true,
+  useSystemColorMode: false,
 };
 
 // Pure neutrals (no blue tint) replace Chakra's default gray everywhere.

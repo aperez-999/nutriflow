@@ -1,5 +1,6 @@
 import {
   Box,
+  Button,
   Card,
   CardBody,
   VStack,
@@ -14,6 +15,7 @@ import {
   IconButton,
 } from '@chakra-ui/react';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { Link as RouterLink } from 'react-router-dom';
 import { ConfirmDeleteButton } from '../Dashboard/components/EntryRow';
 import PlanCard from './PlanCard';
 import MealPlanCard from './MealPlanCard';
@@ -160,9 +162,12 @@ export default function FitnessHubPlansSection({
             )}
 
             {!recommendationsLoading && aiWorkouts.length === 0 && (
-              <Text color={textColor} fontSize="sm">
-                None yet. Tap &ldquo;Plan my training week&rdquo; in the chat and it will be saved here.
-              </Text>
+              <Box>
+                <Text color={textColor} fontSize="sm">
+                  None yet. In Coach, tap &ldquo;Plan my training week&rdquo; and the plan lands here, ready to log.
+                </Text>
+                <Button as={RouterLink} to="/fitness-hub" size="sm" variant="outline" mt={3}>Open Coach</Button>
+              </Box>
             )}
             </VStack>
           </CardBody>
@@ -235,9 +240,12 @@ export default function FitnessHubPlansSection({
                   getMealState={getMealState}
                 />
               ) : (
-                <Text color={textColor} fontSize="sm">
-                  None yet. Tap &ldquo;Make a meal plan&rdquo; in the chat, then log each meal here in one tap.
-                </Text>
+                <Box>
+                  <Text color={textColor} fontSize="sm">
+                    None yet. In Coach, tap &ldquo;Make a meal plan&rdquo;, then log each meal here in one tap.
+                  </Text>
+                  <Button as={RouterLink} to="/fitness-hub" size="sm" variant="outline" mt={3}>Open Coach</Button>
+                </Box>
               )}
             </VStack>
           </CardBody>

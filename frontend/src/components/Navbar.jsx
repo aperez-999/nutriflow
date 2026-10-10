@@ -13,21 +13,23 @@ import {
   MenuItem,
   MenuList,
   Text,
-  useColorMode,
   useToast,
 } from '@chakra-ui/react';
 import { MoonIcon, SunIcon } from '@chakra-ui/icons';
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
-import { FiLogOut, FiMenu, FiUser } from 'react-icons/fi';
+import { FiLogOut, FiMenu, FiSettings, FiUser } from 'react-icons/fi';
 import { motion } from 'framer-motion';
 import { DURATION, EASE_OUT } from './Motion/tokens';
 import { AuthContext } from '../context/AuthContext';
+import useAppearance from '../theme/useAppearance';
+import { useColorMode } from '@chakra-ui/react';
 import Logo from './Global/Logo';
 
 // Labels match the mobile tab bar so the app reads the same on every screen size.
 const NAV_ITEMS = [
   { label: 'Today', path: '/dashboard' },
   { label: 'Coach', path: '/fitness-hub' },
+  { label: 'Library', path: '/library' },
 ];
 
 const getAccount = (user) => user?.user || user?.result || user || {};
@@ -39,7 +41,9 @@ function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const toast = useToast();
-  const { colorMode, toggleColorMode } = useColorMode();
+  const { colorMode } = useColorMode();
+  // Also keeps 'follow device' in effect on every page, since the navbar is always mounted.
+  const [, setAppearance] = useAppearance();
   const account = getAccount(user);
 
   const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname) || location.pathname.startsWith('/reset-password/');
@@ -79,6 +83,7 @@ function Navbar() {
                       as={RouterLink}
                       to={item.path}
                       aria-current={isActive ? 'page' : undefined}
+                      data-guide={item.path === '/fitness-hub' ? 'coach' : undefined}
                       h="100%"
                       align="center"
                       px={3}
@@ -123,7 +128,7 @@ function Navbar() {
             <IconButton
               aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
               icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
-              onClick={toggleColorMode}
+              onClick={() => setAppearance(colorMode === 'light' ? 'dark' : 'light')}
               variant="ghost"
               size="sm"
             />
@@ -145,8 +150,11 @@ function Navbar() {
                     <Text fontSize="xs" color="fg.muted" noOfLines={1}>{account.email}</Text>
                   </Box>
                   <MenuDivider />
-                  <MenuItem icon={<FiUser />} onClick={() => navigate('/settings')}>
-                    Profile and settings
+                  <MenuItem icon={<FiUser />} onClick={() => navigate('/profile')}>
+                    Profile
+                  </MenuItem>
+                  <MenuItem icon={<FiSettings />} onClick={() => navigate('/settings')}>
+                    Settings
                   </MenuItem>
                   <MenuItem icon={<FiLogOut />} onClick={handleLogout}>
                     Log out
