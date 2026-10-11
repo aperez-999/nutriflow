@@ -14,6 +14,7 @@ import chatRoutes from './routes/chatRoutes.js';
 import foodRoutes from './routes/foodRoutes.js';
 import exerciseRoutes from './routes/exerciseRoutes.js';
 import checkInRoutes from './routes/checkInRoutes.js';
+import exerciseLibraryRoutes from './routes/exerciseLibraryRoutes.js';
 import { selectProvider } from './ai/config/aiProvider.js';
 import { identifyUser } from './middleware/authMiddleware.js';
 
@@ -57,6 +58,7 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/food', foodRoutes);
 app.use('/api/exercise', exerciseRoutes);
 app.use('/api/checkins', checkInRoutes);
+app.use('/api/exercises', exerciseLibraryRoutes);
 
 import { orchestrateAI } from './ai/orchestrator/orchestrate.js';
 

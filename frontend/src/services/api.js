@@ -303,6 +303,16 @@ export const saveCheckIn = async (dayKey, checkIn) => {
   }
 };
 
+// Exercise library (stored in MongoDB, seeded from the backend catalog)
+export const getExerciseLibrary = async () => {
+  try {
+    const response = await axios.get('/api/exercises');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to load the exercise library' };
+  }
+};
+
 // Food search functions
 export const searchFoods = async (query) => {
   try {

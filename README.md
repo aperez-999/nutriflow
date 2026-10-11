@@ -239,6 +239,9 @@ The application will be available at:
 ### Exercise Search
 - `GET /api/exercise/search?query=squat` - Search exercise database
 
+### Exercise Library
+- `GET /api/exercises` - The Library's exercise catalog with muscle maps, cues and filter values (`muscleGroup`, `equipment`, `difficulty` and `q` are optional filters). The collection is seeded from `backend/data/exerciseCatalog.js` on first request and kept in sync by slug.
+
 ### Contact
 - `POST /api/contact` - Submit contact form
 
