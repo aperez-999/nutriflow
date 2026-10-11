@@ -44,6 +44,10 @@ Tabular figures are only applied to display figures; in Schibsted they widen com
 
 **Muscle maps.** Exercises are shown with `AnatomyFigure`, a flat front and back body map: main muscles in `train.solid`, helpers in a lighter train step, everything else in `border`. It is a diagram, not an illustration: no shading or outlines, and the same figure at thumbnail and detail size.
 
+**Page bands carry live figures.** Coach and Library open with two or three numbers counting up under the title (`PageBandFigures`), the same way the dashboard opens with the verdict.
+
+**Plans are a shelf, not a dropdown.** The Library's Plans tab switches between Training and Meals, shows saved plans as tiles with one progress segment per session or meal, and lays the chosen plan out as a grid you log from. A training plan also shows "What this plan trains", a muscle map built by matching its exercises to the library.
+
 **Coach.** An empty conversation shows four flow-tinted starting points instead of a blank transcript. While the coach answers, the logo's three bars fill in turn. Beside the chat, "What your coach sees" shows the readiness and numbers the answers draw on. Other pages can hand over a question with `/fitness-hub?ask=...`, which opens it in a new conversation.
 
 **Sign-in screens:** the brand side follows the mode and cycles the three daily verdicts, each in its flow color, with a pause control; it does not rotate under reduced motion.

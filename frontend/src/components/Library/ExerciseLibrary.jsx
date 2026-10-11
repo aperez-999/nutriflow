@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Box,
   Button,
@@ -17,7 +17,7 @@ import {
 import { SearchIcon } from '@chakra-ui/icons';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { getExerciseLibrary } from '../../services/api';
+import useExerciseCatalog from './useExerciseCatalog';
 import AnatomyFigure from './AnatomyFigure';
 import { describeMuscles } from './anatomy';
 import QuickPanel from '../Dashboard/components/QuickPanel';
@@ -93,21 +93,12 @@ function ExerciseDetail({ exercise, onAsk }) {
 /** Searchable exercise grid backed by the Exercise collection, with a detail panel. */
 export default function ExerciseLibrary() {
   const navigate = useNavigate();
-  const [state, setState] = useState({ status: 'loading', exercises: [], filters: null });
+  const state = useExerciseCatalog();
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('');
   const [equipment, setEquipment] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [selected, setSelected] = useState(null);
-
-  const load = useCallback(() => {
-    setState((prev) => ({ ...prev, status: 'loading' }));
-    getExerciseLibrary()
-      .then((data) => setState({ status: 'ready', exercises: data.exercises || [], filters: data.filters }))
-      .catch(() => setState({ status: 'error', exercises: [], filters: null }));
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
 
   const visible = useMemo(() => {
     const text = query.trim().toLowerCase();
@@ -199,7 +190,7 @@ export default function ExerciseLibrary() {
         <Box borderWidth="1px" borderColor="border" borderRadius="panel" p={6}>
           <Text fontWeight="700">The exercise library didn’t load.</Text>
           <Text fontSize="sm" color="fg.muted" mt={1}>Check your connection, then try again.</Text>
-          <Button mt={4} size="sm" onClick={load}>Try again</Button>
+          <Button mt={4} size="sm" onClick={state.reload}>Try again</Button>
         </Box>
       )}
 

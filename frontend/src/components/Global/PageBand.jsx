@@ -1,6 +1,7 @@
-import { Box, Container, Heading, Text } from '@chakra-ui/react';
+import { Box, Container, Heading, HStack, Text } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { DURATION, EASE_OUT } from '../Motion/tokens';
+import { CountUp } from '../Motion';
 
 const MotionBox = motion(Box);
 
@@ -10,6 +11,20 @@ const BAND = {
   fuel: { bg: 'fuel.600', color: 'white', muted: 'whiteAlpha.900' },
   train: { bg: 'train.500', color: 'gray.900', muted: 'blackAlpha.800' },
 };
+
+/** A row of live figures under a band's title, counting up on arrival. */
+export function PageBandFigures({ items }) {
+  return (
+    <HStack spacing={{ base: 6, md: 10 }} mt={{ base: 6, md: 8 }} align="flex-start" flexWrap="wrap">
+      {items.map(({ value, label }) => (
+        <Box key={label}>
+          <Text textStyle="figure" fontSize={{ base: '4xl', md: '5xl' }} lineHeight="1"><CountUp value={value} /></Text>
+          <Text fontSize="sm" opacity={0.9} mt={1}>{label}</Text>
+        </Box>
+      ))}
+    </HStack>
+  );
+}
 
 /**
  * Header band that opens an app page. With `flow` it is a solid block of that flow's

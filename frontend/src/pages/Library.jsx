@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Box,
   Container,
@@ -8,37 +8,28 @@ import {
   TabPanel,
   TabPanels,
   Tabs,
-  useDisclosure,
 } from '@chakra-ui/react';
-import PageBand from '../components/Global/PageBand';
-import FitnessHubPlansSection from '../components/FitnessHub/FitnessHubPlansSection';
-import ExerciseDetailsModal from '../components/FitnessHub/ExerciseDetailsModal';
+import PageBand, { PageBandFigures } from '../components/Global/PageBand';
 import usePlanLibrary from '../components/Library/usePlanLibrary';
+import useExerciseCatalog from '../components/Library/useExerciseCatalog';
 import ExerciseLibrary from '../components/Library/ExerciseLibrary';
-
-const noop = () => {};
-const idleState = () => ({ loading: false, completed: false });
+import PlansView from '../components/Library/PlansView';
+import SessionDetail from '../components/Library/SessionDetail';
+import { planProgress } from '../components/Library/planUtils';
 
 /** Everything you keep: plans the coach built for you, and the exercise library. */
 function Library() {
   const library = usePlanLibrary();
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [activeWorkout, setActiveWorkout] = useState(null);
+  const catalog = useExerciseCatalog();
+  const [session, setSession] = useState(null);
 
-  const handleViewDetails = useCallback((workout) => {
-    setActiveWorkout(workout);
-    onOpen();
-  }, [onOpen]);
-
-  const handleCloseDetails = useCallback(() => {
-    onClose();
-    setActiveWorkout(null);
-  }, [onClose]);
-
-  const shared = {
-    sectionRef: null,
-    compact: true,
-  };
+  const totals = useMemo(() => {
+    const items = [
+      ...library.savedPlans.flatMap((plan) => plan.workouts),
+      ...library.savedMealPlans.flatMap((plan) => plan.meals),
+    ];
+    return { plans: library.savedPlans.length + library.savedMealPlans.length, logged: planProgress(items).done };
+  }, [library.savedMealPlans, library.savedPlans]);
 
   return (
     <Box>
@@ -46,9 +37,17 @@ function Library() {
         flow="fuel"
         title="Library"
         description="Plans your coach built for you, ready to log in one tap, and exercises to browse."
-      />
+      >
+        <PageBandFigures
+          items={[
+            { value: totals.plans, label: totals.plans === 1 ? 'plan saved' : 'plans saved' },
+            { value: totals.logged, label: 'logged from plans' },
+            { value: catalog.exercises.length, label: 'exercises' },
+          ]}
+        />
+      </PageBand>
       <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
-        <Tabs variant="unstyled" position="relative" isLazy defaultIndex={library.savedPlans.length || library.savedMealPlans.length ? 0 : 1}>
+        <Tabs variant="unstyled" position="relative" isLazy defaultIndex={totals.plans ? 0 : 1}>
           <TabList mb={6} borderBottomWidth="1px" borderColor="border">
             {['Plans', 'Exercises'].map((label) => (
               <Tab key={label} px={4} py={2.5} fontWeight={600} color="fg.muted" _selected={{ color: 'fg' }} _hover={{ color: 'fg' }}>
@@ -59,47 +58,11 @@ function Library() {
           <TabIndicator mt="-26px" height="2px" bg="border.strong" borderRadius="1px" />
           <TabPanels>
             <TabPanel p={0}>
-              <Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={6} alignItems="start">
-                <FitnessHubPlansSection
-                  {...shared}
-                  workoutPlansOnly
-                  recommendationsLoading={library.recommendationsLoading}
-                  aiWorkouts={library.activePlan?.workouts || []}
-                  aiGeneratedAt={library.activePlan?.generatedAt ? new Date(library.activePlan.generatedAt) : null}
-                  onViewDetails={handleViewDetails}
-                  savedPlans={library.savedPlans}
-                  activePlanId={library.activePlan?.id || null}
-                  onSelectPlan={library.setActivePlanId}
-                  onCompleteWorkout={library.handleCompleteWorkout}
-                  onDeletePlan={library.deletePlan}
-                  getWorkoutState={library.getWorkoutState}
-                  savedMealPlans={[]}
-                  onSelectMealPlan={noop}
-                  onDeleteMealPlan={noop}
-                  onCompleteMeal={noop}
-                  getMealState={idleState}
-                />
-                <FitnessHubPlansSection
-                  {...shared}
-                  mealPlansOnly
-                  recommendationsLoading={false}
-                  aiWorkouts={[]}
-                  aiGeneratedAt={null}
-                  onViewDetails={noop}
-                  savedPlans={[]}
-                  onSelectPlan={noop}
-                  onCompleteWorkout={noop}
-                  onDeletePlan={noop}
-                  getWorkoutState={idleState}
-                  savedMealPlans={library.savedMealPlans}
-                  activeMealPlanId={library.activeMealPlan?.id || null}
-                  onSelectMealPlan={library.setActiveMealPlanId}
-                  onDeleteMealPlan={library.deleteMealPlan}
-                  onCompleteMeal={library.handleCompleteMeal}
-                  mealPlansLoading={library.mealPlansLoading}
-                  getMealState={library.getMealState}
-                />
-              </Box>
+              <PlansView
+                library={library}
+                catalog={catalog.exercises}
+                onOpenSession={(workout, index) => setSession({ workout, index })}
+              />
             </TabPanel>
             <TabPanel p={0}>
               <ExerciseLibrary />
@@ -107,7 +70,13 @@ function Library() {
           </TabPanels>
         </Tabs>
       </Container>
-      <ExerciseDetailsModal isOpen={isOpen} onClose={handleCloseDetails} workout={activeWorkout} />
+      <SessionDetail
+        session={session}
+        catalog={catalog.exercises}
+        state={session ? library.getWorkoutState(session.index) : {}}
+        onLog={library.handleCompleteWorkout}
+        onClose={() => setSession(null)}
+      />
     </Box>
   );
 }
