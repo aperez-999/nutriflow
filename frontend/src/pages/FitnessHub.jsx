@@ -1,12 +1,23 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Box, Button, Card, CardBody, Container, Flex, Heading, Spinner, Text, useToast } from '@chakra-ui/react';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import FitnessHubChatSection from '../components/FitnessHub/FitnessHubChatSection';
 import FitnessHubInsightsSection from '../components/FitnessHub/FitnessHubInsightsSection';
+import CoachContextCard from '../components/FitnessHub/CoachContextCard';
 import PageBand from '../components/Global/PageBand';
 import usePlanLibrary from '../components/Library/usePlanLibrary';
-import { getWorkouts, getDiets } from '../services/api';
+import { AuthContext } from '../context/AuthContext';
+import { getWorkouts, getDiets, getCheckIns } from '../services/api';
 import { handleApiError } from '../utils/apiErrorHandler';
+import {
+  calculateDailyCalories,
+  calculateDailyProtein,
+  calculateDailyReadiness,
+  calculateWeeklyWorkouts,
+} from '../components/Dashboard/utils/dashboardUtils';
+import { getTodayDayKey } from '../utils/dateUtils';
+
+const DEFAULT_GOALS = { dailyCalories: 2000, dailyProtein: 150, weeklyWorkouts: 5 };
 
 const getInsightContent = (userWorkouts, userDiets) => {
   const sortedWorkouts = [...userWorkouts]
@@ -103,13 +114,21 @@ function FitnessHub() {
   const toast = useToast();
   const [userWorkouts, setUserWorkouts] = useState([]);
   const [userDiets, setUserDiets] = useState([]);
+  const [checkIns, setCheckIns] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useContext(AuthContext);
+  const goals = { ...DEFAULT_GOALS, ...user?.user?.goals };
+  // "Ask Coach about this" elsewhere in the app lands here as ?ask=...
+  const [searchParams, setSearchParams] = useSearchParams();
+  const askPrompt = searchParams.get('ask');
+  const clearAsk = useCallback(() => setSearchParams({}, { replace: true }), [setSearchParams]);
   // Mounted here so plans generated in the chat are captured and saved.
   const library = usePlanLibrary();
 
   useEffect(() => {
     let isMounted = true;
     (async () => {
-      const [workouts, diets] = await Promise.all([
+      const [workouts, diets, recentCheckIns] = await Promise.all([
         getWorkouts().catch((err) => {
           handleApiError(err, 'loading workouts', toast);
           return [];
@@ -118,10 +137,13 @@ function FitnessHub() {
           handleApiError(err, 'loading diets', toast);
           return [];
         }),
+        getCheckIns(7).catch(() => []),
       ]);
       if (isMounted) {
         setUserWorkouts(Array.isArray(workouts) ? workouts : []);
         setUserDiets(Array.isArray(diets) ? diets : []);
+        setCheckIns(Array.isArray(recentCheckIns) ? recentCheckIns : []);
+        setIsLoading(false);
       }
     })();
     return () => {
@@ -130,6 +152,16 @@ function FitnessHub() {
   }, [toast]);
 
   const insights = useMemo(() => getInsightContent(userWorkouts, userDiets), [userDiets, userWorkouts]);
+  const todayCheckIn = useMemo(() => checkIns.find((c) => c.dayKey === getTodayDayKey()) || null, [checkIns]);
+  const readiness = useMemo(
+    () => calculateDailyReadiness(userWorkouts, userDiets, todayCheckIn),
+    [todayCheckIn, userDiets, userWorkouts]
+  );
+  const today = useMemo(() => ({
+    calories: calculateDailyCalories(userDiets),
+    protein: calculateDailyProtein(userDiets),
+    weeklyWorkouts: calculateWeeklyWorkouts(userWorkouts),
+  }), [userDiets, userWorkouts]);
 
   return (
     <Box>
@@ -139,11 +171,24 @@ function FitnessHub() {
         description="Ask anything about training, food or recovery. Answers come from your own log."
       />
       <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
-        <Box display="grid" gridTemplateColumns={{ base: '1fr', xl: '1.6fr 1fr' }} gap={6} alignItems="start">
+        <Box display="grid" gridTemplateColumns={{ base: '1fr', xl: 'minmax(0, 1fr) 360px' }} gap={6} alignItems="start">
           <Box minW={0}>
-            <FitnessHubChatSection userWorkouts={userWorkouts} userDiets={userDiets} toast={toast} />
+            <FitnessHubChatSection
+              userWorkouts={userWorkouts}
+              userDiets={userDiets}
+              toast={toast}
+              initialPrompt={askPrompt}
+              onPromptConsumed={clearAsk}
+            />
           </Box>
           <Box minW={0} display="flex" flexDirection="column" gap={6}>
+            <CoachContextCard
+              readiness={readiness}
+              today={today}
+              goals={goals}
+              hasCheckIn={Boolean(todayCheckIn)}
+              isLoading={isLoading}
+            />
             <LibraryShortcut library={library} />
             <FitnessHubInsightsSection insights={insights} />
           </Box>

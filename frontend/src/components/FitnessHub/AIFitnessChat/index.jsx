@@ -2,10 +2,10 @@ import { useState, useRef, useEffect, useContext, forwardRef, useImperativeHandl
 import {
   Box,
   VStack,
-  HStack,
   Flex,
   Card,
   CardBody,
+  Grid,
   Text,
   Button,
   IconButton,
@@ -18,7 +18,7 @@ import {
 import { FiMoreHorizontal, FiPlus } from 'react-icons/fi';
 import { AuthContext } from '../../../context/AuthContext';
 import { aiChat, saveChatHistory, loadChatHistory, clearChatHistory, normalizeChatMessage, sanitizeChatMessages } from '../../../services/api';
-import { ChatInput, ChatMessage, TypingDots } from './components';
+import { ChatEmptyState, ChatInput, ChatMessage, ConversationList, TypingIndicator } from './components';
 import { WELCOME_MESSAGE, CLEAR_MESSAGE, QUICK_ACTIONS, QUICK_ACTION_LABELS, CHAT_ACTION_BUTTON_PROPS, TYPING_INDICATOR_TEXT } from './constants';
 import {
   parseAIRecommendations,
@@ -47,7 +47,11 @@ const createConversation = (title = 'New chat', messages = [WELCOME_MESSAGE]) =>
 const getConversationTitle = (messages = [], fallback = 'New chat') => {
   const firstUserMessage = messages.find((message) => message.type === 'user' && message.content?.trim());
   if (!firstUserMessage) return fallback;
-  return firstUserMessage.content.trim().slice(0, 40) || fallback;
+  const text = firstUserMessage.content.trim();
+  if (text.length <= 40) return text;
+  // Cut at a word boundary so titles never end mid-word.
+  const cut = text.slice(0, 40);
+  return `${cut.slice(0, cut.lastIndexOf(' ') > 20 ? cut.lastIndexOf(' ') : 40).trimEnd()}…`;
 };
 
 const normalizeStoredMessages = (messages = [], conversationKey = 'conversation') => {
@@ -124,7 +128,7 @@ const processChatHistoryQueue = async (state, toast) => {
   }
 };
 
-const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, ref) => {
+const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, initialPrompt, onPromptConsumed }, ref) => {
   const [conversations, setConversations] = useState([createConversation()]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [inputMessage, setInputMessage] = useState('');
@@ -134,6 +138,8 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
   const messagesContainerRef = useRef(null);
   const suppressSaveRef = useRef(false);
   const chatHistorySaveRef = useRef({ inFlight: false, queued: null });
+  const handledPromptRef = useRef(null);
+  const pendingPromptRef = useRef(null);
 
   const { user } = useContext(AuthContext);
   const storageUserId = user?.user?._id || user?._id || user?.result?._id || 'anonymous';
@@ -147,6 +153,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     () => activeConversation?.messages || [WELCOME_MESSAGE],
     [activeConversation?.messages]
   );
+  const isFresh = messages.every((message) => message?.id?.startsWith('welcome'));
 
   const updateActiveConversation = useCallback((updater) => {
     setConversations((prev) =>
@@ -185,10 +192,15 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
   }, []);
 
   useEffect(() => {
+    // A fresh conversation shows the prompt cards from the top.
+    if (isFresh && !isLoading) {
+      messagesContainerRef.current?.scrollTo({ top: 0 });
+      return undefined;
+    }
     const behavior = messages.length <= 1 ? 'auto' : 'smooth';
     const frame = window.requestAnimationFrame(() => scrollToBottom(behavior));
     return () => window.cancelAnimationFrame(frame);
-  }, [activeConversationId, isLoading, messages, scrollToBottom]);
+  }, [activeConversationId, isFresh, isLoading, messages, scrollToBottom]);
 
   // Runs again in StrictMode development; the cancelled flag (not a run-once ref) keeps
   // the second run from being skipped while the first run's late result is ignored.
@@ -411,101 +423,138 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast }, 
     setInputMessage('');
   }, [activeConversationId]);
 
+  // A question handed over from another page (e.g. "Ask Coach about this" in the Library)
+  // opens its own conversation once the stored ones have loaded. The ref keeps
+  // StrictMode's second effect run from sending it twice.
+  useEffect(() => {
+    if (!initialPrompt || !activeConversationId || handledPromptRef.current === initialPrompt) return;
+    handledPromptRef.current = initialPrompt;
+    const conversation = createConversation();
+    pendingPromptRef.current = { text: initialPrompt, conversationId: conversation.id };
+    setConversations((prev) => [conversation, ...prev]);
+    setActiveConversationId(conversation.id);
+    onPromptConsumed?.();
+  }, [activeConversationId, initialPrompt, onPromptConsumed]);
+
+  // Sends the handed-over question once its new conversation is the active one.
+  useEffect(() => {
+    const pending = pendingPromptRef.current;
+    if (!pending || pending.conversationId !== activeConversationId) return;
+    pendingPromptRef.current = null;
+    sendMessage(pending.text);
+  }, [activeConversationId, sendMessage]);
+
   useImperativeHandle(ref, () => ({
     send: (text) => sendMessage(text),
     clear: clearCurrentConversation,
   }));
 
   return (
-    <Card w="100%" maxW="100%" h={{ base: '72vh', md: '680px' }} minH="480px" display="flex" flexDirection="column" overflow="hidden">
-      <CardBody p={0} display="flex" flexDirection="column" height="100%">
-        <Flex px={{ base: 3, md: 4 }} py={3} gap={2} align="center" borderBottomWidth="1px" borderColor="border">
-          <Select
-            value={activeConversationId || ''}
-            onChange={(e) => setActiveConversationId(e.target.value)}
-            size="sm"
-            maxW={{ base: '100%', md: '320px' }}
-            aria-label="Conversation"
-          >
-            {conversations.map((conversation) => (
-              <option key={conversation.id} value={conversation.id}>
-                {conversation.title}
-              </option>
-            ))}
-          </Select>
-          <Button size="sm" leftIcon={<FiPlus />} variant="outline" onClick={startNewConversation} flexShrink={0}>
-            New chat
-          </Button>
-          <Menu placement="bottom-end">
-            <MenuButton as={IconButton} size="sm" variant="ghost" icon={<FiMoreHorizontal />} aria-label="Conversation options" ml="auto" />
-            <MenuList fontSize="sm">
-              <MenuItem onClick={clearCurrentConversation}>Clear messages</MenuItem>
-              <MenuItem onClick={deleteCurrentConversation} color="red.500">Delete conversation</MenuItem>
-            </MenuList>
-          </Menu>
-        </Flex>
-
-        <Box
-          flex="1"
-          overflowY="auto"
-          overscrollBehaviorY="contain"
-          sx={{ WebkitOverflowScrolling: 'touch' }}
-          px={{ base: 4, md: 6 }}
-          py={{ base: 4, md: 5 }}
-          position="relative"
-          ref={messagesContainerRef}
-          minH={0}
-          aria-live="polite"
-        >
-          <VStack spacing={5} align="stretch">
-            {messages.map((message) => (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                onSuggestionClick={handleActionClick}
-              />
-            ))}
-
-            {isLoading && (
-              <HStack spacing={2} color="fg.muted" fontSize="sm">
-                <Text>{TYPING_INDICATOR_TEXT}</Text>
-                <TypingDots />
-              </HStack>
-            )}
-            <div ref={messagesEndRef} />
-          </VStack>
+    <Card w="100%" maxW="100%" h={{ base: '74vh', md: '720px' }} minH="500px" overflow="hidden">
+      <Grid as={CardBody} p={0} h="100%" minH={0} templateColumns={{ base: 'minmax(0, 1fr)', lg: '232px minmax(0, 1fr)' }}>
+        <Box display={{ base: 'none', lg: 'block' }} borderRightWidth="1px" borderColor="border" bg="bg.canvas" minH={0}>
+          <ConversationList
+            conversations={conversations}
+            activeId={activeConversation?.id}
+            onSelect={setActiveConversationId}
+            onNew={startNewConversation}
+          />
         </Box>
 
-        {/* Side-scrolls on phones, wraps on wider screens so no suggestion is cut off. */}
-        <Flex
-          gap={2}
-          px={{ base: 3, md: 4 }}
-          pb={2}
-          flexWrap={{ base: 'nowrap', md: 'wrap' }}
-          overflowX={{ base: 'auto', md: 'visible' }}
-          sx={{ scrollbarWidth: 'none' }}
-        >
-          {QUICK_ACTIONS.map((suggestion) => (
-            <Button
-              key={suggestion}
-              variant="outline"
-              flexShrink={0}
-              {...CHAT_ACTION_BUTTON_PROPS}
-              onClick={() => handleActionClick(suggestion)}
-              isDisabled={isLoading}
+        <Flex direction="column" minH={0} minW={0}>
+          <Flex px={{ base: 3, md: 4 }} py={3} gap={2} align="center" borderBottomWidth="1px" borderColor="border">
+            {/* Phones and tablets pick conversations here; desktop uses the sidebar. */}
+            <Select
+              display={{ base: 'block', lg: 'none' }}
+              value={activeConversation?.id || ''}
+              onChange={(e) => setActiveConversationId(e.target.value)}
+              size="sm"
+              aria-label="Conversation"
             >
-              {QUICK_ACTION_LABELS[suggestion] || suggestion}
+              {conversations.map((conversation) => (
+                <option key={conversation.id} value={conversation.id}>
+                  {conversation.title}
+                </option>
+              ))}
+            </Select>
+            <Button display={{ base: 'inline-flex', lg: 'none' }} size="sm" leftIcon={<FiPlus />} variant="outline" onClick={startNewConversation} flexShrink={0}>
+              New
             </Button>
-          ))}
-        </Flex>
+            {/* noOfLines sets its own display, so the responsive hide lives on a wrapper. */}
+            <Box display={{ base: 'none', lg: 'block' }} flex="1" minW={0}>
+              <Text fontWeight="700" noOfLines={1}>{activeConversation?.title || 'New chat'}</Text>
+            </Box>
+            <Menu placement="bottom-end">
+              <MenuButton as={IconButton} size="sm" variant="ghost" icon={<FiMoreHorizontal />} aria-label="Conversation options" ml="auto" flexShrink={0} />
+              <MenuList fontSize="sm">
+                <MenuItem onClick={clearCurrentConversation}>Clear messages</MenuItem>
+                <MenuItem onClick={deleteCurrentConversation} color="red.500">Delete conversation</MenuItem>
+              </MenuList>
+            </Menu>
+          </Flex>
 
-        <ChatInput
-          value={inputMessage}
-          onChange={setInputMessage}
-          onSend={() => sendMessage(inputMessage)}
-          isLoading={isLoading}
-        />
-      </CardBody>
+          <Box
+            flex="1"
+            overflowY="auto"
+            overscrollBehaviorY="contain"
+            sx={{ WebkitOverflowScrolling: 'touch' }}
+            px={{ base: 4, md: 6 }}
+            py={{ base: 4, md: 5 }}
+            position="relative"
+            ref={messagesContainerRef}
+            minH={0}
+            aria-live="polite"
+          >
+            {isFresh && !isLoading ? (
+              <ChatEmptyState intro={messages[0]?.content} onPick={handleActionClick} isDisabled={isLoading} />
+            ) : (
+              <VStack spacing={6} align="stretch" maxW="760px" mx="auto">
+                {messages.map((message) => (
+                  <ChatMessage
+                    key={message.id}
+                    message={message}
+                    onSuggestionClick={handleActionClick}
+                  />
+                ))}
+                {isLoading && <TypingIndicator label={TYPING_INDICATOR_TEXT} />}
+              </VStack>
+            )}
+            <div ref={messagesEndRef} />
+          </Box>
+
+          {/* Side-scrolls on phones, wraps on wider screens so no suggestion is cut off. */}
+          {!isFresh && (
+            <Flex
+              gap={2}
+              px={{ base: 3, md: 4 }}
+              pb={2}
+              flexWrap={{ base: 'nowrap', md: 'wrap' }}
+              overflowX={{ base: 'auto', md: 'visible' }}
+              sx={{ scrollbarWidth: 'none' }}
+            >
+              {QUICK_ACTIONS.map((suggestion) => (
+                <Button
+                  key={suggestion}
+                  variant="outline"
+                  flexShrink={0}
+                  {...CHAT_ACTION_BUTTON_PROPS}
+                  onClick={() => handleActionClick(suggestion)}
+                  isDisabled={isLoading}
+                >
+                  {QUICK_ACTION_LABELS[suggestion] || suggestion}
+                </Button>
+              ))}
+            </Flex>
+          )}
+
+          <ChatInput
+            value={inputMessage}
+            onChange={setInputMessage}
+            onSend={() => sendMessage(inputMessage)}
+            isLoading={isLoading}
+          />
+        </Flex>
+      </Grid>
     </Card>
   );
 });

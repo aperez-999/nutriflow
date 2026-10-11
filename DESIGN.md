@@ -42,6 +42,10 @@ Tabular figures are only applied to display figures; in Schibsted they widen com
 
 **Navigation:** Today (the daily verdict and logging), Coach (the conversation only), Library (saved plans and exercises) and Me (profile, with Settings inside). The phone tab bar has exactly these four.
 
+**Muscle maps.** Exercises are shown with `AnatomyFigure`, a flat front and back body map: main muscles in `train.solid`, helpers in a lighter train step, everything else in `border`. It is a diagram, not an illustration: no shading or outlines, and the same figure at thumbnail and detail size.
+
+**Coach.** An empty conversation shows four flow-tinted starting points instead of a blank transcript. While the coach answers, the logo's three bars fill in turn. Beside the chat, "What your coach sees" shows the readiness and numbers the answers draw on. Other pages can hand over a question with `/fitness-hub?ask=...`, which opens it in a new conversation.
+
 **Sign-in screens:** the brand side follows the mode and cycles the three daily verdicts, each in its flow color, with a pause control; it does not rotate under reduced motion.
 
 ## Motion

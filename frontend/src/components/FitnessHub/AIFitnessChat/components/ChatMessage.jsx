@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import {
   Box,
   VStack,
+  HStack,
   Text,
   Flex,
   Button,
@@ -11,6 +12,7 @@ import {
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import { DURATION, EASE_OUT } from '../../../Motion/tokens';
+import { LogoMark } from '../../../Global/Logo';
 import remarkGfm from 'remark-gfm';
 import { QUICK_ACTIONS, PRIMARY_SUGGESTIONS, CHAT_ACTION_BUTTON_PROPS, QUICK_ACTION_LABELS } from '../constants';
 
@@ -65,16 +67,21 @@ function parseStructuredSections(content) {
 function MarkdownBlock({ content }) {
   return (
     <Box
-      fontSize="sm"
+      fontSize={{ base: 'sm', md: 'md' }}
       lineHeight="1.7"
+      overflowWrap="anywhere"
       sx={{
         '& p': { marginBottom: '0.85rem', lineHeight: 1.7 },
         '& p:last-child': { marginBottom: 0 },
         '& ul, & ol': { paddingLeft: '1.25rem', marginBottom: '0.85rem' },
         '& li': { marginBottom: '0.35rem' },
         '& li > p': { marginBottom: '0.35rem' },
-        '& h1, & h2, & h3': { marginTop: '0.85rem', marginBottom: '0.5rem', fontWeight: 600, lineHeight: 1.4 },
-        '& strong': { fontWeight: 600 },
+        '& h1, & h2, & h3': { marginTop: '0.85rem', marginBottom: '0.5rem', fontWeight: 700, lineHeight: 1.4 },
+        '& strong': { fontWeight: 700 },
+        '& blockquote': { borderLeftWidth: '2px', borderColor: 'var(--chakra-colors-border-strong)', paddingLeft: '0.85rem', color: 'var(--chakra-colors-fg-muted)' },
+        '& table': { width: '100%', borderCollapse: 'collapse', marginBottom: '0.85rem', fontSize: '0.9em', display: 'block', overflowX: 'auto' },
+        '& th, & td': { borderBottom: '1px solid var(--chakra-colors-border)', padding: '0.4rem 0.75rem 0.4rem 0', textAlign: 'left', verticalAlign: 'top' },
+        '& th': { fontWeight: 700 },
         '& code': {
           fontSize: '0.85em',
           background: 'var(--chakra-colors-bg-muted)',
@@ -111,8 +118,8 @@ const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick
     return (
       <Flex as={motion.div} {...enter} justify="flex-end">
         <Box maxW={{ base: '88%', md: '75%' }}>
-          <Box bg="bg.muted" px={4} py={2.5} borderRadius="panel" borderBottomRightRadius="4px">
-            <Text fontSize="sm" lineHeight="1.6" whiteSpace="pre-line" overflowWrap="anywhere">{message.content}</Text>
+          <Box bg="fg" color="bg.surface" px={4} py={2.5} borderRadius="panel" borderBottomRightRadius="4px">
+            <Text fontSize={{ base: 'sm', md: 'md' }} lineHeight="1.6" whiteSpace="pre-line" overflowWrap="anywhere">{message.content}</Text>
           </Box>
           <Text fontSize="xs" color="fg.muted" mt={1} textAlign="right">{time}</Text>
         </Box>
@@ -122,13 +129,16 @@ const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick
 
   return (
     <Box as={motion.div} {...enter} maxW={{ base: '100%', md: '92%' }}>
-      <Text fontSize="xs" fontWeight="700" mb={1}>Coach <Text as="span" color="fg.muted" fontWeight="400">{time}</Text></Text>
+      <HStack spacing={2} mb={2}>
+        <LogoMark size={16} />
+        <Text fontSize="xs" fontWeight="700">Coach <Text as="span" color="fg.muted" fontWeight="400">{time}</Text></Text>
+      </HStack>
       {structuredContent ? (
         <VStack align="stretch" spacing={3}>
           {structuredContent.intro ? <MarkdownBlock content={structuredContent.intro} /> : null}
           {structuredContent.sections.map((section, index) => (
-            <Box key={`${section.title}-${index}`} borderTopWidth="1px" borderColor="border" pt={3}>
-              <Text fontSize="sm" fontWeight="700" mb={1}>{section.title}</Text>
+            <Box key={`${section.title}-${index}`} borderWidth="1px" borderColor="border" borderRadius="panel" px={4} py={3}>
+              <Text fontWeight="700" mb={1}>{section.title}</Text>
               <MarkdownBlock content={section.content} />
             </Box>
           ))}
