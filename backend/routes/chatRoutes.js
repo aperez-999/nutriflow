@@ -86,7 +86,8 @@ router.get('/history', protect, async (req, res) => {
   try {
     const parsedLimit = parseInt(req.query.limit || '40', 10);
     const limit = Number.isFinite(parsedLimit) ? Math.min(Math.max(parsedLimit, 1), MAX_HISTORY_MESSAGES) : 40;
-    const messages = await ChatMessage.find({ user: req.user._id }).sort({ createdAt: -1 }).limit(limit);
+    // insertMany gives a saved conversation one shared createdAt; _id keeps insert order on ties.
+    const messages = await ChatMessage.find({ user: req.user._id }).sort({ createdAt: -1, _id: -1 }).limit(limit);
     res.json(messages.reverse());
   } catch (err) {
     console.error('Get history error:', err);
