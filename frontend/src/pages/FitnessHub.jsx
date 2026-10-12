@@ -1,10 +1,12 @@
-import { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Box, Button, Card, CardBody, Container, Flex, Heading, Spinner, Text, useToast } from '@chakra-ui/react';
+import { motion } from 'framer-motion';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import FitnessHubChatSection from '../components/FitnessHub/FitnessHubChatSection';
 import FitnessHubInsightsSection from '../components/FitnessHub/FitnessHubInsightsSection';
 import CoachContextCard from '../components/FitnessHub/CoachContextCard';
-import PageBand from '../components/Global/PageBand';
+import PageBand, { PageBandFigures } from '../components/Global/PageBand';
+import { DURATION, EASE_OUT } from '../components/Motion/tokens';
 import usePlanLibrary from '../components/Library/usePlanLibrary';
 import { AuthContext } from '../context/AuthContext';
 import { getWorkouts, getDiets, getCheckIns } from '../services/api';
@@ -18,6 +20,12 @@ import {
 import { getTodayDayKey } from '../utils/dateUtils';
 
 const DEFAULT_GOALS = { dailyCalories: 2000, dailyProtein: 150, weeklyWorkouts: 5 };
+const MotionBox = motion(Box);
+const rise = (i) => ({
+  initial: { opacity: 0, y: 12 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: DURATION.slow, ease: EASE_OUT, delay: 0.1 + i * 0.08 },
+});
 
 const getInsightContent = (userWorkouts, userDiets) => {
   const sortedWorkouts = [...userWorkouts]
@@ -122,6 +130,17 @@ function FitnessHub() {
   const [searchParams, setSearchParams] = useSearchParams();
   const askPrompt = searchParams.get('ask');
   const clearAsk = useCallback(() => setSearchParams({}, { replace: true }), [setSearchParams]);
+  const chatRef = useRef(null);
+  const chatBoxRef = useRef(null);
+  // Questions asked from the side panel go into the open conversation; on phones the
+  // chat sits above the panel, so bring it back into view.
+  const askCoach = useCallback((question) => {
+    chatRef.current?.send(question);
+    const top = chatBoxRef.current?.getBoundingClientRect().top;
+    if (top < 0 || top > window.innerHeight * 0.6) {
+      chatBoxRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
   // Mounted here so plans generated in the chat are captured and saved.
   const library = usePlanLibrary();
 
@@ -169,11 +188,20 @@ function FitnessHub() {
         flow="recover"
         title="Coach"
         description="Ask anything about training, food or recovery. Answers come from your own log."
-      />
+      >
+        <PageBandFigures
+          items={[
+            { value: readiness.score, label: 'readiness today' },
+            { value: today.calories, label: `of ${goals.dailyCalories.toLocaleString()} kcal today` },
+            { value: today.weeklyWorkouts, label: `of ${goals.weeklyWorkouts} sessions this week` },
+          ]}
+        />
+      </PageBand>
       <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
         <Box display="grid" gridTemplateColumns={{ base: '1fr', xl: 'minmax(0, 1fr) 360px' }} gap={6} alignItems="start">
-          <Box minW={0}>
+          <Box minW={0} ref={chatBoxRef} scrollMarginTop="80px">
             <FitnessHubChatSection
+              ref={chatRef}
               userWorkouts={userWorkouts}
               userDiets={userDiets}
               toast={toast}
@@ -182,15 +210,20 @@ function FitnessHub() {
             />
           </Box>
           <Box minW={0} display="flex" flexDirection="column" gap={6}>
-            <CoachContextCard
-              readiness={readiness}
-              today={today}
-              goals={goals}
-              hasCheckIn={Boolean(todayCheckIn)}
-              isLoading={isLoading}
-            />
-            <LibraryShortcut library={library} />
-            <FitnessHubInsightsSection insights={insights} />
+            <MotionBox {...rise(0)}>
+              <CoachContextCard
+                readiness={readiness}
+                hasCheckIn={Boolean(todayCheckIn)}
+                isLoading={isLoading}
+                onAsk={askCoach}
+              />
+            </MotionBox>
+            <MotionBox {...rise(1)}>
+              <LibraryShortcut library={library} />
+            </MotionBox>
+            <MotionBox {...rise(2)}>
+              <FitnessHubInsightsSection insights={insights} onAsk={askCoach} />
+            </MotionBox>
           </Box>
         </Box>
       </Container>

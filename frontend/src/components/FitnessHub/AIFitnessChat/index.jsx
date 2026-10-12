@@ -389,7 +389,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
   }, [activeConversationId, generateAIResponse, messages, updateActiveConversation, updateConversationById]);
 
   const handleActionClick = useCallback((label) => {
-    sendMessage(resolveAssistantActionPrompt(label), label);
+    sendMessage(resolveAssistantActionPrompt(label), QUICK_ACTION_LABELS[label] || label);
   }, [sendMessage]);
 
   const startNewConversation = useCallback(() => {
@@ -445,7 +445,8 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
   }, [activeConversationId, sendMessage]);
 
   useImperativeHandle(ref, () => ({
-    send: (text) => sendMessage(text),
+    // Ignored mid-answer, like the in-chat quick actions.
+    send: (text) => { if (!isLoading) sendMessage(text); },
     clear: clearCurrentConversation,
   }));
 

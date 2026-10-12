@@ -1,49 +1,61 @@
-import { Box, Card, CardBody, Flex, Grid, Heading, Skeleton, Text } from '@chakra-ui/react';
+import { Box, Button, Card, CardBody, Flex, Heading, Skeleton, Text, VStack } from '@chakra-ui/react';
 import { ScoreRing } from '../Dashboard/components/CheckInForm';
 import { LEVEL_LABEL } from '../Dashboard/components/verdict';
 
-function Figure({ flow, label, value, unit }) {
-  return (
-    <Box>
-      <Text fontSize="xs" fontWeight="700" color={`${flow}.fg`}>{label}</Text>
-      <Text textStyle="figure" fontSize="3xl" mt={0.5}>{value}</Text>
-      <Text fontSize="xs" color="fg.muted">{unit}</Text>
-    </Box>
-  );
-}
+// Follow-up questions that fit each kind of day.
+const QUESTIONS = {
+  high: ['What should I train hard today?', 'How do I fuel a big session?'],
+  moderate: ['What kind of session fits today?', 'What should I eat today?'],
+  low: ['What does a good recovery day look like?', 'What helps me recover faster?'],
+};
 
 /**
- * The numbers the coach answers from, so its advice never feels like a black box:
- * today's verdict and readiness, plus fuel and training against the user's goals.
+ * Today's read: the verdict and readiness the coach answers from, with
+ * one-tap questions that go straight into the conversation.
  */
-export default function CoachContextCard({ readiness, today, goals, hasCheckIn, isLoading }) {
+export default function CoachContextCard({ readiness, hasCheckIn, isLoading, onAsk }) {
+  const verdict = LEVEL_LABEL[readiness.level] || 'Steady day';
+  const questions = [`Why is today a ${verdict.toLowerCase()}?`, ...(QUESTIONS[readiness.level] || QUESTIONS.moderate)];
   return (
     <Card>
       <CardBody>
-        <Heading as="h2" size="sm">What your coach sees</Heading>
+        <Heading as="h2" size="sm">Today’s read</Heading>
         {isLoading ? (
-          <Skeleton h="150px" mt={4} borderRadius="panel" />
+          <Skeleton h="180px" mt={4} borderRadius="panel" />
         ) : (
           <>
             <Flex align="center" gap={4} mt={4}>
               <ScoreRing score={readiness.score} level={readiness.level} size={72} />
               <Box minW={0}>
-                <Text fontFamily="heading" fontWeight="800" fontSize="3xl" lineHeight="1">
-                  {LEVEL_LABEL[readiness.level] || 'Steady day'}.
-                </Text>
+                <Text fontFamily="heading" fontWeight="800" fontSize="3xl" lineHeight="1">{verdict}.</Text>
                 <Text fontSize="sm" color="fg.muted" mt={1}>
                   Readiness {readiness.score} of 100{hasCheckIn ? '' : ', without a check-in today'}.
                 </Text>
               </Box>
             </Flex>
-            {readiness.shortRecommendation && (
-              <Text fontSize="sm" mt={3}>{readiness.shortRecommendation}</Text>
-            )}
-            <Grid templateColumns="repeat(3, 1fr)" gap={3} mt={4} pt={4} borderTopWidth="1px" borderColor="border">
-              <Figure flow="fuel" label="Calories" value={today.calories.toLocaleString()} unit={`of ${goals.dailyCalories.toLocaleString()} kcal`} />
-              <Figure flow="fuel" label="Protein" value={today.protein} unit={`of ${goals.dailyProtein} g`} />
-              <Figure flow="train" label="Sessions" value={today.weeklyWorkouts} unit={`of ${goals.weeklyWorkouts} this week`} />
-            </Grid>
+            {readiness.shortRecommendation && <Text fontSize="sm" mt={3}>{readiness.shortRecommendation}</Text>}
+            <VStack align="stretch" spacing={1} mt={4} pt={3} borderTopWidth="1px" borderColor="border">
+              <Text fontSize="xs" color="fg.muted" mb={1}>Ask about today</Text>
+              {questions.map((question) => (
+                <Button
+                  key={question}
+                  variant="ghost"
+                  size="sm"
+                  justifyContent="space-between"
+                  fontWeight="500"
+                  px={2}
+                  mx={-2}
+                  rightIcon={<Text as="span" color="recover.fg" aria-hidden="true">→</Text>}
+                  onClick={() => onAsk(question)}
+                  whiteSpace="normal"
+                  textAlign="left"
+                  h="auto"
+                  py={2}
+                >
+                  {question}
+                </Button>
+              ))}
+            </VStack>
           </>
         )}
       </CardBody>

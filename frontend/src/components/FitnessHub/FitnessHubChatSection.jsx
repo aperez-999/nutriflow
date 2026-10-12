@@ -1,10 +1,16 @@
+import { forwardRef } from 'react';
 import { Box } from '@chakra-ui/react';
 import AIFitnessChat from './AIFitnessChat/index.jsx';
 
-export default function FitnessHubChatSection({ userWorkouts = [], userDiets = [], toast, initialPrompt, onPromptConsumed }) {
+// Forwards the chat's handle ({ send, clear }) so the page can ask questions from outside it.
+const FitnessHubChatSection = forwardRef(function FitnessHubChatSection(
+  { userWorkouts = [], userDiets = [], toast, initialPrompt, onPromptConsumed },
+  ref
+) {
   return (
     <Box w="100%" h="100%" minH={0}>
       <AIFitnessChat
+        ref={ref}
         userWorkouts={userWorkouts}
         userDiets={userDiets}
         toast={toast}
@@ -13,4 +19,6 @@ export default function FitnessHubChatSection({ userWorkouts = [], userDiets = [
       />
     </Box>
   );
-}
+});
+
+export default FitnessHubChatSection;

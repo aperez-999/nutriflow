@@ -3,6 +3,6 @@ import AIInsightsSection from './AIInsightsSection';
 /**
  * Fitness Hub — AI Insights block (wrapper for consistent section naming).
  */
-export default function FitnessHubInsightsSection({ insights = [] }) {
-  return <AIInsightsSection insights={insights} />;
+export default function FitnessHubInsightsSection({ insights = [], onAsk }) {
+  return <AIInsightsSection insights={insights} onAsk={onAsk} />;
 }
