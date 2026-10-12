@@ -147,6 +147,12 @@ const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick
         <MarkdownBlock content={message.content} />
       )}
 
+      {message.offline && (
+        <Text fontSize="xs" color="fg.muted" mt={2}>
+          The AI coach couldn’t be reached, so this is a built-in answer. Try again in a moment.
+        </Text>
+      )}
+
       {suggestions.length > 0 && (
         <Wrap spacing={2} mt={3}>
           {suggestions.map((suggestion, index) => (

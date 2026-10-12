@@ -261,11 +261,11 @@ export const parseAIMealPlan = (content) => {
 
 const ACTION_PROMPT_MAP = {
   'Generate Weekly Plan': 'Can you generate a personalized weekly fitness plan for me based on my recent activity and fitness level? Include a short readable overview with headings for each workout day, and also include the machine-readable plan payload. [[RETURN_JSON_WORKOUT_PLAN]]',
-  'Create Meal Plan': 'Create a personalized meal plan based on my recent activity and nutrition patterns. Use clear markdown headings like Overview, Breakfast, Lunch, Dinner, Snacks, and Next Steps. Respond in plain language, not JSON.',
-  'Analyze My Progress': 'Analyze my recent fitness and nutrition progress. Use markdown headings for Wins, Watchouts, and Next Steps. Respond in plain language, not JSON.',
-  'How ready am I?': 'Based on my recent workouts and nutrition, tell me how ready I am for a harder training day today. Use markdown headings for Readiness, Why, and Recommendation. Respond in plain language, not JSON.',
-  'Nutrition Advice': 'Give me personalized nutrition advice based on my recent habits. Use markdown headings for Priority Focus, What to Keep, and What to Adjust. Respond in plain language, not JSON.',
-  'Form Tips': 'Give me practical form tips for safer, more effective workouts. Use markdown headings for Setup, Common Mistakes, and Coaching Cues. Respond in plain language, not JSON.',
+  'Create Meal Plan': 'Create a personalized meal plan for today based on my recent activity and nutrition patterns: one line per meal for Breakfast, Lunch, Dinner and a Snack. Respond in plain language, not JSON.',
+  'Analyze My Progress': 'How is my week going? Give me the one thing that is working and the one thing to change, briefly. Respond in plain language, not JSON.',
+  'How ready am I?': 'Based on my recent workouts and nutrition, how ready am I for a harder training day today? Keep it short: my score, the main reason, and what to do today. Respond in plain language, not JSON.',
+  'Nutrition Advice': 'Give me the most useful nutrition change for me right now, based on my recent habits, briefly. Respond in plain language, not JSON.',
+  'Form Tips': 'Give me a few quick form tips for safer, more effective workouts. Respond in plain language, not JSON.',
 };
 
 export const resolveAssistantActionPrompt = (text) => ACTION_PROMPT_MAP[text] || text;
@@ -328,12 +328,14 @@ export const createUserMessage = (text) => ({
   timestamp: new Date(),
 });
 
-export const createAIMessage = (content, suggestions) => ({
+/** `offline` marks a built-in reply given because no AI provider answered. */
+export const createAIMessage = (content, suggestions, offline = false) => ({
   id: `ai-${Date.now()}`,
   type: 'ai',
   content,
   suggestions,
   timestamp: new Date(),
+  ...(offline && { offline: true }),
 });
 
 export const createErrorMessage = () => ({
@@ -343,41 +345,19 @@ export const createErrorMessage = () => ({
   timestamp: new Date(),
 });
 
+/** A short confirmation for a generated plan: the sessions at a glance; details live in the Library. */
 export const formatWorkoutsAsMarkdown = (workouts = []) => {
   if (!Array.isArray(workouts) || workouts.length === 0) {
     return 'I generated a plan, but there were no workouts to display.';
   }
 
-  const sections = workouts.map((workout, index) => {
-    const heading = workout.title || `Workout ${index + 1}`;
-    const focus = Array.isArray(workout.focusAreas) && workout.focusAreas.length > 0
-      ? `Focus: ${workout.focusAreas.join(', ')}`
-      : 'Focus: General fitness';
-    const exercises = Array.isArray(workout.exercises) && workout.exercises.length > 0
-      ? workout.exercises
-          .slice(0, 5)
-          .map((exercise) => {
-            const details = [];
-            if (exercise.sets && exercise.reps) details.push(`${exercise.sets} x ${exercise.reps}`);
-            if (exercise.interval) details.push(`${exercise.interval}`);
-            return `- ${exercise.name}${details.length ? ` (${details.join(', ')})` : ''}`;
-          })
-          .join('\n')
-      : '- Personalized exercise details available in the plan card';
-
-    return `## ${heading}
-${focus}
-
-${workout.description || 'A personalized training block based on your recent activity.'}
-
-### Key exercises
-${exercises}`;
+  const minutes = workouts.reduce((sum, workout) => sum + (Number(workout.duration) || 0), 0);
+  const lines = workouts.map((workout, index) => {
+    const title = workout.title || `Session ${index + 1}`;
+    return `- **${title}**${workout.duration ? `, ${workout.duration} min` : ''}`;
   });
-
-  return `# Your Weekly Plan
-I created a personalized weekly training plan and saved it to your AI Generated Plans section.
-
-${sections.join('\n\n')}`;
+  const total = `${workouts.length} session${workouts.length === 1 ? '' : 's'}${minutes ? `, ${minutes} min in total` : ''}`;
+  return [`Your week is ready: **${total}**.`, '', ...lines, '', 'It is saved in your Library, where you can see each session and log it in one tap.'].join('\n');
 };
 
 export const createSuccessMessage = (workouts = []) => ({

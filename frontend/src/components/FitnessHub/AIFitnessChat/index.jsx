@@ -198,7 +198,18 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
       return undefined;
     }
     const behavior = messages.length <= 1 ? 'auto' : 'smooth';
-    const frame = window.requestAnimationFrame(() => scrollToBottom(behavior));
+    const last = messages[messages.length - 1];
+    const frame = window.requestAnimationFrame(() => {
+      // A new coach reply is shown from its first line, so a long answer reads top-down
+      // instead of landing on its last paragraph. Sent messages and "thinking" go to the bottom.
+      const reply = !isLoading && last?.type === 'ai' && messagesContainerRef.current
+        ?.querySelector(`[data-message-id="${last.id}"]`);
+      if (reply) {
+        messagesContainerRef.current.scrollTo({ top: Math.max(reply.offsetTop - 12, 0), behavior });
+      } else {
+        scrollToBottom(behavior);
+      }
+    });
     return () => window.cancelAnimationFrame(frame);
   }, [activeConversationId, isFresh, isLoading, messages, scrollToBottom]);
 
@@ -325,6 +336,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
 
       const history = sanitizeChatMessages(historyMessages, 'type');
       const data = await aiChat(userMessage, userContext, history);
+      const offline = data?.source === 'fallback';
 
       if (isPlanRequest) {
         const workouts = parseAIRecommendations(data.content) || fallbackParseWorkoutPlan(data.content);
@@ -334,12 +346,14 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
             content: createSuccessMessage(workouts).content,
             suggestions: data.suggestions,
             parsedRecommendations: true,
+            offline,
           };
         }
         return {
           content: data.content || createPlanFormattingMessage().content,
           suggestions: data.suggestions,
           parsedRecommendations: false,
+          offline,
         };
       }
 
@@ -352,12 +366,13 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
         }
       }
 
-      if (data?.source === 'fallback' || isGenericBackendFallback(data.content)) {
+      if (offline || isGenericBackendFallback(data.content)) {
         const fallbackResponse = buildConversationalFallbackResponse(userMessage, userContext);
         return {
           content: fallbackResponse.content,
           suggestions: fallbackResponse.suggestions,
           parsedRecommendations: false,
+          offline: true,
         };
       }
 
@@ -378,7 +393,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
 
     try {
       const aiResponse = await generateAIResponse(promptText, nextMessages);
-      const aiMessage = createAIMessage(aiResponse.content, aiResponse.suggestions);
+      const aiMessage = createAIMessage(aiResponse.content, aiResponse.suggestions, aiResponse.offline);
       updateConversationById(sourceConversationId, (currentMessages) => [...currentMessages, aiMessage]);
     } catch (error) {
       console.error('Error generating AI response:', error);
@@ -489,7 +504,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
               <MenuButton as={IconButton} size="sm" variant="ghost" icon={<FiMoreHorizontal />} aria-label="Conversation options" ml="auto" flexShrink={0} />
               <MenuList fontSize="sm">
                 <MenuItem onClick={clearCurrentConversation}>Clear messages</MenuItem>
-                <MenuItem onClick={deleteCurrentConversation} color="red.500">Delete conversation</MenuItem>
+                <MenuItem onClick={deleteCurrentConversation} color="danger.fg">Delete conversation</MenuItem>
               </MenuList>
             </Menu>
           </Flex>
@@ -511,11 +526,9 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
             ) : (
               <VStack spacing={6} align="stretch" maxW="760px" mx="auto">
                 {messages.map((message) => (
-                  <ChatMessage
-                    key={message.id}
-                    message={message}
-                    onSuggestionClick={handleActionClick}
-                  />
+                  <Box key={message.id} data-message-id={message.id}>
+                    <ChatMessage message={message} onSuggestionClick={handleActionClick} />
+                  </Box>
                 ))}
                 {isLoading && <TypingIndicator label={TYPING_INDICATOR_TEXT} />}
               </VStack>

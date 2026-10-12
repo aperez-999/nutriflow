@@ -99,6 +99,8 @@ const theme = extendTheme({
       fg: { default: '#0A0A0A', _dark: '#EDEDED' },
       'fg.muted': { default: '#525252', _dark: '#A3A3A3' },
       'focus.ring': { default: '#3C5FD9', _dark: '#7B93E8' },
+      // Text for destructive actions (delete); readable on surfaces in both modes.
+      'danger.fg': { default: '#C53030', _dark: '#FC8181' },
       ...flowTokens('fuel', '#17977A'),
       ...flowTokens('train', '#D9561F'),
       ...flowTokens('recover', '#5070E8'),

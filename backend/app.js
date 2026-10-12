@@ -15,7 +15,7 @@ import foodRoutes from './routes/foodRoutes.js';
 import exerciseRoutes from './routes/exerciseRoutes.js';
 import checkInRoutes from './routes/checkInRoutes.js';
 import exerciseLibraryRoutes from './routes/exerciseLibraryRoutes.js';
-import { selectProvider } from './ai/config/aiProvider.js';
+import { DEFAULT_GROQ_MODEL, selectProvider } from './ai/config/aiProvider.js';
 import { identifyUser } from './middleware/authMiddleware.js';
 
 const app = express();
@@ -87,7 +87,7 @@ app.post('/api/chat', aiChatLimiter, identifyUser, handleAIChat);
 app.get('/api/health', (req, res) => {
   const provider = selectProvider();
   const model = provider === 'groq' ? 
-    process.env.GROQ_MODEL || 'llama3-8b-8192' : 
+    process.env.GROQ_MODEL || DEFAULT_GROQ_MODEL : 
     process.env.OLLAMA_MODEL || 'llama3:latest';
 
   const payload = {

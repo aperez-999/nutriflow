@@ -157,7 +157,7 @@ NINJA_API_KEY=your_api_ninjas_key
 # AI Configuration
 # Production
 GROQ_API_KEY=your_groq_api_key
-GROQ_MODEL=llama3-8b-8192
+GROQ_MODEL=openai/gpt-oss-120b
 
 # Local Development
 OLLAMA_URL=http://localhost:11434

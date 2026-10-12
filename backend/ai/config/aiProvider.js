@@ -14,6 +14,9 @@
 import { fetchCompat } from '../utils/fetchCompat.js';
 
 const DEFAULT_GROQ_TIMEOUT_MS = 20000;
+/** Used when GROQ_MODEL is unset, and when the configured model has been retired by Groq. */
+export const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b';
+const RETIRED_MODEL_ERROR = /decommissioned|model_not_found|does not exist/i;
 const DEFAULT_OLLAMA_TIMEOUT_MS = 45000;
 
 function getTimeoutMs(envKey, fallback) {
@@ -69,12 +72,8 @@ function getProviderAttemptOrder() {
   return hasGroqConfig() ? ['ollama', 'groq'] : ['ollama'];
 }
 
-async function callGroq(messages, temperature) {
-  if (!process.env.GROQ_API_KEY) {
-    throw new Error('Missing GROQ_API_KEY');
-  }
-
-  const response = await fetchCompat('https://api.groq.com/openai/v1/chat/completions', {
+function requestGroq(model, messages, temperature) {
+  return fetchCompat('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     timeoutMs: getTimeoutMs('GROQ_TIMEOUT_MS', DEFAULT_GROQ_TIMEOUT_MS),
     headers: {
@@ -82,11 +81,33 @@ async function callGroq(messages, temperature) {
       Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
     },
     body: JSON.stringify({
-      model: process.env.GROQ_MODEL || 'llama3-8b-8192',
+      model,
       messages,
       temperature,
+      // gpt-oss models reason before answering; low effort keeps chat replies fast.
+      ...(model.startsWith('openai/gpt-oss') && { reasoning_effort: 'low' }),
     }),
   });
+}
+
+async function callGroq(messages, temperature) {
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error('Missing GROQ_API_KEY');
+  }
+
+  const configured = process.env.GROQ_MODEL?.trim() || DEFAULT_GROQ_MODEL;
+  let response = await requestGroq(configured, messages, temperature);
+
+  // Groq retires models over time; fall back to the default rather than failing every reply.
+  if (!response.ok && configured !== DEFAULT_GROQ_MODEL && [400, 404].includes(response.status)) {
+    const body = await response.text();
+    if (RETIRED_MODEL_ERROR.test(body)) {
+      console.warn(`GROQ_MODEL "${configured}" is no longer available; using ${DEFAULT_GROQ_MODEL}. Update GROQ_MODEL in backend/.env.`);
+      response = await requestGroq(DEFAULT_GROQ_MODEL, messages, temperature);
+    } else {
+      throw new Error(`Groq error ${response.status}`);
+    }
+  }
 
   if (!response.ok) {
     throw new Error(`Groq error ${response.status}`);

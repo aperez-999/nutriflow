@@ -15,6 +15,7 @@ import { AGENTS } from '../agents/index.js';
 import { verifyAgentResult } from '../agents/VerifierAgent.js';
 import { formatWorkoutPlanForChat, formatMealPlanForChat } from '../utils/formatPlannerOutput.js';
 import { formatInsightsForChat } from '../utils/formatInsightsOutput.js';
+import { narrateFacts } from '../utils/narrateFacts.js';
 import { COACHING_ACTION_SUGGESTIONS } from '../../utils/aiUtils.js';
 
 const INSIGHTS_SUGGESTIONS = ['Generate workout plan', 'Create meal plan'];
@@ -61,7 +62,9 @@ function detectIntent(message) {
     m.includes('am i ready') ||
     m.includes('should i train today') ||
     m.includes('can i train today') ||
-    m.includes('ready to train')
+    m.includes('ready to train') ||
+    // "Why is today a recovery day?" from the Coach page asks about the verdict itself.
+    /why is today an? (push|steady|recovery) day/.test(m)
   ) {
     return INTENT.READINESS;
   }
@@ -69,6 +72,7 @@ function detectIntent(message) {
     m.includes('analyze my progress') ||
     m.includes('progress analysis') ||
     m.includes('how am i doing') ||
+    m.includes('how is my week going') ||
     m.includes('fitness insights')
   ) {
     return INTENT.INSIGHTS;
@@ -76,6 +80,21 @@ function detectIntent(message) {
   if (m.includes('analyze') && m.includes('progress')) return INTENT.INSIGHTS;
 
   return INTENT.COACH;
+}
+
+/**
+ * Readiness and insights are computed by rules, so their wording never changes.
+ * The model answers the user's question from those computed facts; if no
+ * provider is reachable, the rule-based text is returned as before.
+ */
+async function withNarration(response, { message, history }) {
+  try {
+    const narrated = await narrateFacts({ message, facts: response.content, history });
+    return narrated.content ? { ...response, ...narrated } : response;
+  } catch (err) {
+    console.error('narrateFacts provider error:', err.message);
+    return response;
+  }
 }
 
 /**
@@ -112,11 +131,12 @@ export async function orchestrateAI({ message, context = {}, history = [] }) {
 
   // Normalize result to API shape { content, suggestions, source }.
   if (result && typeof result.content === 'string') {
-    return {
+    const response = {
       content: result.content,
       suggestions: result.suggestions || (result.type === 'readiness' ? READINESS_SUGGESTIONS : COACHING_ACTION_SUGGESTIONS),
       source: result.source || 'agent',
     };
+    return intent === INTENT.READINESS ? withNarration(response, { message, history }) : response;
   }
 
   if (result && result.type === 'workout_plan') {
@@ -136,11 +156,11 @@ export async function orchestrateAI({ message, context = {}, history = [] }) {
   }
 
   if (result && result.type === 'insights') {
-    return {
+    return withNarration({
       content: formatInsightsForChat(result),
       suggestions: INSIGHTS_SUGGESTIONS,
       source: result.source || 'agent',
-    };
+    }, { message, history });
   }
 
   const payload = JSON.stringify(result ?? {}, null, 2);
