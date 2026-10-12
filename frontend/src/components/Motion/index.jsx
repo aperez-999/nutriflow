@@ -1,8 +1,28 @@
 import { useEffect, useRef } from 'react';
-import { VisuallyHidden } from '@chakra-ui/react';
-import { animate, useReducedMotion } from 'framer-motion';
+import { Box, VisuallyHidden } from '@chakra-ui/react';
+import { animate, motion, useReducedMotion } from 'framer-motion';
 import { DURATION, EASE_OUT } from './tokens';
 
+
+const MotionBox = motion(Box);
+
+/**
+ * The one enter used for content that replaces other content in place (tab panels,
+ * switched views): a short fade and rise. Mount it fresh on each switch (lazy tabs or
+ * a changing key) so nothing animates from a stale, hidden layout.
+ */
+export function SwapIn({ children, ...props }) {
+  return (
+    <MotionBox
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: DURATION.base, ease: EASE_OUT }}
+      {...props}
+    >
+      {children}
+    </MotionBox>
+  );
+}
 
 const formatNumber = (value, decimals) =>
   Number(value).toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals });

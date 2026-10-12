@@ -30,7 +30,7 @@ export function PageBandFigures({ items }) {
  * Header band that opens an app page. With `flow` it is a solid block of that flow's
  * color; without, it follows the light/dark surface.
  */
-export default function PageBand({ title, description, flow, children }) {
+export default function PageBand({ title, description, flow, maxW = 'container.xl', children }) {
   const band = BAND[flow];
   return (
     <Box
@@ -40,7 +40,8 @@ export default function PageBand({ title, description, flow, children }) {
       borderBottomWidth={band ? 0 : '1px'}
       borderColor="border"
     >
-      <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 7, md: 10 }}>
+      {/* maxW matches the page's own content column, so title and content share a left edge. */}
+      <Container maxW={maxW} px={{ base: 4, md: 6 }} py={{ base: 7, md: 10 }}>
         <MotionBox
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}

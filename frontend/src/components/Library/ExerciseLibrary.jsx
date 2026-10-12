@@ -15,15 +15,14 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import { SearchIcon } from '@chakra-ui/icons';
-import { AnimatePresence, motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import useExerciseCatalog from './useExerciseCatalog';
 import AnatomyFigure from './AnatomyFigure';
 import { describeMuscles } from './anatomy';
 import QuickPanel from '../Dashboard/components/QuickPanel';
-import { DURATION, EASE_OUT } from '../Motion/tokens';
+import { DURATION } from '../Motion/tokens';
+import { SwapIn } from '../Motion';
 
-const MotionBox = motion(Box);
 // Two compact columns on phones, as many 220px+ cards as fit elsewhere.
 const GRID_COLUMNS = { base: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(auto-fill, minmax(220px, 1fr))' };
 const meta = (ex) => [ex.muscleGroup, ex.equipment.toLowerCase(), ex.difficulty.toLowerCase()].join(', ');
@@ -199,22 +198,14 @@ export default function ExerciseLibrary() {
       )}
 
       {state.status === 'ready' && visible.length > 0 && (
-        <Grid templateColumns={GRID_COLUMNS} gap={{ base: 3, md: 4 }}>
-          <AnimatePresence initial={false}>
+        // A new filter swaps the whole grid in; typing a search updates it in place.
+        <SwapIn key={`${group}|${equipment}|${difficulty}`}>
+          <Grid templateColumns={GRID_COLUMNS} gap={{ base: 3, md: 4 }}>
             {visible.map((exercise) => (
-              <MotionBox
-                key={exercise.slug}
-                layout
-                initial={{ opacity: 0, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.97 }}
-                transition={{ duration: DURATION.base, ease: EASE_OUT }}
-              >
-                <ExerciseCard exercise={exercise} onOpen={setSelected} />
-              </MotionBox>
+              <ExerciseCard key={exercise.slug} exercise={exercise} onOpen={setSelected} />
             ))}
-          </AnimatePresence>
-        </Grid>
+          </Grid>
+        </SwapIn>
       )}
 
       <QuickPanel

@@ -147,7 +147,14 @@ function Profile() {
                 {initialsOf(account.username)}
               </Flex>
               <Box minW={0} flex="1">
-                <Heading as="h1" fontSize={{ base: '5xl', md: '7xl' }} lineHeight="0.9" noOfLines={2} wordBreak="break-word">
+                {/* Long names step down a size so they wrap at most once instead of mid-word. */}
+                <Heading
+                  as="h1"
+                  fontSize={(account.username || '').length > 12 ? { base: '3xl', md: '5xl' } : { base: '5xl', md: '7xl' }}
+                  lineHeight="0.95"
+                  noOfLines={2}
+                  wordBreak="break-word"
+                >
                   {account.username || 'Your profile'}
                 </Heading>
                 <Text color="fg.muted" mt={2}>

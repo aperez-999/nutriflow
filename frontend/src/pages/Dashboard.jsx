@@ -23,6 +23,7 @@ import {
 import { useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { DURATION, EASE_OUT } from '../components/Motion/tokens';
+import { SwapIn } from '../components/Motion';
 import {
   getDiets,
   addDiet,
@@ -432,7 +433,8 @@ function Dashboard() {
 
         <MotionBox {...enter(3)} id="log" scrollMarginTop="88px">
           <Heading as="h2" size="lg" mb={4}>Log</Heading>
-          <Tabs index={logTab} onChange={setLogTab} variant="unstyled" position="relative">
+          {/* Lazy: only the shown panel is mounted, so its rows never animate from a hidden layout. */}
+          <Tabs index={logTab} onChange={setLogTab} variant="unstyled" position="relative" isLazy>
             <TabList mb={5} borderBottomWidth="1px" borderColor="border">
               {['Meals', 'Workouts'].map((label) => (
                 <Tab key={label} px={4} py={2.5} fontWeight={600} color="fg.muted" _selected={{ color: 'fg' }} _hover={{ color: 'fg' }}>
@@ -444,7 +446,7 @@ function Dashboard() {
             <TabIndicator mt="-22px" height="2px" bg="border.strong" borderRadius="1px" />
             <TabPanels>
               <TabPanel p={0}>
-                <Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '5fr 7fr' }} gap={6} alignItems="start">
+                <SwapIn display="grid" gridTemplateColumns={{ base: '1fr', lg: '5fr 7fr' }} gap={6} alignItems="start">
                   <DietDailySummaryCard
                     diets={diets}
                     selectedDate={dietSelectedDate}
@@ -469,10 +471,10 @@ function Dashboard() {
                       />
                     )}
                   />
-                </Box>
+                </SwapIn>
               </TabPanel>
               <TabPanel p={0}>
-                <Box display="grid" gridTemplateColumns={{ base: '1fr', lg: '5fr 7fr' }} gap={6} alignItems="start">
+                <SwapIn display="grid" gridTemplateColumns={{ base: '1fr', lg: '5fr 7fr' }} gap={6} alignItems="start">
                   <WorkoutDailySummaryCard
                     workouts={workouts}
                     selectedDate={workoutSelectedDate}
@@ -497,7 +499,7 @@ function Dashboard() {
                       />
                     )}
                   />
-                </Box>
+                </SwapIn>
               </TabPanel>
             </TabPanels>
           </Tabs>

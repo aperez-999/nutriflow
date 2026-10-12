@@ -10,6 +10,7 @@ import {
   Tabs,
 } from '@chakra-ui/react';
 import PageBand, { PageBandFigures } from '../components/Global/PageBand';
+import { SwapIn } from '../components/Motion';
 import usePlanLibrary from '../components/Library/usePlanLibrary';
 import useExerciseCatalog from '../components/Library/useExerciseCatalog';
 import ExerciseLibrary from '../components/Library/ExerciseLibrary';
@@ -58,14 +59,18 @@ function Library() {
           <TabIndicator mt="-26px" height="2px" bg="border.strong" borderRadius="1px" />
           <TabPanels>
             <TabPanel p={0}>
-              <PlansView
-                library={library}
-                catalog={catalog.exercises}
-                onOpenSession={(workout, index) => setSession({ workout, index })}
-              />
+              <SwapIn>
+                <PlansView
+                  library={library}
+                  catalog={catalog.exercises}
+                  onOpenSession={(workout, index) => setSession({ workout, index })}
+                />
+              </SwapIn>
             </TabPanel>
             <TabPanel p={0}>
-              <ExerciseLibrary />
+              <SwapIn>
+                <ExerciseLibrary />
+              </SwapIn>
             </TabPanel>
           </TabPanels>
         </Tabs>

@@ -2,8 +2,6 @@ import { useState } from 'react';
 import {
   Box,
   Container,
-  Heading,
-  Text,
   VStack,
   FormControl,
   FormLabel,
@@ -12,6 +10,7 @@ import {
   Button,
   useToast,
 } from '@chakra-ui/react';
+import PageBand from '../Global/PageBand';
 import { motion } from 'framer-motion';
 import axios from 'axios';
 
@@ -64,18 +63,11 @@ function Contact() {
   };
 
   return (
-    <Box
-      pt={20}
-      pb={10}
-    >
-      <Container maxW="4xl">
+    <Box>
+      <PageBand maxW="4xl" title="Contact" description="Questions or feedback? Send a message and we'll reply as soon as we can." />
+      <Container maxW="4xl" px={{ base: 4, md: 6 }} py={{ base: 8, md: 10 }}>
         <VStack spacing={8} align="start">
-          <Heading size="2xl">Contact</Heading>
           
-          <Text fontSize="lg">
-            Have questions or feedback? We&apos;d love to hear from you. Send us a
-            message and we&apos;ll respond as soon as possible.
-          </Text>
 
           <MotionBox
             as="form"

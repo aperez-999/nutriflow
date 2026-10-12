@@ -5,16 +5,14 @@ import {
   Text,
   VStack,
 } from '@chakra-ui/react';
+import PageBand from '../Global/PageBand';
 
 function Privacy() {
   return (
-    <Box
-      pt={20}
-      pb={10}
-    >
-      <Container maxW="4xl">
+    <Box>
+      <PageBand maxW="4xl" title="Privacy Policy" description="What NutriFlow collects, why, and how it is kept safe." />
+      <Container maxW="4xl" px={{ base: 4, md: 6 }} py={{ base: 8, md: 10 }}>
         <VStack spacing={8} align="start">
-          <Heading size="2xl">Privacy Policy</Heading>
           
           <VStack spacing={6} align="start" width="100%">
             <Box>

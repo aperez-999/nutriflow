@@ -1,6 +1,6 @@
 import { lazy, Suspense, useContext } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Center, Spinner } from '@chakra-ui/react';
+import { Box, Container, SimpleGrid, Skeleton } from '@chakra-ui/react';
 import { AuthContext } from '../context/AuthContext';
 
 // Route-level code splitting keeps the initial bundle small.
@@ -18,10 +18,22 @@ const Privacy = lazy(() => import('../components/Footer/Privacy'));
 const Terms = lazy(() => import('../components/Footer/Terms'));
 const Contact = lazy(() => import('../components/Footer/Contact'));
 
+// While a page's code loads: the shape of a page (band, then content), not a spinner.
 const RouteFallback = () => (
-  <Center minH="40vh">
-    <Spinner size="lg" color="brand.400" thickness="3px" />
-  </Center>
+  <Box aria-busy="true" aria-label="Loading">
+    <Box bg="bg.surface" borderBottomWidth="1px" borderColor="border">
+      <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 7, md: 10 }}>
+        <Skeleton h={{ base: '48px', md: '64px' }} w="240px" borderRadius="md" />
+        <Skeleton h="20px" w={{ base: '80%', md: '420px' }} mt={4} borderRadius="md" />
+      </Container>
+    </Box>
+    <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 6, md: 8 }}>
+      <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+        {[0, 1, 2].map((i) => <Skeleton key={i} h="160px" borderRadius="panel" />)}
+      </SimpleGrid>
+      <Skeleton h="240px" borderRadius="panel" mt={6} />
+    </Container>
+  </Box>
 );
 
 // Protected Route Component

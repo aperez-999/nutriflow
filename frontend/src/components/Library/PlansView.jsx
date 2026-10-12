@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Box, Button, Card, CardBody, Flex, Grid, Heading, HStack, Skeleton, Text, VStack } from '@chakra-ui/react';
 import { FiCheck } from 'react-icons/fi';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link as RouterLink } from 'react-router-dom';
 import { ConfirmDeleteButton } from '../Dashboard/components/EntryRow';
 import { DURATION, EASE_OUT } from '../Motion/tokens';
+import { SwapIn } from '../Motion';
 import AnatomyFigure from './AnatomyFigure';
 import { describeMuscles } from './anatomy';
 import { exerciseName, planMuscles, planProgress } from './planUtils';
@@ -251,7 +252,7 @@ export default function PlansView({ library, catalog, onOpenSession }) {
               {selected && (
                 <MotionBox layoutId="plan-kind" position="absolute" inset={0} bg="bg.surface" borderRadius="full" borderWidth="1px" borderColor="border" transition={{ duration: DURATION.base, ease: EASE_OUT }} />
               )}
-              <HStack as="span" position="relative" spacing={2}>
+              <HStack as="span" position="relative" zIndex={1} spacing={2}>
                 <Box as="span" boxSize="8px" borderRadius="2px" bg={`${item.flow}.solid`} />
                 <span>{item.label}</span>
                 <Text as="span" color="fg.muted" fontWeight="500">{counts[item.key]}</Text>
@@ -279,14 +280,8 @@ export default function PlansView({ library, catalog, onOpenSession }) {
         </HStack>
       )}
 
-      <AnimatePresence mode="wait" initial={false}>
-        <MotionBox
-          key={`${kind}-${active?.id || 'none'}`}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: DURATION.base, ease: EASE_OUT }}
-        >
+      {/* Switching kind or plan swaps the body in fresh; no exit, so old and new never overlap. */}
+      <SwapIn key={`${kind}-${active?.id || 'none'}`}>
           {!active && !loading && <EmptyPlans kind={kind} />}
 
           {active && isTraining && (
@@ -353,8 +348,7 @@ export default function PlansView({ library, catalog, onOpenSession }) {
               {active.meals.length === 0 && <Text fontSize="sm" color="fg.muted">This plan has no meals yet.</Text>}
             </VStack>
           )}
-        </MotionBox>
-      </AnimatePresence>
+      </SwapIn>
     </VStack>
   );
 }

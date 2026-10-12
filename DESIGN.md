@@ -15,6 +15,7 @@ NutriFlow is used in two moments: a quick check-in before training and a log at 
 | `border.strong` | `#0A0A0A` | `#EDEDED` | label rules (3px), focus |
 | `fg` | `#0A0A0A` | `#EDEDED` | text, primary button fill |
 | `fg.muted` | `#525252` | `#A3A3A3` | secondary text (≥ 7.2:1 light, ≥ 7.3:1 dark) |
+| `danger.fg` | `#C53030` | `#FC8181` | destructive actions only (delete) |
 | `fuel` | `#14936F` | `#17977A` | meals, calories, protein |
 | `train` | `#E0561F` | `#D9561F` | workouts, effort |
 | `recover` | `#3C5FD9` | `#5070E8` | check-ins, sleep, readiness |
@@ -60,6 +61,8 @@ Shared values live in `components/Motion/tokens.js` (one ease-out curve, 150/250
 - Bars, meters, the readiness ring and rhythm cells fill from zero.
 - Routes fade in (enter only, never delaying navigation); list rows slide in and collapse out.
 - Nav and tab indicators slide between items (`layoutId`, `TabIndicator`).
+- Switched content (tab panels, filters, plan or plan-type changes) uses one enter, `SwapIn`: mounted fresh, a 250 ms fade and 6px rise, no exit. Old and new content never overlap, and hidden panels are not kept mounted (lazy tabs), so nothing animates from a stale layout.
+- Loading shows the shape of what is coming (skeletons): a page outline while a route's code loads, card skeletons while data loads. Spinners are only for small inline waits (a search field, a saving button).
 - The landing page alone gets an orchestrated entrance and Lenis smooth scrolling; the app keeps native scrolling.
 - Reduced motion: `MotionConfig reducedMotion="user"` removes movement, `CountUp` shows final values, Lenis disables itself, and the landing hero renders without fades.
 
