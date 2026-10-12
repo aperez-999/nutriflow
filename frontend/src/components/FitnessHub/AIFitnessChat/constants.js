@@ -6,22 +6,11 @@ export const QUICK_ACTIONS = [
   'How ready am I?',
 ];
 
-/** Primary suggestions returned in-chat. */
-export const PRIMARY_SUGGESTIONS = [
-  'Generate Weekly Plan',
-  'Create Meal Plan',
-  'Analyze My Progress',
-  'How ready am I?',
-];
+/** Follow-ups for built-in (offline) replies; online replies get theirs from the backend. */
+export const DEFAULT_SUGGESTIONS = QUICK_ACTIONS;
 
-/** Secondary quick actions — general advice. */
-export const SECONDARY_SUGGESTIONS = [
-  'Nutrition Advice',
-  'Form Tips',
-];
-
-/** Default set for follow-up suggestions inside chat replies. */
-export const DEFAULT_SUGGESTIONS = [...PRIMARY_SUGGESTIONS, ...SECONDARY_SUGGESTIONS];
+/** A reply never shows more follow-ups than this. */
+export const MAX_SUGGESTIONS = 4;
 
 export const CHAT_ACTION_BUTTON_PROPS = {
   size: 'sm',

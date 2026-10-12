@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EXERCISE_CATALOG } from '../../../../backend/data/exerciseCatalog.js';
 import { matchExercise, planMuscles, planProgress } from './planUtils';
+import { planTitle } from './usePlanLibrary';
 
 const name = (text) => matchExercise(text, EXERCISE_CATALOG)?.name ?? null;
 
@@ -35,5 +36,15 @@ describe('planMuscles', () => {
 describe('planProgress', () => {
   it('counts logged items', () => {
     expect(planProgress([{ completedRecordId: 'a' }, {}, { completedRecordId: 'b' }])).toEqual({ done: 2, total: 3 });
+  });
+});
+
+describe('planTitle', () => {
+  it('names a plan after the focus most sessions share', () => {
+    expect(planTitle([{ title: 'Monday - Full Body', focusAreas: ['Full Body'] }, { focusAreas: ['Full Body', 'Core'] }, { focusAreas: ['Cardio'] }])).toBe('Full Body week');
+  });
+
+  it('falls back to the session count', () => {
+    expect(planTitle([{ title: 'Monday - Run' }, { title: 'Wednesday - Lift' }])).toBe('2-session week');
   });
 });

@@ -7,20 +7,14 @@
  * diet entries, average calories) is passed into the coach prompt so the AI
  * can analyze patterns and recommend improvements (e.g. more strength work,
  * calorie adjustment). Preserves existing behavior: [[RETURN_JSON_WORKOUT_PLAN]],
- * fallback responses, Groq/Ollama, and category-based suggestions plus
- * coaching action suggestions for future agents.
+ * fallback responses and Groq/Ollama. Follow-up suggestions are chosen by the
+ * orchestrator (ai/utils/followUps.js).
  */
 
 import { get_user_stats } from '../tools/get_user_stats.js';
 import { COACH_SYSTEM_PROMPT, buildContextSummary } from '../prompts/coachPrompt.js';
 import { generateChatCompletion } from '../config/aiProvider.js';
-import {
-  categorizeMessage,
-  suggestionsByCategory,
-  COACHING_ACTION_SUGGESTIONS,
-  getDefaultWorkoutPlan,
-  generateFallbackResponse,
-} from '../../utils/aiUtils.js';
+import { getDefaultWorkoutPlan, generateFallbackResponse } from '../../utils/aiUtils.js';
 
 /** Minimum safe daily calorie recommendation (safety clamp for AI output). */
 const MIN_SAFE_CALORIES = 1500;
@@ -77,12 +71,12 @@ function canParsePlanArray(content) {
 
 /**
  * Runs the HeadCoachAgent: optionally enriches context from DB via get_user_stats,
- * builds messages with the structured context summary, calls LLM, returns content and suggestions.
+ * builds messages with the structured context summary, calls LLM, returns the content.
  * @param {Object} params
  * @param {string} params.message - User message.
  * @param {Object} [params.context] - { userId?, recentWorkouts?, recentDiets?, userName? }. If userId is set, get_user_stats(userId) is called and its result is used for the prompt.
  * @param {Array<{ type: string, content: string }>} [params.history] - Previous chat turns.
- * @returns {Promise<{ content: string, suggestions: string[], source: 'groq'|'ollama'|'fallback' }>}
+ * @returns {Promise<{ content: string, source: 'groq'|'ollama'|'fallback' }>}
  */
 export async function runHeadCoachAgent({ message, context = {}, history = [] }) {
   // When userId is available, load fresh stats from the DB for personalized coaching.
@@ -122,9 +116,6 @@ export async function runHeadCoachAgent({ message, context = {}, history = [] })
     });
   }
 
-  const type = categorizeMessage(message);
-  const categorySuggestions = suggestionsByCategory[type] || suggestionsByCategory.default;
-  const suggestions = [...categorySuggestions, ...COACHING_ACTION_SUGGESTIONS];
   try {
     const { content: rawContent, provider: usedProvider } = await generateChatCompletion(messages, { temperature: 0.7 });
     let content = rawContent;
@@ -141,18 +132,10 @@ export async function runHeadCoachAgent({ message, context = {}, history = [] })
       content = clampUnsafeCalorieContent(content);
     }
 
-    return {
-      content,
-      suggestions,
-      source: usedProvider,
-    };
+    return { content, source: usedProvider };
   } catch (err) {
     console.error('HeadCoachAgent provider error:', err);
     const fallback = generateFallbackResponse(message, coachingContext);
-    return {
-      ...fallback,
-      suggestions: [...(fallback.suggestions || []), ...COACHING_ACTION_SUGGESTIONS],
-      source: 'fallback',
-    };
+    return { content: fallback.content, source: 'fallback' };
   }
 }

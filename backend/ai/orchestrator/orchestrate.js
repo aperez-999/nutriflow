@@ -16,10 +16,8 @@ import { verifyAgentResult } from '../agents/VerifierAgent.js';
 import { formatWorkoutPlanForChat, formatMealPlanForChat } from '../utils/formatPlannerOutput.js';
 import { formatInsightsForChat } from '../utils/formatInsightsOutput.js';
 import { narrateFacts } from '../utils/narrateFacts.js';
-import { COACHING_ACTION_SUGGESTIONS } from '../../utils/aiUtils.js';
+import { followUpsFor } from '../utils/followUps.js';
 
-const INSIGHTS_SUGGESTIONS = ['Generate workout plan', 'Create meal plan'];
-const READINESS_SUGGESTIONS = ['How can I improve my readiness?', 'Plan a light workout for today', 'Analyze my progress'];
 
 /** Supported intents. */
 export const INTENT = {
@@ -97,19 +95,11 @@ async function withNarration(response, { message, history }) {
   }
 }
 
-/**
- * Orchestrates the AI request: detects intent and runs the corresponding agent.
- * @param {Object} params
- * @param {string} params.message - User message.
- * @param {Object} [params.context] - { recentWorkouts, recentDiets, userName } (optional, from client).
- * @param {Array<{ type: string, content: string }>} [params.history] - Previous chat messages.
- * @returns {Promise<{ content: string, suggestions: string[], source: string }>}
- */
-export async function orchestrateAI({ message, context = {}, history = [] }) {
-  const intent = detectIntent(message);
-
+/** Runs the agent for an intent and normalizes its result to { content, source }. */
+async function runAgent(intent, { message, context, history }) {
   if (intent === INTENT.COACH) {
-    return runHeadCoachAgent({ message, context, history });
+    const { content, source } = await runHeadCoachAgent({ message, context, history });
+    return { content, source };
   }
 
   let agentKey = 'coach';
@@ -129,44 +119,35 @@ export async function orchestrateAI({ message, context = {}, history = [] }) {
     result = verifyAgentResult(result);
   }
 
-  // Normalize result to API shape { content, suggestions, source }.
+  const source = result?.source || 'agent';
+
   if (result && typeof result.content === 'string') {
-    const response = {
-      content: result.content,
-      suggestions: result.suggestions || (result.type === 'readiness' ? READINESS_SUGGESTIONS : COACHING_ACTION_SUGGESTIONS),
-      source: result.source || 'agent',
-    };
+    const response = { content: result.content, source };
     return intent === INTENT.READINESS ? withNarration(response, { message, history }) : response;
   }
-
   if (result && result.type === 'workout_plan') {
-    return {
-      content: formatWorkoutPlanForChat(result),
-      suggestions: COACHING_ACTION_SUGGESTIONS,
-      source: result.source || 'agent',
-    };
+    return { content: formatWorkoutPlanForChat(result), source };
   }
-
   if (result && result.type === 'meal_plan') {
-    return {
-      content: formatMealPlanForChat(result),
-      suggestions: COACHING_ACTION_SUGGESTIONS,
-      source: result.source || 'agent',
-    };
+    return { content: formatMealPlanForChat(result), source };
   }
-
   if (result && result.type === 'insights') {
-    return withNarration({
-      content: formatInsightsForChat(result),
-      suggestions: INSIGHTS_SUGGESTIONS,
-      source: result.source || 'agent',
-    }, { message, history });
+    return withNarration({ content: formatInsightsForChat(result), source }, { message, history });
   }
+  return { content: JSON.stringify(result ?? {}, null, 2), source };
+}
 
-  const payload = JSON.stringify(result ?? {}, null, 2);
-  return {
-    content: payload,
-    suggestions: COACHING_ACTION_SUGGESTIONS,
-    source: result?.source || 'agent',
-  };
+/**
+ * Orchestrates the AI request: detects intent, runs the corresponding agent, and
+ * attaches the follow-up suggestions (chosen here only, at most four per reply).
+ * @param {Object} params
+ * @param {string} params.message - User message.
+ * @param {Object} [params.context] - { recentWorkouts, recentDiets, userName } (optional, from client).
+ * @param {Array<{ type: string, content: string }>} [params.history] - Previous chat messages.
+ * @returns {Promise<{ content: string, suggestions: string[], source: string }>}
+ */
+export async function orchestrateAI({ message, context = {}, history = [] }) {
+  const intent = detectIntent(message);
+  const { content, source } = await runAgent(intent, { message, context, history });
+  return { content, suggestions: followUpsFor({ message, intent }), source };
 }

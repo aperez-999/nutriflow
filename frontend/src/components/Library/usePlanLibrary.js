@@ -7,12 +7,24 @@ import { getTodayDayKey, toStoredIsoFromDayKey } from '../../utils/dateUtils';
 
 const AI_PLANS_STORAGE_KEY = 'nutriflow.fitnessHub.aiPlans';
 
+/**
+ * A name for a whole week, not its first session: the focus most sessions share
+ * ("Full Body week"), or the session count when there is none.
+ */
+export const planTitle = (workouts = []) => {
+  const counts = new Map();
+  workouts.forEach((workout) => (workout?.focusAreas || []).forEach((area) => {
+    const key = String(area).trim();
+    if (key) counts.set(key, (counts.get(key) || 0) + 1);
+  }));
+  const [top] = [...counts.entries()].sort((a, b) => b[1] - a[1])[0] || [];
+  if (top) return `${top.charAt(0).toUpperCase()}${top.slice(1)} week`;
+  return workouts.length ? `${workouts.length}-session week` : `Plan ${new Date().toLocaleDateString()}`;
+};
+
 const createStoredPlan = (workouts = []) => ({
   id: `plan-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  title:
-    workouts[0]?.title ||
-    (Array.isArray(workouts[0]?.focusAreas) && workouts[0].focusAreas.length > 0 ? workouts[0].focusAreas.join(' / ') : null) ||
-    `Plan ${new Date().toLocaleDateString()}`,
+  title: planTitle(workouts),
   workouts,
   generatedAt: new Date().toISOString(),
 });

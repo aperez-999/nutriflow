@@ -11,25 +11,6 @@ export const categorizeMessage = (text) => {
   return 'default';
 };
 
-export const suggestionsByCategory = {
-  greeting: ['How can I build muscle?', 'Create a workout plan', 'Nutrition advice', 'How ready am I?'],
-  muscle: ['Create a workout plan', 'Nutrition advice', 'Form tips', 'How ready am I?'],
-  workout: ['Show me the exercises', 'Adjust difficulty', 'Plan my week', 'How ready am I?'],
-  nutrition: ['Create a meal plan', 'Nutrition advice', 'Track my intake', 'How ready am I?'],
-  form: ['Specific exercise form', 'Video demonstrations', 'Form checklist', 'Common mistakes'],
-  progress: ['Detailed analysis', 'Set new goals', 'Weekly plan', 'How ready am I?'],
-  plan: ['Customize plan', 'Add to calendar', 'Nutrition details', 'Exercise library'],
-  default: ['How can I build muscle?', 'Workout plan', 'Nutrition advice', 'How ready am I?'],
-};
-
-/** Suggestions that trigger future agents (workout plan, meal plan, progress analysis). */
-export const COACHING_ACTION_SUGGESTIONS = [
-  'Generate workout plan',
-  'Create meal plan',
-  'Analyze my progress',
-  'How ready am I?',
-];
-
 export const getDefaultWorkoutPlan = () => [
   {
     title: 'Full Body Strength',
@@ -85,10 +66,7 @@ export const generateFallbackResponse = (message, context) => {
   };
   
   const type = categorizeMessage(message);
-  return {
-    content: getFallbackContent(type, ctx),
-    suggestions: suggestionsByCategory[type] || suggestionsByCategory.default
-  };
+  return { content: getFallbackContent(type, ctx) };
 };
 
 const getFallbackContent = (type, ctx) => {

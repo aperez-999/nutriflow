@@ -19,7 +19,7 @@ import { FiMoreHorizontal, FiPlus } from 'react-icons/fi';
 import { AuthContext } from '../../../context/AuthContext';
 import { aiChat, saveChatHistory, loadChatHistory, clearChatHistory, normalizeChatMessage, sanitizeChatMessages } from '../../../services/api';
 import { ChatEmptyState, ChatInput, ChatMessage, ConversationList, TypingIndicator } from './components';
-import { WELCOME_MESSAGE, CLEAR_MESSAGE, QUICK_ACTIONS, QUICK_ACTION_LABELS, CHAT_ACTION_BUTTON_PROPS, TYPING_INDICATOR_TEXT } from './constants';
+import { WELCOME_MESSAGE, CLEAR_MESSAGE, QUICK_ACTION_LABELS, TYPING_INDICATOR_TEXT } from './constants';
 import {
   parseAIRecommendations,
   parseAIMealPlan,
@@ -525,9 +525,13 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
               <ChatEmptyState intro={messages[0]?.content} onPick={handleActionClick} isDisabled={isLoading} />
             ) : (
               <VStack spacing={6} align="stretch" maxW="760px" mx="auto">
-                {messages.map((message) => (
+                {messages.map((message, index) => (
                   <Box key={message.id} data-message-id={message.id}>
-                    <ChatMessage message={message} onSuggestionClick={handleActionClick} />
+                    <ChatMessage
+                      message={message}
+                      onSuggestionClick={handleActionClick}
+                      showSuggestions={index === messages.length - 1 && !isLoading}
+                    />
                   </Box>
                 ))}
                 {isLoading && <TypingIndicator label={TYPING_INDICATOR_TEXT} />}
@@ -535,31 +539,6 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
             )}
             <div ref={messagesEndRef} />
           </Box>
-
-          {/* Side-scrolls on phones, wraps on wider screens so no suggestion is cut off. */}
-          {!isFresh && (
-            <Flex
-              gap={2}
-              px={{ base: 3, md: 4 }}
-              pb={2}
-              flexWrap={{ base: 'nowrap', md: 'wrap' }}
-              overflowX={{ base: 'auto', md: 'visible' }}
-              sx={{ scrollbarWidth: 'none' }}
-            >
-              {QUICK_ACTIONS.map((suggestion) => (
-                <Button
-                  key={suggestion}
-                  variant="outline"
-                  flexShrink={0}
-                  {...CHAT_ACTION_BUTTON_PROPS}
-                  onClick={() => handleActionClick(suggestion)}
-                  isDisabled={isLoading}
-                >
-                  {QUICK_ACTION_LABELS[suggestion] || suggestion}
-                </Button>
-              ))}
-            </Flex>
-          )}
 
           <ChatInput
             value={inputMessage}

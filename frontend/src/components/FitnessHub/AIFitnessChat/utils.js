@@ -1,4 +1,4 @@
-import { DEFAULT_SUGGESTIONS, GENERIC_BACKEND_FALLBACK_MESSAGE } from './constants';
+import { DEFAULT_SUGGESTIONS, GENERIC_BACKEND_FALLBACK_MESSAGE, MAX_SUGGESTIONS, QUICK_ACTION_LABELS } from './constants';
 
 export const parseAIRecommendations = (content) => {
   try {
@@ -266,6 +266,11 @@ const ACTION_PROMPT_MAP = {
   'How ready am I?': 'Based on my recent workouts and nutrition, how ready am I for a harder training day today? Keep it short: my score, the main reason, and what to do today. Respond in plain language, not JSON.',
   'Nutrition Advice': 'Give me the most useful nutrition change for me right now, based on my recent habits, briefly. Respond in plain language, not JSON.',
   'Form Tips': 'Give me a few quick form tips for safer, more effective workouts. Respond in plain language, not JSON.',
+  // Follow-ups after a plan: these build a new, adjusted plan that is saved to the Library.
+  'Make the week easier': 'Generate my weekly fitness plan again, but easier: lower intensity and fewer hard sessions than the last one. [[RETURN_JSON_WORKOUT_PLAN]]',
+  'Make the sessions shorter': 'Generate my weekly fitness plan again with shorter sessions, 30 minutes or less each. [[RETURN_JSON_WORKOUT_PLAN]]',
+  'Make it higher in protein': 'Create my meal plan again, higher in protein: at least 30 g of protein per main meal. One line per meal for Breakfast, Lunch, Dinner and a Snack. Respond in plain language, not JSON.',
+  'Make it vegetarian': 'Create my meal plan again, fully vegetarian. One line per meal for Breakfast, Lunch, Dinner and a Snack. Respond in plain language, not JSON.',
 };
 
 export const resolveAssistantActionPrompt = (text) => ACTION_PROMPT_MAP[text] || text;
@@ -373,3 +378,17 @@ export const createPlanFormattingMessage = () => ({
   content: 'I generated a weekly plan, but I had to fall back to the plain-text version this time. The plan details are still shown below.',
   timestamp: new Date(),
 });
+
+/** At most four follow-ups, one per distinct label (older saved replies may carry more). */
+export function pickSuggestions(suggestions) {
+  if (!Array.isArray(suggestions)) return [];
+  const seen = new Set();
+  return suggestions
+    .filter((suggestion) => {
+      const label = String(QUICK_ACTION_LABELS[suggestion] || suggestion).trim().toLowerCase();
+      if (!label || seen.has(label)) return false;
+      seen.add(label);
+      return true;
+    })
+    .slice(0, MAX_SUGGESTIONS);
+}

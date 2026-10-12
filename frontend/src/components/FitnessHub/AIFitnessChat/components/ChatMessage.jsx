@@ -14,15 +14,8 @@ import ReactMarkdown from 'react-markdown';
 import { DURATION, EASE_OUT } from '../../../Motion/tokens';
 import { LogoMark } from '../../../Global/Logo';
 import remarkGfm from 'remark-gfm';
-import { QUICK_ACTIONS, PRIMARY_SUGGESTIONS, CHAT_ACTION_BUTTON_PROPS, QUICK_ACTION_LABELS } from '../constants';
-
-
-function splitSuggestions(suggestions) {
-  if (!Array.isArray(suggestions)) return { primary: [], secondary: [] };
-  const primary = suggestions.filter((s) => PRIMARY_SUGGESTIONS.includes(s) && !QUICK_ACTIONS.includes(s));
-  const secondary = suggestions.filter((s) => !PRIMARY_SUGGESTIONS.includes(s) && !QUICK_ACTIONS.includes(s));
-  return { primary, secondary };
-}
+import { CHAT_ACTION_BUTTON_PROPS, QUICK_ACTION_LABELS } from '../constants';
+import { pickSuggestions } from '../utils';
 
 function parseStructuredSections(content) {
   if (!content || typeof content !== 'string') return null;
@@ -96,12 +89,13 @@ function MarkdownBlock({ content }) {
   );
 }
 
-const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick }) {
+// Follow-ups show only on the latest reply, so earlier turns stay quiet.
+const ChatMessage = React.memo(function ChatMessage({ message, onSuggestionClick, showSuggestions = false }) {
   const isUser = message.type === 'user';
-  const suggestions = useMemo(() => {
-    const { primary, secondary } = splitSuggestions(message.suggestions);
-    return [...primary, ...secondary];
-  }, [message.suggestions]);
+  const suggestions = useMemo(
+    () => (showSuggestions ? pickSuggestions(message.suggestions) : []),
+    [message.suggestions, showSuggestions]
+  );
   const structuredContent = useMemo(
     () => (message.type === 'ai' ? parseStructuredSections(message.content) : null),
     [message.content, message.type]

@@ -1,12 +1,6 @@
 import { get_user_stats } from '../tools/get_user_stats.js';
 import { calculateReadinessScore } from '../../../shared/readinessScore.js';
 
-const READINESS_SUGGESTIONS = [
-  'How can I improve my readiness?',
-  'Plan a light workout for today',
-  'Analyze my progress',
-];
-
 function formatHoursLabel(hours) {
   if (hours === null || hours === undefined) return 'No recent workout logged';
   if (hours < 1) return 'Last workout logged less than 1 hour ago';
@@ -59,7 +53,6 @@ export async function runReadinessAgent({ context = {} }) {
 
   return {
     content: buildReadinessResponse(readiness),
-    suggestions: READINESS_SUGGESTIONS,
     source: 'readiness',
     type: 'readiness',
     readiness,
