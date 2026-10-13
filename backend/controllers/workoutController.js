@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import Workout from '../models/Workout.js';
 import { validationResult } from 'express-validator';
 

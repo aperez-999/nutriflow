@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 
 const FOOD_STOP_WORDS = new Set(['and', '&', 'with', 'the', 'a', 'an', 'of']);
 const FOOD_FALLBACKS = [

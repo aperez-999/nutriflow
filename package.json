@@ -1,8 +1,7 @@
 {
   "name": "nutriflow-vercel",
   "version": "1.0.0",
-  "description": "NutriFlow app deployed on Vercel",
-  "main": "index.js",
+  "description": "NutriFlow: React frontend, Express API and the Vercel entry point that serves it.",
   "type": "module",
   "scripts": {
     "dev": "cd frontend && npm run dev",
@@ -13,14 +12,6 @@
     "check": "npm run lint && npm test && npm run build"
   },
   "dependencies": {
-    "bcrypt": "^5.1.1",
-    "bcryptjs": "^2.4.3",
-    "crypto": "^1.0.1",
-    "express-validator": "^7.2.1",
-    "jsonwebtoken": "^9.0.2",
-    "mongodb": "^6.13.0",
-    "mongoose": "^8.10.0",
-    "nodemailer": "^6.10.0",
     "serverless-http": "^4.0.0"
   },
   "keywords": [

@@ -1,7 +1,9 @@
+import crypto from 'node:crypto';
 import User from '../models/User.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
+import { isMailConfigured, sendMail } from '../utils/mailer.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -219,5 +221,96 @@ export const updateGoals = async (req, res) => {
   } catch (error) {
     console.error('Update goals error:', error);
     return res.status(500).json({ message: 'Unable to update goals right now' });
+  }
+};
+
+const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
+const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
+/**
+ * POST /api/auth/forgot-password: emails a one-hour reset link. The answer is the
+ * same whether or not the email has an account, so it cannot be used to probe accounts.
+ */
+export const forgotPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid email input' });
+    }
+
+    const email = String(req.body.email || '').trim().toLowerCase();
+
+    if (!isMailConfigured()) {
+      return res.status(503).json({
+        message: 'Password reset email is not configured. Set EMAIL_USERNAME and EMAIL_PASSWORD in the server environment.',
+      });
+    }
+
+    const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+    if (!frontendUrl) {
+      return res.status(503).json({
+        message: 'Password reset email is not configured. Set FRONTEND_URL in the server environment.',
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (user) {
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = hashResetToken(resetToken);
+      user.resetPasswordExpires = Date.now() + RESET_TOKEN_TTL_MS;
+      await user.save();
+
+      await sendMail({
+        to: email,
+        subject: 'NutriFlow Password Reset',
+        html: `
+          <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: sans-serif; color: #0A0A0A;">
+            <h1 style="font-size: 24px;">Reset your NutriFlow password</h1>
+            <p>You asked to reset the password for your NutriFlow account.</p>
+            <p>
+              <a href="${frontendUrl}/reset-password/${resetToken}"
+                 style="display: inline-block; background-color: #0A0A0A; color: #FFFFFF; padding: 10px 20px;
+                        text-decoration: none; border-radius: 6px; margin: 16px 0;">
+                Choose a new password
+              </a>
+            </p>
+            <p style="color: #525252;">This link expires in 1 hour. If you didn't ask for it, you can ignore this email.</p>
+          </div>
+        `,
+      });
+    }
+
+    return res.json({ message: 'If an account exists for that email, a password reset link has been sent.' });
+  } catch (error) {
+    console.error('Password reset error:', error);
+    return res.status(500).json({ message: 'Error sending reset email' });
+  }
+};
+
+/** POST or PUT /api/auth/reset-password/:token: sets a new password with a valid, unexpired token. */
+export const resetPassword = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid password input' });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: hashResetToken(String(req.params.token || '')),
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    user.password = await bcrypt.hash(String(req.body.password || ''), 12);
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    return res.json({ message: 'Password successfully reset' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    return res.status(500).json({ message: 'Error resetting password' });
   }
 };
