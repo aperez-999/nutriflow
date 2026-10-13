@@ -96,14 +96,3 @@ export const getExerciseMeta = (ex = {}, workout = {}) => {
 
   return meta;
 };
-
-export const getWorkoutBenefits = (workout = {}) => {
-  const focuses = (workout.focusAreas || []).map(f => String(f).toLowerCase());
-  const benefits = [];
-  if (focuses.includes('cardio')) benefits.push('Improves aerobic capacity and endurance');
-  if (focuses.includes('core')) benefits.push('Enhances trunk stability and posture');
-  if (focuses.some(f => ['upper body','chest','back','shoulders','arms','biceps','triceps'].includes(f))) benefits.push('Builds upper-body strength and muscle tone');
-  if (focuses.some(f => ['legs','lower body','glutes','hamstrings','quads'].includes(f))) benefits.push('Develops lower-body strength and power');
-  if (benefits.length < 3) benefits.push('Supports overall health and energy levels');
-  return benefits;
-};

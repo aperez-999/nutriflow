@@ -59,7 +59,7 @@ export default function MobileTabBar() {
               position="relative"
               color={active ? 'fg' : 'fg.muted'}
               transition="color 0.15s ease"
-              _focusVisible={{ outline: '2px solid', outlineColor: 'brand.500', outlineOffset: '-4px', borderRadius: 'md' }}
+              _focusVisible={{ outline: '2px solid', outlineColor: 'focus.ring', outlineOffset: '-4px', borderRadius: 'md' }}
             >
               {active && (
                 <MotionBox

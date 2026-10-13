@@ -113,7 +113,6 @@ function Contact() {
 
               <Button
                 type="submit"
-                colorScheme="teal"
                 size="lg"
                 width="full"
                 isLoading={isLoading}

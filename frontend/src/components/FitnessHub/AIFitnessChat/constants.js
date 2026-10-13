@@ -1,13 +1,13 @@
-/** Top-level quick actions for the chat rail. */
-export const QUICK_ACTIONS = [
+/**
+ * The chat's actions, as sent to the backend. Offline (built-in) replies offer these as
+ * follow-ups; online replies get theirs from the backend (ai/utils/followUps.js).
+ */
+export const DEFAULT_SUGGESTIONS = [
   'Generate Weekly Plan',
   'Create Meal Plan',
   'Analyze My Progress',
   'How ready am I?',
 ];
-
-/** Follow-ups for built-in (offline) replies; online replies get theirs from the backend. */
-export const DEFAULT_SUGGESTIONS = QUICK_ACTIONS;
 
 /** A reply never shows more follow-ups than this. */
 export const MAX_SUGGESTIONS = 4;
@@ -23,6 +23,7 @@ export const QUICK_ACTION_LABELS = {
   'Create Meal Plan': 'Make a meal plan',
   'Analyze My Progress': 'How is my week going?',
   'How ready am I?': 'How ready am I today?',
+  // No longer offered, but replies saved before may still show them.
   'Nutrition Advice': 'Nutrition advice',
   'Form Tips': 'Form tips',
 };

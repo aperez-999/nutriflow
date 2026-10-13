@@ -64,7 +64,7 @@ const GoalsModal = ({
           </FormControl>
 
           <HStack mt={6} spacing={3}>
-            <Button colorScheme="teal" onClick={onSave} _hover={{ opacity: 0.9 }}>
+            <Button onClick={onSave}>
               Save Goals
             </Button>
             <Button variant="ghost" onClick={onClose}>Cancel</Button>

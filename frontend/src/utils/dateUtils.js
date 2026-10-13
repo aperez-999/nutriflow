@@ -1,4 +1,4 @@
-export const getLocalDateParts = (value = new Date()) => {
+const getLocalDateParts = (value = new Date()) => {
   const date = value instanceof Date ? new Date(value) : new Date(value);
   return {
     year: date.getFullYear(),

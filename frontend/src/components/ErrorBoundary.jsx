@@ -13,8 +13,8 @@ function ErrorFallback({ onRetry }) {
           We hit an error loading this section. You can try again or go back home.
         </Text>
         <VStack spacing={2}>
-          <Button colorScheme="teal" onClick={onRetry}>Try again</Button>
-          <Button variant="link" colorScheme="teal" onClick={() => window.location.assign('/')}>
+          <Button onClick={onRetry}>Try again</Button>
+          <Button variant="link" onClick={() => window.location.assign('/')}>
             Go to home
           </Button>
         </VStack>

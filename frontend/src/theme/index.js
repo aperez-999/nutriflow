@@ -76,8 +76,6 @@ const theme = extendTheme({
   colors: {
     gray,
     ink,
-    // Legacy alias: older components reference `brand`; it now resolves to ink.
-    brand: ink,
     fuel,
     train,
     recover,
@@ -182,11 +180,9 @@ const theme = extendTheme({
         _active: { transform: 'scale(0.97)' },
       },
       variants: {
-        // Any legacy "teal"/"brand" solid button renders as the ink primary.
+        // The default (gray) solid button is the ink primary; flow and status schemes keep their color.
         solid: (props) => {
-          const scheme = ['teal', 'brand', 'ink', 'gray', 'cyan', 'blue'].includes(props.colorScheme)
-            ? 'ink'
-            : props.colorScheme;
+          const scheme = ['ink', 'gray'].includes(props.colorScheme) ? 'ink' : props.colorScheme;
           if (scheme === 'ink') {
             return {
               bg: 'fg',
@@ -314,7 +310,7 @@ const theme = extendTheme({
       },
       variants: {
         subtle: (props) => {
-          const scheme = ['teal', 'brand', 'cyan', 'gray', 'ink'].includes(props.colorScheme) ? null : props.colorScheme;
+          const scheme = ['gray', 'ink'].includes(props.colorScheme) ? null : props.colorScheme;
           if (!scheme) return { bg: 'bg.muted', color: 'fg' };
           if (['fuel', 'train', 'recover'].includes(scheme)) return { bg: `${scheme}.subtle`, color: `${scheme}.fg` };
           return {};

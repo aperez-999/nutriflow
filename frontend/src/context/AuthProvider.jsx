@@ -1,7 +1,6 @@
-import { createContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { AuthContext } from './AuthContext';
 import { rememberUser } from '../components/Auth/rememberedUser';
-
-export const AuthContext = createContext();
 
 const normalizeUserRecord = (payload) => {
   if (!payload) return null;

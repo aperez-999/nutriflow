@@ -331,13 +331,3 @@ export const searchExercises = async (query) => {
     throw error.response?.data || { message: 'Failed to search exercises' };
   }
 };
-
-// AI Configuration check
-export const checkAIConfig = async () => {
-  try {
-    const response = await axios.get('/api/health');
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Failed to check AI configuration' };
-  }
-};

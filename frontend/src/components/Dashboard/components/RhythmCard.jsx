@@ -37,7 +37,7 @@ function DayCell({ day, column }) {
         tabIndex={0}
         aria-label={describeDay(day)}
         _hover={{ outline: '2px solid', outlineColor: 'fg.muted' }}
-        _focusVisible={{ outline: '2px solid', outlineColor: 'brand.500' }}
+        _focusVisible={{ outline: '2px solid', outlineColor: 'focus.ring' }}
       >
         {FLOWS.map((flow) => (
           <MotionBox
