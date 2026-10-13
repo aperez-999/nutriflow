@@ -11,11 +11,13 @@ import {
   Link,
   VStack,
 } from '@chakra-ui/react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { register } from '../../services/api';
 import AuthLayout from './AuthLayout';
+import { RegisterPanel } from './AuthPanels';
 import PasswordInput from './PasswordInput';
+import { LEVEL_LABEL } from '../Dashboard/components/verdict';
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -23,7 +25,12 @@ function Register() {
   const [formData, setFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
   const [isLoading, setIsLoading] = useState(false);
   const [formError, setFormError] = useState('');
+  const [emailTaken, setEmailTaken] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  // The landing page's "try it" result, if they came from there.
+  const demo = location.state?.demo;
+  const triedDemo = Boolean(demo && LEVEL_LABEL[demo.level] && Number.isFinite(demo.score));
   const { login } = useContext(AuthContext);
 
   const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -32,6 +39,7 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFormError('');
+    setEmailTaken(false);
     if (formData.password !== formData.confirmPassword) {
       setFormError('The two passwords don’t match.');
       return;
@@ -47,7 +55,9 @@ function Register() {
       login(response);
       navigate('/dashboard');
     } catch (error) {
-      setFormError(error.response?.data?.message || error.message || 'Something went wrong. Please try again.');
+      const message = error.response?.data?.message || error.message || 'Something went wrong. Please try again.';
+      if (/already exists/i.test(message)) setEmailTaken(true);
+      else setFormError(message);
     } finally {
       setIsLoading(false);
     }
@@ -55,8 +65,9 @@ function Register() {
 
   return (
     <AuthLayout
+      panel={<RegisterPanel demo={triedDemo ? demo : null} />}
       title="Create your account"
-      description="Takes a minute. Your first check-in comes right after."
+      description={triedDemo ? 'Takes a minute. Tomorrow morning, your first real verdict.' : 'Takes a minute. Your first check-in comes right after.'}
       footer={<>Already have an account? <Link as={RouterLink} to="/login" color="fg" fontWeight="600" textDecoration="underline">Log in</Link></>}
     >
       <form onSubmit={handleSubmit}>
@@ -66,9 +77,19 @@ function Register() {
               <AlertDescription>{formError}</AlertDescription>
             </Alert>
           )}
+          {emailTaken && (
+            <Alert status="info" borderRadius="control" fontSize="sm">
+              <AlertDescription>
+                That email already has an account.{' '}
+                <Link as={RouterLink} to="/login" state={{ email: formData.email }} fontWeight="600" textDecoration="underline">
+                  Log in instead
+                </Link>
+              </AlertDescription>
+            </Alert>
+          )}
           <FormControl isRequired>
             <FormLabel>Name</FormLabel>
-            <Input name="username" autoComplete="nickname" value={formData.username} onChange={handleChange} />
+            <Input name="username" autoComplete="nickname" value={formData.username} onChange={handleChange} autoFocus />
           </FormControl>
           <FormControl isRequired>
             <FormLabel>Email</FormLabel>

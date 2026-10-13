@@ -1,4 +1,5 @@
 import { createContext, useState, useEffect } from 'react';
+import { rememberUser } from '../components/Auth/rememberedUser';
 
 export const AuthContext = createContext();
 
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }) => {
   const login = (userData) => {
     const normalized = normalizeUserRecord(userData);
     localStorage.setItem('user', JSON.stringify(normalized));
+    rememberUser(normalized?.user);
     setUser(normalized);
   };
 

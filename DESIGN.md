@@ -49,7 +49,11 @@ Tabular figures are only applied to display figures; in Schibsted they widen com
 
 **Plans are a shelf, not a dropdown.** The Library's Plans tab switches between Training and Meals, shows saved plans as tiles with one progress segment per session or meal, and lays the chosen plan out as a grid you log from. A training plan also shows "What this plan trains", a muscle map built by matching its exercises to the library.
 
-**Coach.** An empty conversation shows four flow-tinted starting points instead of a blank transcript. While the coach answers, the logo's three bars fill in turn. Beside the chat, "What your coach sees" shows the readiness and numbers the answers draw on. Other pages can hand over a question with `/fitness-hub?ask=...`, which opens it in a new conversation.
+**Landing page.** The hero is a working demo: visitors set last night's sleep, energy, soreness, yesterday's training and how they've been eating, and the real readiness formula (`shared/readinessScore.js`) turns it into the verdict, the score and three live flow bars. Product pictures further down (`*Specimen`) mirror the real components (plan view, chat, check-in, nutrition label); when a component changes, its specimen changes with it.
+
+**Auth screens speak to the visit.** Log in greets the last account used on this device by name, fills its email and returns to the page the visitor was heading to; "Not you?" forgets it. Sign up shows the first day and carries over the landing demo result. Password pages say the data is safe.
+
+**Coach.** An empty conversation shows four flow-tinted starting points instead of a blank transcript. While the coach answers, the logo's three bars fill in turn. Beside the chat, "What your coach sees" shows the readiness and numbers the answers draw on. Other pages can hand over a question with `/fitness-hub?ask=...`, which opens it in a new conversation. Each reply ends with at most four follow-ups chosen by the backend (`ai/utils/followUps.js`), shown only under the latest reply; plan follow-ups build a new plan.
 
 **Sign-in screens:** the brand side follows the mode and cycles the three daily verdicts, each in its flow color, with a pause control; it does not rotate under reduced motion.
 

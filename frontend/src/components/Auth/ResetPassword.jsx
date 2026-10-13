@@ -12,6 +12,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { resetPassword } from '../../services/api';
 import AuthLayout from './AuthLayout';
+import { PasswordPanel } from './AuthPanels';
 import PasswordInput from './PasswordInput';
 
 function ResetPassword() {
@@ -44,7 +45,7 @@ function ResetPassword() {
   };
 
   return (
-    <AuthLayout title="Choose a new password">
+    <AuthLayout panel={<PasswordPanel />} title="Choose a new password" description="Pick something you haven’t used here before.">
       <form onSubmit={handleSubmit}>
         <VStack spacing={4} align="stretch">
           {error && (

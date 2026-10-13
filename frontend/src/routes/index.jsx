@@ -1,5 +1,5 @@
 import { lazy, Suspense, useContext } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Box, Container, SimpleGrid, Skeleton } from '@chakra-ui/react';
 import { AuthContext } from '../context/AuthContext';
 
@@ -39,8 +39,10 @@ const RouteFallback = () => (
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
   const { user } = useContext(AuthContext);
+  const location = useLocation();
   if (!user) {
-    return <Navigate to="/login" replace />;
+    // Remember where they were going (including ?ask=...), so login can take them back there.
+    return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />;
   }
   return children;
 };

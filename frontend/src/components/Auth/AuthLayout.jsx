@@ -1,5 +1,4 @@
 import { Box, Container, Grid, Heading, Text } from '@chakra-ui/react';
-import VerdictCarousel from './VerdictCarousel';
 import { motion } from 'framer-motion';
 import FlowBand from '../Global/FlowBand';
 import { DURATION, EASE_OUT } from '../Motion/tokens';
@@ -7,10 +6,10 @@ import { DURATION, EASE_OUT } from '../Motion/tokens';
 const MotionBox = motion(Box);
 
 /**
- * Split frame for sign-in, sign-up and password pages: a black brand panel with
- * the animated flow band on large screens, and the form on its own on phones.
+ * Split frame for sign-in, sign-up and password pages: a brand panel on large
+ * screens (`panel`, different for each kind of visit), and the form on its own on phones.
  */
-export default function AuthLayout({ title, description, children, footer }) {
+export default function AuthLayout({ title, description, children, footer, panel }) {
   return (
     <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} minH={{ lg: 'calc(100vh - 57px)' }}>
       {/* Brand panel follows light/dark mode; the verdicts carry the color. */}
@@ -24,13 +23,7 @@ export default function AuthLayout({ title, description, children, footer }) {
         px={{ lg: 12, xl: 16 }}
         py={16}
       >
-        <VerdictCarousel />
-        <Box>
-          <FlowBand delay={0.15} barHeight="10px" gap={2} />
-          <Text color="fg.muted" mt={5} maxW="40ch">
-            One readiness score from what you ate, how you trained and how you slept.
-          </Text>
-        </Box>
+        {panel}
       </Box>
 
       <Box>

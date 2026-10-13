@@ -18,7 +18,7 @@ const VERDICTS = [
  * Idle animation for the sign-in screens: cycles through the daily verdicts.
  * Has a pause control, and does not rotate on its own under reduced motion.
  */
-export default function VerdictCarousel() {
+export default function VerdictCarousel({ intro = 'Every morning, NutriFlow tells you:' }) {
   const reduceMotion = useReducedMotion();
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -34,7 +34,7 @@ export default function VerdictCarousel() {
 
   return (
     <Box>
-      <Text fontSize="sm" fontWeight="600" color="fg.muted">Every morning, NutriFlow tells you:</Text>
+      <Text fontSize="sm" fontWeight="600" color="fg.muted">{intro}</Text>
       <Box position="relative" overflow="hidden" mt={3} minH={{ lg: '260px', xl: '300px' }}>
         <AnimatePresence mode="wait" initial={false}>
           <MotionBox

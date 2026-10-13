@@ -3,6 +3,7 @@ import { Alert, AlertDescription, Button, FormControl, FormLabel, Input, Link, T
 import { Link as RouterLink } from 'react-router-dom';
 import { forgotPassword } from '../../services/api';
 import AuthLayout from './AuthLayout';
+import { PasswordPanel } from './AuthPanels';
 
 function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -26,6 +27,7 @@ function ForgotPassword() {
 
   return (
     <AuthLayout
+      panel={<PasswordPanel />}
       title="Reset your password"
       description="We’ll email you a link to choose a new one."
       footer={<Link as={RouterLink} to="/login" color="fg" fontWeight="600" textDecoration="underline">Back to log in</Link>}
