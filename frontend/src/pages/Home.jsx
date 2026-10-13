@@ -1,21 +1,17 @@
 import { useEffect } from 'react';
+import { FiCheck } from 'react-icons/fi';
 import { Box, Button, Container, Flex, Grid, Heading, HStack, Stack, Text, VStack } from '@chakra-ui/react';
 import { Link as RouterLink } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import Lenis from 'lenis';
 import 'lenis/dist/lenis.css';
-import { CountUp } from '../components/Motion';
 import { DURATION, EASE_OUT } from '../components/Motion/tokens';
-import FlowBand from '../components/Global/FlowBand';
+import { TryTodayBars, TryTodayControls, TryTodaySummary, TryTodayVerdict } from '../components/Landing/TryToday';
+import { useTryToday } from '../components/Landing/tryDay';
+import { LogoMark } from '../components/Global/Logo';
+import AnatomyFigure from '../components/Library/AnatomyFigure';
 
 const MotionBox = motion(Box);
-
-// Sample day shown in the hero. It uses the same layout as the in-app day label.
-const SAMPLE_ROWS = [
-  { flow: 'fuel', label: 'Fuel', value: 1840, unit: '/ 2,200 kcal', detail: '128 g protein', fill: 0.84 },
-  { flow: 'train', label: 'Train', value: 45, unit: 'min', detail: 'Strength, medium intensity', fill: 1 },
-  { flow: 'recover', label: 'Recover', value: 7.5, decimals: 1, unit: 'h sleep', detail: 'Energy 4 of 5, soreness 2 of 5', fill: 0.9 },
-];
 
 const STEPS = [
   {
@@ -109,63 +105,6 @@ function Specimen({ children, label, ...props }) {
   );
 }
 
-function SampleDayLabel() {
-  const reduceMotion = useReducedMotion();
-  return (
-    <MotionBox
-      // Under reduced motion the label is simply there; no fade or delay.
-      initial={reduceMotion ? false : { opacity: 0, y: 24, rotate: -1.5 }}
-      animate={{ opacity: 1, y: 0, rotate: -1.5 }}
-      transition={{ duration: 0.7, ease: EASE_OUT, delay: 0.25 }}
-      w="100%"
-      maxW="420px"
-    >
-      <Specimen label="Example day: readiness 78, fuel 1,840 of 2,200 kcal, 45 minutes of strength training, 7.5 hours of sleep." p={0} px={{ base: 5, md: 6 }} pt={5} pb={4}>
-        <Flex justify="space-between" align="baseline">
-          <Text fontFamily="heading" fontWeight="800" fontSize="3xl" lineHeight="1">Today</Text>
-          <Text fontSize="sm" color="fg.muted">Tuesday</Text>
-        </Flex>
-        <Box h="8px" bg="border.strong" mt={2} />
-        <Flex justify="space-between" align="baseline" py={3} borderBottomWidth="4px" borderColor="border.strong">
-          <Text fontWeight="800" fontSize="lg">Readiness</Text>
-          <Text textStyle="figure" fontSize="7xl" color="recover.fg"><CountUp value={78} duration={1.2} /></Text>
-        </Flex>
-        {SAMPLE_ROWS.map((row, i) => (
-          <Box key={row.label} py={2.5} borderBottomWidth="1px" borderColor="border">
-            <Flex justify="space-between" align="flex-start" gap={4}>
-              <Box>
-                <Text fontWeight="700" fontSize="sm">{row.label}</Text>
-                <Text fontSize="xs" color="fg.muted">{row.detail}</Text>
-              </Box>
-              <Text fontWeight="700" fontSize="sm" whiteSpace="nowrap">
-                <CountUp value={row.value} decimals={row.decimals || 0} duration={1.1} />{' '}
-                <Text as="span" color="fg.muted" fontWeight="500">{row.unit}</Text>
-              </Text>
-            </Flex>
-            <Box h="4px" bg="bg.muted" borderRadius="full" mt={2} overflow="hidden">
-              <MotionBox
-                h="100%"
-                bg={`${row.flow}.solid`}
-                borderRadius="full"
-                style={{ originX: 0 }}
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: row.fill }}
-                transition={{ duration: 0.9, ease: EASE_OUT, delay: 0.6 + i * 0.12 }}
-              />
-            </Box>
-          </Box>
-        ))}
-        <Box pt={3}>
-          <Text fontSize="xs" fontWeight="700" color="fg.muted">Next step</Text>
-          <Text fontSize="sm" mt={0.5}>
-            Good day to push your main lift. Have a carb-forward meal about two hours before.
-          </Text>
-        </Box>
-      </Specimen>
-    </MotionBox>
-  );
-}
-
 function FuelSpecimen() {
   const rows = [['Protein', '42 g'], ['Carbohydrate', '68 g'], ['Fat', '14 g']];
   return (
@@ -187,24 +126,53 @@ function FuelSpecimen() {
   );
 }
 
+// Mirrors the Library's plan view: segmented progress, session rows and the plan's muscle map.
 function TrainSpecimen() {
-  const days = [
-    ['Mon', 'Upper body push', '50 min', 'High'],
-    ['Wed', 'Easy run', '35 min', 'Low'],
-    ['Fri', 'Legs and core', '55 min', 'Medium'],
+  const sessions = [
+    { title: 'Lower body strength', meta: '50 min, high', done: true },
+    { title: 'Upper push', meta: '45 min, medium', done: false },
+    { title: 'Easy run and core', meta: '35 min, low', done: false },
   ];
   return (
-    <Specimen label="Example training week: three sessions with duration and intensity.">
-      <Text fontWeight="800" fontSize="lg">Your week</Text>
-      <Text fontSize="xs" color="fg.muted">Built by your coach from your log</Text>
-      {days.map(([day, name, time, effort]) => (
-        <Flex key={day} align="center" gap={3} py={2.5} borderTopWidth="1px" borderColor="border" mt={2}>
-          <Text textStyle="figure" fontSize="2xl" w="44px" color="train.fg">{day}</Text>
+    <Specimen label="Example training plan in the Library: three sessions, one logged, with a muscle map of what the week trains.">
+      <Flex justify="space-between" align="flex-start" gap={4}>
+        <Box minW={0}>
+          <Text fontFamily="heading" fontWeight="800" fontSize="2xl" lineHeight="1">Strength base week</Text>
+          <Text fontSize="xs" color="fg.muted" mt={1}>Built by your coach, saved to your Library</Text>
+        </Box>
+        <Box w="84px" flexShrink={0} bg="bg.canvas" borderRadius="md" py={1.5}>
+          <AnatomyFigure primary={['quads', 'glutes', 'chest', 'shoulders', 'triceps', 'abs']} secondary={['hamstrings', 'calves']} height={64} />
+        </Box>
+      </Flex>
+      <Flex gap="3px" h="6px" mt={3}>
+        {sessions.map((session) => (
+          <Box key={session.title} flex="1" borderRadius="2px" bg={session.done ? 'train.solid' : 'bg.muted'} />
+        ))}
+      </Flex>
+      {sessions.map((session, i) => (
+        <Flex
+          key={session.title}
+          align="center"
+          gap={3}
+          mt={i ? 2 : 3}
+          p={2.5}
+          borderRadius="md"
+          bg={session.done ? 'train.subtle' : 'transparent'}
+          borderWidth="1px"
+          borderColor={session.done ? 'transparent' : 'border'}
+        >
           <Box flex="1" minW={0}>
-            <Text fontSize="sm" fontWeight="700">{name}</Text>
-            <Text fontSize="xs" color="fg.muted">{effort} intensity</Text>
+            <Text fontSize="xs" fontWeight="700" color="train.fg">Session {i + 1}</Text>
+            <Text fontSize="sm" fontWeight="700">{session.title}</Text>
+            <Text fontSize="xs" color="fg.muted">{session.meta}</Text>
           </Box>
-          <Text fontSize="sm" fontWeight="700">{time}</Text>
+          {session.done ? (
+            <Flex boxSize="24px" borderRadius="full" bg="train.solid" color="white" align="center" justify="center" fontSize="xs">
+              <FiCheck />
+            </Flex>
+          ) : (
+            <Box px={2.5} py={1} borderRadius="md" bg="fg" color="bg.surface" fontSize="xs" fontWeight="700">Log session</Box>
+          )}
         </Flex>
       ))}
     </Specimen>
@@ -249,19 +217,30 @@ function RecoverSpecimen() {
   );
 }
 
+// Mirrors the Coach chat: ink user bubble, the coach's mark, a short answer and follow-ups.
 function CoachSpecimen() {
   return (
-    <Specimen label="Example coach conversation about a leg day after short sleep.">
+    <Specimen label="Example coach conversation about a leg day after short sleep, with follow-up suggestions.">
       <Flex justify="flex-end">
-        <Box bg="bg.muted" px={3.5} py={2} borderRadius="panel" borderBottomRightRadius="4px" maxW="80%">
+        <Box bg="fg" color="bg.surface" px={3.5} py={2} borderRadius="panel" borderBottomRightRadius="4px" maxW="80%">
           <Text fontSize="sm">Slept badly. Should I still do legs today?</Text>
         </Box>
       </Flex>
-      <Text fontSize="xs" fontWeight="700" mt={4}>Coach</Text>
-      <Text fontSize="sm" mt={1}>
-        Your readiness is 52 after 5.5 h of sleep. Keep legs, but drop to two working sets and stay a rep or two
-        short of failure. Eat about 40 g of carbs an hour before.
-      </Text>
+      <HStack spacing={2} mt={4} mb={1.5}>
+        <LogoMark size={14} />
+        <Text fontSize="xs" fontWeight="700">Coach <Text as="span" color="fg.muted" fontWeight="400">7:42 AM</Text></Text>
+      </HStack>
+      <Text fontSize="sm">Yes, but lighter: your readiness is 52 after 5.5 h of sleep.</Text>
+      <Box as="ul" pl={4} mt={2} fontSize="sm">
+        <Box as="li">Two working sets, a rep or two short of failure.</Box>
+        <Box as="li">About 40 g of carbs an hour before.</Box>
+        <Box as="li">An early night counts more than the last set.</Box>
+      </Box>
+      <Flex gap={2} mt={3} wrap="wrap">
+        {['Make it shorter', 'What should I eat after?', 'How ready am I today?'].map((chip) => (
+          <Box key={chip} px={2.5} py={1} borderWidth="1px" borderColor="border" borderRadius="md" fontSize="xs" fontWeight="500">{chip}</Box>
+        ))}
+      </Flex>
     </Specimen>
   );
 }
@@ -278,7 +257,7 @@ const FEATURES = [
     flow: 'train',
     title: 'Training that fits the day.',
     body: 'Log sessions as you go, or ask the coach to plan your week. Intensity follows how ready you are, so hard days land on good days.',
-    points: ['Real exercise search with burn estimates', 'Weekly plans built from your log', 'One tap to log a planned session'],
+    points: ['Weekly plans built from your log, one tap to log each session', 'A muscle map of what every plan and exercise works', '36 exercises with form cues, plus search with burn estimates'],
     Specimen: TrainSpecimen,
   },
   {
@@ -358,44 +337,117 @@ function RhythmDemo() {
   );
 }
 
+// What sets NutriFlow apart, side by side with the apps people already know.
+const COMPARISON = [
+  { them: 'Counts what you ate.', us: 'Tells you what today is for: push, hold steady or recover.', flow: 'train' },
+  { them: 'Food, training and sleep live in separate apps.', us: 'Scores all three together, every morning.', flow: 'fuel' },
+  { them: 'One missed day breaks the streak.', us: 'Forgives a missed day. Months matter more than a perfect week.', flow: 'recover' },
+  { them: 'The same tips for everyone.', us: 'A coach that has read your log and answers in seconds.', flow: null },
+];
+
+function Comparison() {
+  return (
+    <Box as="section" bg="bg.surface" borderTopWidth="1px" borderBottomWidth="1px" borderColor="border">
+      <Container maxW="container.xl" px={{ base: 4, md: 6 }} py={{ base: 14, md: 20 }}>
+        <ScrollReveal>
+          <Heading as="h2" fontSize={{ base: '4xl', md: '6xl' }} maxW="18ch" lineHeight="0.95">
+            Calorie apps count. NutriFlow decides.
+          </Heading>
+        </ScrollReveal>
+        <Grid templateColumns={{ base: '1fr', md: '1fr 1.4fr' }} mt={{ base: 8, md: 12 }} role="table" aria-label="A typical calorie app compared with NutriFlow">
+          <Box role="row" display={{ base: 'none', md: 'contents' }}>
+            <Text role="columnheader" fontSize="sm" fontWeight="700" color="fg.muted" pb={3}>A typical calorie app</Text>
+            <Text role="columnheader" fontSize="sm" fontWeight="700" pb={3}>NutriFlow</Text>
+          </Box>
+          {COMPARISON.map((row, i) => (
+            <ScrollReveal key={row.us} role="row" delay={i * 0.06} display="contents">
+              <Text role="cell" color="fg.muted" py={{ base: 3, md: 5 }} pt={{ base: 5, md: 5 }} borderTopWidth="1px" borderColor="border" fontSize={{ base: 'md', md: 'lg' }}>
+                {row.them}
+              </Text>
+              <Flex role="cell" gap={3} align="baseline" py={{ base: 0, md: 5 }} pb={{ base: 5, md: 5 }} borderTopWidth={{ base: 0, md: '1px' }} borderColor="border">
+                <Box boxSize="10px" borderRadius="2px" bg={row.flow ? `${row.flow}.solid` : 'fg'} flexShrink={0} aria-hidden="true" />
+                <Text fontWeight="700" fontSize={{ base: 'lg', md: 'xl' }}>{row.us}</Text>
+              </Flex>
+            </ScrollReveal>
+          ))}
+        </Grid>
+      </Container>
+    </Box>
+  );
+}
+
 function Home() {
   useSmoothScroll();
   const reduceMotion = useReducedMotion();
+  const demo = useTryToday();
 
   return (
     <Box>
-      <Box as="section" bg="bg.canvas" pt={{ base: 10, md: 20 }} pb={{ base: 10, md: 14 }} overflow="hidden">
+      <Box as="section" bg="bg.canvas" pt={{ base: 10, md: 16 }} pb={{ base: 12, md: 16 }} overflow="hidden">
         <Container maxW="container.xl" px={{ base: 4, md: 6 }}>
-          <Grid templateColumns={{ base: '1fr', lg: '1.15fr 1fr' }} gap={{ base: 12, lg: 16 }} alignItems="center">
-            <Box>
-              <Heading as="h1" fontSize={{ base: '5xl', sm: '6xl', md: '8xl' }} lineHeight="0.88" letterSpacing="-0.005em">
-                <HeadlineLine delay={0.05}>Know what</HeadlineLine>
-                <HeadlineLine delay={0.15}>today needs.</HeadlineLine>
+          <Grid
+            templateAreas={{ base: '"intro" "verdict" "controls" "bars"', lg: '"intro controls" "verdict controls" "bars bars"' }}
+            templateColumns={{ base: '1fr', lg: '1.25fr 1fr' }}
+            columnGap={{ lg: 16 }}
+            rowGap={{ base: 10, lg: 12 }}
+            alignItems="start"
+          >
+            <Box gridArea="intro">
+              <Heading as="h1" fontSize={{ base: '5xl', sm: '6xl', md: '7xl' }} lineHeight="0.88" letterSpacing="-0.005em">
+                <HeadlineLine delay={0.05}>Not another</HeadlineLine>
+                <HeadlineLine delay={0.15}>calorie counter.</HeadlineLine>
               </Heading>
               <MotionBox
                 initial={reduceMotion ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: DURATION.slow, ease: EASE_OUT, delay: 0.35 }}
               >
-                <Text fontSize={{ base: 'lg', md: 'xl' }} color="fg.muted" mt={6} maxW="46ch">
-                  NutriFlow reads what you ate, how you trained and how you slept, then gives you one readiness score and
-                  one next step. No wearable required.
+                <Text fontSize={{ base: 'lg', md: 'xl' }} color="fg.muted" mt={5} maxW="46ch">
+                  NutriFlow reads what you ate, how you trained and how you slept, and every morning tells you what
+                  today is for. No wearable required.
                 </Text>
-                <Stack direction={{ base: 'column', sm: 'row' }} spacing={3} mt={8}>
-                  <Button as={RouterLink} to="/register" size="lg">Create an account</Button>
+                <Stack direction={{ base: 'column', sm: 'row' }} spacing={3} mt={7}>
+                  <Button as={RouterLink} to="/register" state={{ demo: { level: demo.result.level, score: demo.result.score } }} size="lg">Create an account</Button>
                   <Button as={RouterLink} to="/login" size="lg" variant="outline">Log in</Button>
                 </Stack>
               </MotionBox>
             </Box>
-            <Flex justify={{ base: 'flex-start', lg: 'flex-end' }} pr={{ lg: 4 }}>
-              <SampleDayLabel />
-            </Flex>
+
+            <Box gridArea="verdict">
+              <TryTodayVerdict result={demo.result} />
+            </Box>
+
+            <Box gridArea="controls">
+              {/* Not a Specimen: that is a picture (role="img"); this card holds real controls. */}
+              <Box
+                as="section"
+                aria-labelledby="try-heading"
+                bg="bg.surface"
+                borderWidth="1px"
+                borderColor="border"
+                borderRadius="panel"
+                boxShadow="overlay"
+                p={{ base: 5, md: 6 }}
+                maxW={{ lg: '440px' }}
+                ml={{ lg: 'auto' }}
+              >
+                <Heading as="h2" id="try-heading" fontSize="3xl" lineHeight="1">Try it on your morning</Heading>
+                <Text fontSize="sm" color="fg.muted" mt={2} mb={5}>
+                  Change anything. The verdict uses the same formula as the app.
+                </Text>
+                <TryTodayControls answers={demo.answers} onChange={demo.setAnswers} />
+                <TryTodaySummary result={demo.result} />
+              </Box>
+            </Box>
+
+            <Box gridArea="bars">
+              <TryTodayBars result={demo.result} />
+            </Box>
           </Grid>
-          <Box mt={{ base: 14, md: 20 }}>
-            <FlowBand />
-          </Box>
         </Container>
       </Box>
+
+      <Comparison />
 
       {FEATURES.map((feature, i) => <FeatureSection key={feature.flow} feature={feature} index={i} />)}
 
@@ -406,8 +458,8 @@ function Home() {
               <Text fontFamily="heading" fontWeight="800" fontSize={{ base: '2xl', md: '3xl' }} color="fg.muted">Coach</Text>
               <Heading as="h2" fontSize={{ base: '5xl', md: '6xl' }} mt={1} maxW="14ch">A coach that has read your log.</Heading>
               <Text fontSize={{ base: 'md', md: 'lg' }} color="fg.muted" mt={4} maxW="46ch">
-                Ask anything, or tap for a training week, a meal plan or a readiness check. Answers come from your own
-                entries, and only you, signed in, can see that data.
+                Ask anything and get a short answer built from your own entries, with a few next questions ready to tap.
+                Plans it makes land in your Library. Only you, signed in, can see your data.
               </Text>
             </ScrollReveal>
             <Flex justify={{ base: 'flex-start', lg: 'flex-end' }}>
@@ -463,6 +515,8 @@ function Home() {
             <Button
               as={RouterLink}
               to="/register"
+              // Carries the visitor's "try it" result into sign-up.
+              state={{ demo: { level: demo.result.level, score: demo.result.score } }}
               size="lg"
               flexShrink={0}
               bg="gray.900"

@@ -54,30 +54,36 @@ function ScoreRing({ score, level, size = 128 }) {
   );
 }
 
-/** Five-step rating as a segmented control (radio semantics). */
-function RatingScale({ label, value, onChange, lowLabel, highLabel }) {
+const FIVE_STEPS = [1, 2, 3, 4, 5].map((n) => ({ value: n, label: String(n) }));
+
+/**
+ * A segmented control with radio semantics: a five-step rating by default,
+ * or named choices via `options` ([{ value, label }]).
+ */
+function RatingScale({ label, value, onChange, lowLabel, highLabel, options = FIVE_STEPS }) {
+  const isRating = options === FIVE_STEPS;
   return (
     <Box role="radiogroup" aria-label={label}>
       <Flex justify="space-between" mb={1.5}>
         <Text fontSize="sm" fontWeight="600">{label}</Text>
-        <Text fontSize="xs" color="fg.muted">{lowLabel} → {highLabel}</Text>
+        {lowLabel && <Text fontSize="xs" color="fg.muted">{lowLabel} → {highLabel}</Text>}
       </Flex>
       <ButtonGroup isAttached size="sm" w="100%" variant="outline">
-        {[1, 2, 3, 4, 5].map((n) => (
+        {options.map((option) => (
           <Button
-            key={n}
+            key={option.value}
             flex="1"
             role="radio"
-            aria-checked={value === n}
-            aria-label={`${label} ${n} of 5`}
-            onClick={() => onChange(n)}
+            aria-checked={value === option.value}
+            aria-label={isRating ? `${label} ${option.value} of 5` : option.label}
+            onClick={() => onChange(option.value)}
             borderColor="border"
-            bg={value === n ? 'recover.subtle' : 'bg.surface'}
-            color={value === n ? 'recover.fg' : 'fg.muted'}
-            fontWeight={value === n ? 700 : 500}
+            bg={value === option.value ? 'recover.subtle' : 'bg.surface'}
+            color={value === option.value ? 'recover.fg' : 'fg.muted'}
+            fontWeight={value === option.value ? 700 : 500}
             _hover={{ bg: 'recover.subtle', transform: 'none' }}
           >
-            {n}
+            {option.label}
           </Button>
         ))}
       </ButtonGroup>
@@ -154,5 +160,5 @@ function CheckInForm({ checkIn, onSave, isSaving }) {
   );
 }
 
-export { ScoreRing };
+export { RatingScale, ScoreRing };
 export default memo(CheckInForm);
