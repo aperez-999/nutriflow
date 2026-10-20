@@ -11,9 +11,6 @@
     "lint": "npm --prefix frontend run lint",
     "check": "npm run lint && npm test && npm run build"
   },
-  "dependencies": {
-    "serverless-http": "^4.0.0"
-  },
   "keywords": [
     "fitness",
     "nutrition",

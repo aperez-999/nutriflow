@@ -46,5 +46,5 @@ Already in place for this: safe-area padding (`viewport-fit=cover`, `env(safe-ar
 
 ## Known risks
 
-- `vercel.json` routes every path to `index.html`; confirm on a preview deploy that `/manifest.webmanifest` and `/icons/*` are served as files.
+- The fixed `vercel.json` and serverless entry were verified with a local emulation of Vercel's routing, not on Vercel itself; check `/api/health`, a deep link reload and `/manifest.webmanifest` on the first preview deploy.
 - Readiness weights are heuristics, not clinically validated. Keep the copy advisory.

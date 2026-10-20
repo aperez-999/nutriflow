@@ -29,13 +29,13 @@ were going, and new users see what their first day looks like.
 - **Backend:** Node.js 18+, Express, MongoDB with Mongoose, JWT auth, Nodemailer (Gmail)
 - **AI:** Groq (`openai/gpt-oss-120b` by default) or a local Ollama model
 - **External APIs:** USDA FoodData Central, API Ninjas exercises
-- **Hosting:** one Vercel project: the frontend build plus a serverless function (`api/index.js`) that runs the Express app
+- **Hosting:** one Vercel project: the frontend build plus a serverless function (`api/index.js`) that runs the Express app (see Deployment)
 
 ## Project structure
 
 ```
 nutriflow/
-├── api/index.js            # Vercel serverless entry: wraps backend/app.js
+├── api/index.js            # Vercel serverless entry: runs backend/app.js
 ├── shared/                 # Pure modules used by both sides (readinessScore.js)
 ├── backend/
 │   ├── app.js              # Express app: middleware and route wiring only
@@ -67,8 +67,7 @@ nutriflow/
 API Ninjas and Groq (or [Ollama](https://ollama.com/) running locally).
 
 ```bash
-# 1. Install (root, frontend and backend each have their own dependencies)
-npm install
+# 1. Install (frontend and backend each have their own dependencies)
 npm --prefix frontend install
 npm --prefix backend install
 
@@ -130,10 +129,26 @@ All routes are under `/api`. Routes marked 🔒 need `Authorization: Bearer <tok
 
 ## Deployment (Vercel)
 
-`vercel.json` installs the root, frontend and backend dependencies, builds the frontend into
-`frontend/dist`, and routes `/api/*` to `api/index.js`, which runs the Express app. Set the
-variables from `backend/.env.example` in the Vercel project, with `NODE_ENV=production` and
-`FRONTEND_URL` set to the deployed URL.
+One Vercel project serves both halves from the repository root:
+
+- **Frontend:** `npm --prefix frontend run build` → static files in `frontend/dist`.
+- **Backend:** `api/index.js` is a serverless function that runs the Express app
+  (`backend/app.js`) for every `/api/*` request.
+
+`vercel.json` holds the build and install commands and two rewrites, applied only when no
+static file matches: `/api/*` → the function (the original URL is kept, so Express routes
+match), anything else → `index.html` (so deep links like `/library` work on reload).
+
+**Vercel project settings to check**
+
+- *Root Directory*: empty (the repository root). With `frontend` the API cannot deploy.
+- *Framework Preset*: Other (or Vite); `vercel.json` overrides the build, install and output settings.
+- *Node.js version*: 18 or newer (the backend uses the built-in `fetch`).
+- *Environment variables*: everything in `backend/.env.example`, with `NODE_ENV=production`,
+  `FRONTEND_URL` set to the production URL and `GROQ_MODEL=openai/gpt-oss-120b`.
+  `VITE_API_URL` is not needed: in production the app calls the API on its own origin.
+
+After deploying, `GET /api/health` should answer `{"ok":true,"provider":"groq",...}`.
 
 ## Shared code
 
