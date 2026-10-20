@@ -9,25 +9,27 @@ Most nutrition apps are calorie ledgers that punish missed days. NutriFlow's ang
 - **Consistency that forgives.** Streaks survive a single missed day; the rhythm map shows patterns, not failures.
 - **A coach that knows your day.** The AI reads your own data (only when you are signed in) and gives one next step.
 
-## Shipped in this pass
+## Shipped
 
-- Goals persisted per user (`PUT /api/auth/me/goals`)
-- Daily check-in model and API; readiness blends check-in with logs (`shared/readinessScore.js`, one formula for UI and AI)
-- Dashboard redesign: readiness + check-in, today's flows, rhythm map, weekly fuel chart, Fuel/Train log tabs
-- Mobile tab bar, web app manifest, iOS home-screen meta and icons
-- Landing page rewritten around the differentiators
-- Security: AI chat no longer trusts a client-supplied `userId`
-- Tooling: Vitest + `node:test`, `npm run check`, lint at zero errors, route code-splitting
+- **Today:** daily verdict and readiness score, 20-second check-in, meal and workout logging in slide-in panels, goals, rhythm map, weekly calorie chart, a getting-started guide
+- **Coach:** AI chat on Groq (`openai/gpt-oss-120b`) that reads the user's own log, short answers, four follow-ups per reply, several conversations, today's read and log insights; readiness and progress answers come from computed numbers
+- **Library:** saved training and meal plans as tiles with per-item progress, one-tap logging, a muscle map per plan, and a 36-exercise library (MongoDB) with muscle maps and form cues
+- **Profile and Settings**, light/dark/device appearance
+- **Landing page** with a live readiness demo; sign-in pages that adapt to returning and new users
+- **Design system** (`DESIGN.md`) across every screen; one swap animation; skeleton loading
+- **Platform:** shared readiness formula (`shared/readinessScore.js`), web app manifest and icons, mobile tab bar, `npm run check` (lint, tests, build)
+- **Security:** the AI only reads the data of the verified token's user; rate limits on AI chat and password reset; escaped contact-form email
 
 ## Next
 
-1. **Fuel timing.** If a hard session is planned and today's intake is low, nudge a pre-workout meal. Needs a "planned session" field.
-2. **Weekly recap.** A shareable Sunday card in the day-label style: rhythm, best day, readiness trend. Good for word of mouth.
-3. **Reminders.** Optional morning check-in reminder (web push now, native notifications in iOS).
-4. **Account deletion.** Required by the App Store before the iOS release.
-5. **Undo instead of confirm** for deleting entries, once there is a toast with actions.
-
-Done since the first pass: the design system (`DESIGN.md`) now covers every screen, the app icon is the rhythm-day mark, and the Coach page, log forms and auth pages were rebuilt.
+1. **Saved plans in MongoDB.** Plans live in `localStorage` today, so they do not sync across devices and vanish if storage is cleared. Required for the iOS app.
+2. **CI.** Run `npm run check` and the browser flows (Playwright) on every push.
+3. **Chat history per conversation.** The server keeps one conversation per user; the conversation list is per device.
+4. **Account deletion and data export.** Required by the App Store before the iOS release.
+5. **Morning check-in reminder.** Web push now, native notifications in iOS.
+6. **Safer sessions.** Move the token from `localStorage` to an httpOnly cookie, and add refresh (tokens last one day).
+7. **Error tracking** (for example Sentry) and split the large chart bundle.
+8. **Weekly recap.** A shareable Sunday card: rhythm, best day, readiness trend.
 
 ## iOS app plan (Capacitor)
 

@@ -60,7 +60,7 @@ Core features include:
 ## Safety Rules
 - Do not expose secrets
 - Do not commit `.env` files
-- Do not remove working logic unless clearly unused and archived
+- Do not remove working logic unless it is clearly unused (check imports, e.g. with `npx knip`); removed code lives on in git history, so there is no archive folder
 - Prefer minimal, safe changes over broad rewrites
 - If uncertain, report the risk clearly instead of guessing
 

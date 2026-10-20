@@ -1,296 +1,142 @@
-# NutriFlow - Fitness & Nutrition Tracking App
+# NutriFlow
 
-NutriFlow treats every day as three flows: **Fuel** (what you eat), **Train** (how you move) and **Recover** (how you feel). Meals, workouts and a 20-second daily check-in combine into one readiness score, and the AI coach turns that into a single next step. It is built for consistency over perfection: streaks forgive a missed day and no food is labeled good or bad.
+**Not another calorie counter.** NutriFlow treats every day as three flows, **Fuel** (what you
+eat), **Train** (how you move) and **Recover** (how you feel), and every morning turns them into
+one verdict: *Push day*, *Steady day* or *Recovery day*. No wearable needed, streaks forgive a
+missed day, and no food is labeled good or bad.
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for what is next, including the iOS app.
+- [DESIGN.md](DESIGN.md): the design system (tokens, type, motion, rules) every screen follows
+- [docs/ROADMAP.md](docs/ROADMAP.md): what is next, including the iOS app
+- [backend/ai/README.md](backend/ai/README.md): how the AI coach answers
+- [AGENTS.md](AGENTS.md): rules for anyone (or any agent) changing the code
 
-## Features
+## What's in the app
 
-### **Fuel / Train / Recover**
-- Daily check-in (sleep, energy, soreness, water) that feeds the readiness score, so no wearable is needed
-- Rhythm map: 12 weeks of which flows you logged each day, with a forgiving streak (one grace day)
-- Goals for calories, protein and weekly sessions, saved to your account
+| Page | What it does |
+| --- | --- |
+| **Landing** (`/`) | A live demo: set sleep, energy, soreness, training and eating, and the real readiness formula gives the verdict |
+| **Today** (`/dashboard`) | The daily verdict and readiness score, a 20-second check-in, meal and workout logging (USDA food and API Ninjas exercise search), goals, a 12-week rhythm map and a weekly calorie chart |
+| **Coach** (`/fitness-hub`) | AI chat that reads your own log, with short answers, up to four follow-ups per reply and several conversations; plus today's read and insights from your log |
+| **Library** (`/library`) | Plans the coach built (log a session or meal in one tap, with a muscle map of the week) and a 36-exercise library with muscle maps and form cues |
+| **Profile** and **Settings** | Your stats and most-logged foods and workouts; goals, appearance (light, dark, device) and profile details |
 
-### **AI-Powered Features**
-- Personalized workout recommendations based on fitness level and goals
-- AI Fitness Coach for real-time guidance and form tips
-- Smart workout plan generation
-- Progress analysis and adaptive recommendations
-- Natural language interaction for fitness queries
+Sign-in pages adapt to the visit: returning users are greeted by name and sent back to where they
+were going, and new users see what their first day looks like.
 
-### **Nutrition Tracking**
-- Log daily meals with detailed nutritional information
-- Search and add foods using USDA Food Database API
-- Track calories, protein, carbs, and fats
-- Daily nutrition summaries and progress visualization
-- Meal type categorization (Breakfast, Lunch, Dinner, Snack)
+## Tech stack
 
-### **Workout Management**
-- Record different types of workouts (Cardio, Strength, Flexibility, Sports)
-- Search and add exercises using API Ninjas Exercise Database
-- Track workout duration, intensity, and calories burned
-- Weekly workout goal tracking
-- Progress visualization
-- Equipment recommendations and exercise instructions
+- **Frontend:** React 18, Vite, Chakra UI (custom theme in `frontend/src/theme`), Framer Motion, React Router, Recharts, Axios
+- **Backend:** Node.js 18+, Express, MongoDB with Mongoose, JWT auth, Nodemailer (Gmail)
+- **AI:** Groq (`openai/gpt-oss-120b` by default) or a local Ollama model
+- **External APIs:** USDA FoodData Central, API Ninjas exercises
+- **Hosting:** one Vercel project: the frontend build plus a serverless function (`api/index.js`) that runs the Express app
 
-### **Dashboard & Analytics**
-- Real-time progress tracking
-- Daily calorie and weekly workout goals
-- Visual progress bars and statistics
-- Date-based navigation for historical data
-
-### **User Authentication**
-- Secure user registration and login
-- Password reset functionality
-- JWT-based authentication
-- Protected routes and data
-
-## Architecture
-
-- **Frontend**: React + Vite with Chakra UI
-- **Backend**: Node.js with Express.js
-- **Database**: MongoDB Atlas
-- **Authentication**: JWT tokens
-- **External APIs**: 
-  - USDA Food Database (nutrition data)
-  - API Ninjas Exercise Database (exercise data)
-  - Groq/Ollama (AI features)
-- **Deployment**: Vercel (Frontend) + Render/Heroku (Backend)
-
-## 📁 Project Structure
+## Project structure
 
 ```
-nutriflow-app/
-├── frontend/                 # React frontend application
-│   ├── src/
-│   │   ├── components/      # Reusable UI components
-│   │   │   ├── Auth/       # Authentication components
-│   │   │   ├── Dashboard/  # Dashboard sections
-│   │   │   │   ├── DietSection/    # Diet tracking components
-│   │   │   │   └── WorkoutSection/ # Workout tracking components
-│   │   │   ├── Diet/       # Diet-related components
-│   │   │   └── Workout/    # Workout-related components
-│   │   ├── pages/          # Page components
-│   │   ├── context/        # React context providers
-│   │   ├── services/       # API service functions
-│   │   └── theme/          # UI theme configuration
-│   └── public/             # Static assets
-├── backend/                 # Node.js backend server
-│   ├── controllers/        # Route controllers
-│   ├── models/            # MongoDB models
-│   ├── routes/            # API routes
-│   ├── middleware/        # Custom middleware
-│   └── config/           # Database configuration
-└── api/                   # Vercel serverless functions
-    ├── auth/             # Authentication endpoints
-    ├── diets/           # Diet management endpoints
-    ├── workouts/        # Workout management endpoints
-    ├── food/           # Food search endpoints
-    ├── exercise/       # Exercise search endpoints
-    └── contact/        # Contact form endpoint
+nutriflow/
+├── api/index.js            # Vercel serverless entry: wraps backend/app.js
+├── shared/                 # Pure modules used by both sides (readinessScore.js)
+├── backend/
+│   ├── app.js              # Express app: middleware and route wiring only
+│   ├── server.js           # Local development server
+│   ├── routes/             # URL → middleware → controller
+│   ├── controllers/        # Request handling and logic
+│   ├── models/             # Mongoose models
+│   ├── middleware/         # Auth (protect, identifyUser), rate limits, error handler
+│   ├── ai/                 # AI orchestration: agents, prompts, provider, follow-ups
+│   ├── data/               # Exercise catalog the Library is seeded from
+│   ├── utils/              # Mailer, AI fallback text
+│   └── tests/              # node:test suites
+└── frontend/
+    ├── public/             # Icons, manifest, Open Graph image
+    └── src/
+        ├── pages/          # One file per route
+        ├── components/     # Grouped by area: Auth, Dashboard, FitnessHub (Coach), Library,
+        │                   # Landing, Profile, Global (navbar, bands), Motion, Diet/Workout search
+        ├── context/        # Auth state (AuthContext + AuthProvider)
+        ├── routes/         # Lazy routes and the protected-route guard
+        ├── services/api.js # Every API call
+        ├── theme/          # Chakra theme and appearance preference
+        └── utils/          # Date and workout helpers
 ```
 
-## 🛠️ Tech Stack
+## Getting started
 
-### Frontend
-- **React 18** - UI framework
-- **Vite** - Build tool and dev server
-- **Chakra UI** - Component library
-- **Framer Motion** - Animations
-- **React Router** - Client-side routing
-- **Axios** - HTTP client
+**Requirements:** Node.js 18 or newer, a MongoDB database (Atlas works), and API keys for USDA,
+API Ninjas and Groq (or [Ollama](https://ollama.com/) running locally).
 
-### Backend
-- **Node.js** - Runtime environment
-- **Express.js** - Web framework
-- **MongoDB** - Database
-- **Mongoose** - ODM for MongoDB
-- **JWT** - Authentication
-- **Nodemailer** - Email functionality
-
-## Getting Started
-
-### Prerequisites
-- Node.js (v16 or higher)
-- npm or yarn
-- MongoDB Atlas account
-- API keys for:
-  - USDA Food Database
-  - API Ninjas Exercise Database
-  - Groq (production) or Ollama (development)
-
-### Installation
-
-1. **Clone the repository**
 ```bash
-git clone <repository-url>
-cd nutriflow-app
-```
-
-2. **Install dependencies**
-```bash
-# Install root dependencies
+# 1. Install (root, frontend and backend each have their own dependencies)
 npm install
+npm --prefix frontend install
+npm --prefix backend install
 
-# Install frontend dependencies
-cd frontend && npm install
+# 2. Configure
+cp backend/.env.example backend/.env                  # then fill in the values
+cp frontend/.env.local.example frontend/.env.local    # VITE_API_URL=http://localhost:3000
 
-# Install backend dependencies
-cd ../backend && npm install
+# 3. Run (two terminals)
+npm --prefix backend run dev     # API on http://localhost:3000
+npm --prefix frontend run dev    # app on http://localhost:5173
 ```
 
-3. **Environment Setup**
+Every variable is explained in [`backend/.env.example`](backend/.env.example). Never commit `.env`.
 
-Create `.env` files in the backend directory:
-```bash
-# backend/.env
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-EMAIL_USERNAME=your_gmail_username
-EMAIL_PASSWORD=your_gmail_app_password
-NODE_ENV=development
+## Scripts
 
-# API Keys
-USDA_API_KEY=your_usda_api_key
-NINJA_API_KEY=your_api_ninjas_key
+From the repository root:
 
-# AI Configuration
-# Production
-GROQ_API_KEY=your_groq_api_key
-GROQ_MODEL=openai/gpt-oss-120b
+| Command | What it does |
+| --- | --- |
+| `npm run check` | Lint, backend tests, frontend tests and a production build. Run before every commit. |
+| `npm test` | Backend (`node:test`) and frontend (Vitest) tests |
+| `npm run lint` | ESLint on the frontend |
+| `npm run build` | Production build of the frontend |
 
-# Local Development
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama3:8b-instruct
-```
+Inside `frontend/`: `npm run dev`, `npm run build`, `npm run preview`, `npm test`, `npm run lint`.
+Inside `backend/`: `npm run dev` (nodemon), `npm start`, `npm test`.
 
-Create `.env.local` in the frontend directory:
-```bash
-# frontend/.env.local
-VITE_API_URL=http://localhost:3000
-```
+## API
 
-### API Setup
+All routes are under `/api`. Routes marked 🔒 need `Authorization: Bearer <token>`.
 
-1. **USDA Food Database API**
-   - Sign up at [USDA Food Data Central](https://fdc.nal.usda.gov/api-key-signup.html)
-   - Get your API key
-   - Add to `.env` as `USDA_API_KEY`
+**Auth**
+- `POST /auth/register`, `POST /auth/login`
+- `PUT /auth/me` 🔒 (name and email), `PUT /auth/me/password` 🔒, `PUT /auth/me/goals` 🔒 (calories, protein, weekly sessions)
+- `POST /auth/forgot-password` (rate limited; same answer whether or not the email exists)
+- `PUT /auth/reset-password/:token` (also accepts `POST`)
 
-2. **API Ninjas Exercise Database**
-   - Sign up at [API Ninjas](https://api-ninjas.com/)
-   - Get your API key
-   - Add to `.env` as `NINJA_API_KEY`
+**Logs**
+- `GET | POST /diets` 🔒, `PUT | DELETE /diets/:id` 🔒
+- `GET | POST /workouts` 🔒, `PUT | DELETE /workouts/:id` 🔒
+- `GET /checkins?limit=30` 🔒 (newest first), `PUT /checkins/:dayKey` 🔒 (create or update a `YYYY-MM-DD` check-in)
 
-### AI Development Setup
+**Search and library**
+- `GET /food/search?query=apple` (USDA), `GET /exercise/search?query=squat` (API Ninjas)
+- `GET /exercises` 🔒: the exercise library with muscle maps, cues and filter values. Optional
+  filters: `muscleGroup`, `equipment`, `difficulty`, `q`. Seeded from `backend/data/exerciseCatalog.js`
+  on first request and kept in sync by slug.
 
-For local development, you'll need:
-1. [Ollama](https://ollama.ai/) installed locally
-2. Llama model pulled: `ollama pull llama3:8b-instruct`
+**Coach**
+- `POST /ai/chat` (rate limited, 20 a minute): `{ message, context?, history? }` →
+  `{ content, suggestions, source }`. Uses the signed-in user's data when a token is sent.
+  `POST /chat` is the older address and still works.
+- `GET | POST | DELETE /chat/history` 🔒: the saved conversation
 
-For production:
-1. Groq API key from [Groq Cloud](https://groq.com)
-2. Set GROQ_API_KEY in your production environment
+**Other**
+- `POST /contact`: the contact form (emailed to `EMAIL_USERNAME`)
+- `GET /health`: which AI provider and model are active
 
-4. **Start Development Servers**
+## Deployment (Vercel)
 
-```bash
-# Start backend server (from backend directory)
-cd backend
-npm run dev
+`vercel.json` installs the root, frontend and backend dependencies, builds the frontend into
+`frontend/dist`, and routes `/api/*` to `api/index.js`, which runs the Express app. Set the
+variables from `backend/.env.example` in the Vercel project, with `NODE_ENV=production` and
+`FRONTEND_URL` set to the deployed URL.
 
-# Start frontend dev server (from frontend directory)
-cd frontend
-npm run dev
-```
+## Shared code
 
-The application will be available at:
-- Frontend: http://localhost:5173
-- Backend: http://localhost:3000
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `POST /api/auth/forgot-password` - Request password reset
-- `POST /api/auth/reset-password/:token` - Reset password
-- `PUT /api/auth/me/goals` - Save daily calorie, protein and weekly workout goals
-
-### Daily Check-ins
-- `GET /api/checkins?limit=30` - Recent check-ins, newest first
-- `PUT /api/checkins/:dayKey` - Create or update the check-in for a `YYYY-MM-DD` day
-
-### Diet Management
-- `GET /api/diets` - Get user's diet records
-- `POST /api/diets` - Add new diet record
-- `PUT /api/diets/:id` - Update diet record
-- `DELETE /api/diets/:id` - Delete diet record
-
-### Workout Management
-- `GET /api/workouts` - Get user's workout records
-- `POST /api/workouts` - Add new workout record
-- `PUT /api/workouts/:id` - Update workout record
-- `DELETE /api/workouts/:id` - Delete workout record
-
-### Food Search
-- `GET /api/food/search?query=apple` - Search USDA food database
-
-### Exercise Search
-- `GET /api/exercise/search?query=squat` - Search exercise database
-
-### Exercise Library
-- `GET /api/exercises` - The Library's exercise catalog with muscle maps, cues and filter values (`muscleGroup`, `equipment`, `difficulty` and `q` are optional filters). The collection is seeded from `backend/data/exerciseCatalog.js` on first request and kept in sync by slug.
-
-### Contact
-- `POST /api/contact` - Submit contact form
-
-## Deployment
-
-### Frontend (Vercel)
-1. Connect your GitHub repository to Vercel
-2. Set build command: `cd frontend && npm run build`
-3. Set output directory: `frontend/dist`
-4. Configure environment variables in Vercel dashboard
-
-### Backend (Render/Heroku)
-1. Deploy to Render or Heroku
-2. Set environment variables in deployment platform
-3. Configure MongoDB Atlas connection
-
-## 🔧 Development
-
-### Available Scripts
-
-**Frontend:**
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run preview      # Preview production build
-npm run lint         # Run ESLint
-```
-
-**Backend:**
-```bash
-npm start            # Start production server
-npm run dev          # Start development server with nodemon
-npm test             # node:test suite
-```
-
-**Repo root:**
-```bash
-npm run check        # lint + backend tests + frontend tests + production build
-```
-
-Run `npm run check` before every commit. Frontend tests use Vitest (`cd frontend && npm test`).
-
-### Shared code
-`shared/` holds pure modules used by both the backend AI agents and the frontend (for example `readinessScore.js`). The frontend imports them through the `@shared` Vite alias. Keep them free of Node and browser APIs.
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+`shared/` holds pure modules used by both the backend AI agents and the frontend, so the
+readiness score is computed one way everywhere. The frontend imports them through the `@shared`
+Vite alias. Keep them free of Node and browser APIs.
