@@ -24,7 +24,10 @@ const DESTINATIONS = { '/dashboard': 'Today', '/fitness-hub': 'Coach', '/library
 
 function Login() {
   const location = useLocation();
-  const from = safeReturnPath(location.state?.from);
+  // Where to go after login: a protected link (router state) or an expired session (query).
+  const query = new URLSearchParams(location.search);
+  const from = safeReturnPath(location.state?.from || query.get('from'));
+  const expired = query.get('expired') === '1';
   const [remembered, setRemembered] = useState(readRememberedUser);
   // An email handed over from sign-up ("already has an account") wins over the remembered one.
   const [credentials, setCredentials] = useState(() => ({ email: location.state?.email || remembered?.email || '', password: '' }));
@@ -63,7 +66,13 @@ function Login() {
     <AuthLayout
       panel={<LoginPanel />}
       title={remembered?.name ? `Welcome back, ${remembered.name}.` : 'Welcome back.'}
-      description={from ? `Log in to continue to ${destination || 'where you were'}.` : 'Today’s verdict is waiting. Log in to see it.'}
+      description={
+        expired
+          ? `Your session ended. Log in again to continue to ${destination || 'where you were'}.`
+          : from
+            ? `Log in to continue to ${destination || 'where you were'}.`
+            : 'Today’s verdict is waiting. Log in to see it.'
+      }
       footer={<>New to NutriFlow? <Link as={RouterLink} to="/register" color="fg" fontWeight="600" textDecoration="underline">Create an account</Link></>}
     >
       <form onSubmit={handleSubmit}>

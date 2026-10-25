@@ -23,7 +23,9 @@ function buildUserPayload(user) {
   };
 }
 
-function signAuthToken(userId, expiresIn = '1d') {
+const SESSION_LENGTH = '7d';
+
+function signAuthToken(userId, expiresIn = SESSION_LENGTH) {
   if (!JWT_SECRET) {
     throw new Error('Authentication is not configured');
   }
@@ -58,7 +60,7 @@ export const register = async (req, res) => {
 
     await newUser.save();
 
-    const token = signAuthToken(newUser._id, '1d');
+    const token = signAuthToken(newUser._id);
 
     return res.status(201).json({ result: buildUserPayload(newUser), token });
   } catch (error) {
@@ -94,7 +96,7 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const token = signAuthToken(user._id, '1d');
+    const token = signAuthToken(user._id);
 
     return res.status(200).json({
       user: buildUserPayload(user),
@@ -185,7 +187,7 @@ export const changePassword = async (req, res) => {
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Current password is incorrect' });
+      return res.status(400).json({ message: 'Current password is incorrect' });
     }
 
     user.password = await bcrypt.hash(newPassword, 12);

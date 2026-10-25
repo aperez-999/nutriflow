@@ -211,11 +211,13 @@ axios.interceptors.response.use(
         const status = error.response?.status;
         const url = error.config?.url || '';
         const token = getToken();
-        // Do not redirect on 401 for login attempts; let the caller handle the error
+        // 401 only ever means the session is gone (expired or invalid token). Login attempts
+        // handle their own 401. Send the user to log in, then back to where they were.
         if (status === 401 && token && !url.includes('/api/auth/login')) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
-            window.location.href = '/login';
+            const from = `${window.location.pathname}${window.location.search}`;
+            window.location.href = `/login?expired=1&from=${encodeURIComponent(from)}`;
             return Promise.reject(error);
         }
         return Promise.reject(error);

@@ -225,7 +225,7 @@ export const updateWorkout = async (req, res) => {
       return res.status(404).json({ message: 'Workout not found' });
     }
     if (workout.user.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized' });
+      return res.status(403).json({ message: 'Not authorized' });
     }
 
     let updates;
@@ -254,7 +254,7 @@ export const deleteWorkout = async (req, res) => {
       return res.status(404).json({ message: 'Workout not found' });
     }
     if (workout.user.toString() !== req.user._id.toString()) {
-      return res.status(401).json({ message: 'Not authorized' });
+      return res.status(403).json({ message: 'Not authorized' });
     }
     await workout.deleteOne();
     res.json({ message: 'Workout removed' });

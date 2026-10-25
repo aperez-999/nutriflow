@@ -17,6 +17,7 @@ const Profile = lazy(() => import('../pages/Profile'));
 const Privacy = lazy(() => import('../components/Footer/Privacy'));
 const Terms = lazy(() => import('../components/Footer/Terms'));
 const Contact = lazy(() => import('../components/Footer/Contact'));
+const NotFound = lazy(() => import('../pages/NotFound'));
 
 // While a page's code loads: the shape of a page (band, then content), not a spinner.
 const RouteFallback = () => (
@@ -101,6 +102,7 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Suspense>
   );

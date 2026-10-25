@@ -154,7 +154,7 @@ export const updateDiet = asyncHandler(async (req, res) => {
 
     // Verify ownership
     if (diet.user.toString() !== req.user._id.toString()) {
-        res.status(401);
+        res.status(403);
         throw new Error('Not authorized to update this diet record');
     }
 
@@ -188,7 +188,7 @@ export const deleteDiet = asyncHandler(async (req, res) => {
 
     // Verify ownership
     if (diet.user.toString() !== req.user._id.toString()) {
-        res.status(401);
+        res.status(403);
         throw new Error('Not authorized to delete this diet record');
     }
 
