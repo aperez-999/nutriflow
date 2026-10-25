@@ -333,3 +333,31 @@ export const searchExercises = async (query) => {
     throw error.response?.data || { message: 'Failed to search exercises' };
   }
 };
+
+// Saved plans, kept on the account so they follow the user across devices
+export const getSavedPlans = async () => {
+  try {
+    const response = await axios.get('/api/plans');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to load saved plans' };
+  }
+};
+
+export const saveSavedPlan = async (id, plan) => {
+  try {
+    const response = await axios.put(`/api/plans/${encodeURIComponent(id)}`, plan);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to save the plan' };
+  }
+};
+
+export const deleteSavedPlan = async (id) => {
+  try {
+    const response = await axios.delete(`/api/plans/${encodeURIComponent(id)}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to delete the plan' };
+  }
+};

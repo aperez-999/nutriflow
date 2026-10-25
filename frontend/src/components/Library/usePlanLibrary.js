@@ -1,6 +1,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useToast } from '@chakra-ui/react';
-import { addDiet, addWorkout, searchFoods } from '../../services/api';
+import { addDiet, addWorkout, deleteSavedPlan, getSavedPlans, saveSavedPlan, searchFoods } from '../../services/api';
+import { mergePlans, planChanges } from './planSync';
 import { handleApiError } from '../../utils/apiErrorHandler';
 import { AuthContext } from '../../context/AuthContext';
 import { getTodayDayKey, toStoredIsoFromDayKey } from '../../utils/dateUtils';
@@ -141,7 +142,7 @@ const fallbackMealNutrition = (mealType) => {
 
 /** Reads saved plans for a user synchronously, migrating the old single-plan format. */
 const readStoredLibrary = (storageUserId) => {
-  const empty = { plans: [], activePlanId: null, mealPlans: [], activeMealPlanId: null };
+  const empty = { plans: [], activePlanId: null, mealPlans: [], activeMealPlanId: null, syncedIds: [] };
   if (typeof window === 'undefined') return empty;
   try {
     const raw = window.localStorage.getItem(`${AI_PLANS_STORAGE_KEY}.${storageUserId}`);
@@ -164,6 +165,7 @@ const readStoredLibrary = (storageUserId) => {
         ? parsed.activeMealPlanId
         : result.mealPlans[0]?.id ?? null;
     }
+    result.syncedIds = Array.isArray(parsed?.syncedIds) ? parsed.syncedIds.filter((id) => typeof id === 'string') : [];
     return result;
   } catch {
     // Ignore invalid persisted data and start clean.
@@ -173,8 +175,9 @@ const readStoredLibrary = (storageUserId) => {
 
 /**
  * Saved AI training and meal plans for the signed-in user.
- * Persists to localStorage, captures new plans the coach chat announces
- * (window events), and logs a planned session or meal into the user's log.
+ * Kept on the account (/api/plans) with a localStorage copy for an instant first render,
+ * captures new plans the coach chat announces (window events), and logs a planned
+ * session or meal into the user's log.
  * Used by Coach (to save plans as they are generated) and Library (to use them).
  */
 export default function usePlanLibrary() {
@@ -191,6 +194,14 @@ export default function usePlanLibrary() {
   const [mealPlansLoading, setMealPlansLoading] = useState(false);
   const [completingItems, setCompletingItems] = useState({});
   const completionLocksRef = useRef(new Set());
+  // Server sync: what the server last confirmed (id -> { kind, json }), and whether the
+  // first load finished. Nothing is saved or deleted before that, so a failed load can
+  // never delete plans on the account.
+  const syncedRef = useRef(new Map());
+  // One request per plan at a time, so an older save can never land after a newer one.
+  const inFlightRef = useRef(new Set());
+  const [serverReady, setServerReady] = useState(false);
+  const [syncVersion, setSyncVersion] = useState(0);
 
   const activePlan = useMemo(
     () => savedPlans.find((plan) => plan.id === activePlanId) || savedPlans[0] || null,
@@ -213,12 +224,64 @@ export default function usePlanLibrary() {
           activePlanId,
           mealPlans: savedMealPlans,
           activeMealPlanId,
+          syncedIds: serverReady ? [...syncedRef.current.keys()] : stored.syncedIds,
         })
       );
     } catch {
       // Ignore persistence failures in unsupported/private browsing contexts.
     }
-  }, [activeMealPlanId, activePlanId, savedMealPlans, savedPlans, storageUserId]);
+  }, [activeMealPlanId, activePlanId, savedMealPlans, savedPlans, serverReady, stored.syncedIds, storageUserId, syncVersion]);
+
+  // Load the account's plans once and merge them with this browser's copy.
+  useEffect(() => {
+    if (storageUserId === 'anonymous') return undefined;
+    let cancelled = false;
+    getSavedPlans()
+      .then((data) => {
+        if (cancelled) return;
+        const remember = (kind, plans) => plans.forEach((plan) => {
+          const items = kind === 'meal' ? plan.meals : plan.workouts;
+          syncedRef.current.set(plan.id, {
+            kind,
+            json: JSON.stringify({ kind, title: plan.title, calories: plan.calories ?? null, generatedAt: plan.generatedAt, items }),
+          });
+        });
+        remember('training', data.plans || []);
+        remember('meal', data.mealPlans || []);
+        setSavedPlans((local) => mergePlans('training', data.plans || [], local, stored.syncedIds));
+        setSavedMealPlans((local) => mergePlans('meal', data.mealPlans || [], local, stored.syncedIds));
+        setServerReady(true);
+      })
+      .catch(() => {
+        // Offline or the server failed: keep working from this browser's copy.
+      });
+    return () => { cancelled = true; };
+  }, [stored.syncedIds, storageUserId]);
+
+  // After the first load, save changed plans and delete removed ones. When a request
+  // finishes, syncVersion changes and this runs again to send anything that changed meanwhile.
+  useEffect(() => {
+    if (!serverReady) return;
+    const send = (id, request, onDone) => {
+      if (inFlightRef.current.has(id)) return;
+      inFlightRef.current.add(id);
+      request()
+        .then(() => {
+          onDone();
+          inFlightRef.current.delete(id);
+          setSyncVersion((v) => v + 1);
+        })
+        .catch(() => {
+          // Left unsynced and retried on the next change; never in a loop.
+          inFlightRef.current.delete(id);
+        });
+    };
+    [['training', savedPlans], ['meal', savedMealPlans]].forEach(([kind, plans]) => {
+      const { upserts, removals } = planChanges(kind, plans, syncedRef.current);
+      upserts.forEach(({ id, wire, json }) => send(id, () => saveSavedPlan(id, wire), () => syncedRef.current.set(id, { kind, json })));
+      removals.forEach((id) => send(id, () => deleteSavedPlan(id), () => syncedRef.current.delete(id)));
+    });
+  }, [savedMealPlans, savedPlans, serverReady, syncVersion]);
 
   useEffect(() => {
     const onUpdated = (e) => {

@@ -23,6 +23,9 @@ function Library() {
   const library = usePlanLibrary();
   const catalog = useExerciseCatalog();
   const [session, setSession] = useState(null);
+  // Until the user picks a tab, open Plans whenever there are plans (they can arrive
+  // from the account a moment after the page loads).
+  const [chosenTab, setChosenTab] = useState(null);
 
   const totals = useMemo(() => {
     const items = [
@@ -48,7 +51,7 @@ function Library() {
         />
       </PageBand>
       <Container maxW="container.xl" py={{ base: 6, md: 8 }} px={{ base: 4, md: 6 }}>
-        <Tabs variant="unstyled" position="relative" isLazy defaultIndex={totals.plans ? 0 : 1}>
+        <Tabs variant="unstyled" position="relative" isLazy index={chosenTab ?? (totals.plans ? 0 : 1)} onChange={setChosenTab}>
           <TabList mb={6} borderBottomWidth="1px" borderColor="border">
             {['Plans', 'Exercises'].map((label) => (
               <Tab key={label} px={4} py={2.5} fontWeight={600} color="fg.muted" _selected={{ color: 'fg' }} _hover={{ color: 'fg' }}>

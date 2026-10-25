@@ -117,6 +117,11 @@ All routes are under `/api`. Routes marked 🔒 need `Authorization: Bearer <tok
   filters: `muscleGroup`, `equipment`, `difficulty`, `q`. Seeded from `backend/data/exerciseCatalog.js`
   on first request and kept in sync by slug.
 
+**Saved plans** (kept on the account, so they follow you across devices)
+- `GET /plans` 🔒: `{ plans, mealPlans }`, newest first
+- `PUT /plans/:id` 🔒: create or replace a plan: `{ kind: 'training' | 'meal', title, calories?, generatedAt, items }`
+- `DELETE /plans/:id` 🔒
+
 **Coach**
 - `POST /ai/chat` (rate limited, 20 a minute): `{ message, context?, history? }` →
   `{ content, suggestions, source }`. Uses the signed-in user's data when a token is sent.
