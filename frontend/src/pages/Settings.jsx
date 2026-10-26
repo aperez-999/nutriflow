@@ -27,6 +27,8 @@ import PasswordInput from '../components/Auth/PasswordInput';
 import PageBand from '../components/Global/PageBand';
 import useAppearance from '../theme/useAppearance';
 import { isGuideHidden, setGuideHidden } from '../components/Dashboard/utils/onboarding';
+import YourData from '../components/Settings/YourData';
+import { forgetAccountOnDevice } from '../components/Auth/rememberedUser';
 
 const getAccount = (user) => user?.user || user?.result || user || {};
 const DEFAULT_GOALS = { dailyCalories: 2000, dailyProtein: 150, weeklyWorkouts: 5 };
@@ -284,6 +286,18 @@ function Settings() {
               <Button type="submit" variant="outline" isLoading={isSavingPassword} isDisabled={passwordMismatch}>Update password</Button>
             </Box>
           </VStack>
+        </SettingsSection>
+
+        <SettingsSection id="data" title="Your data" description="It is yours: take a copy, or delete it all.">
+          <YourData
+            toast={toast}
+            onDeleted={() => {
+              forgetAccountOnDevice(account._id);
+              logout();
+              navigate('/', { replace: true });
+              toast({ title: 'Your account was deleted', description: 'Everything in it is gone. Thanks for trying NutriFlow.', status: 'success', duration: 5000, isClosable: true });
+            }}
+          />
         </SettingsSection>
 
         <SettingsSection title="Session" description="Log out of NutriFlow on this device.">

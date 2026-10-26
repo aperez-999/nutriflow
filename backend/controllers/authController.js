@@ -1,5 +1,10 @@
 import crypto from 'node:crypto';
 import User from '../models/User.js';
+import Diet from '../models/Diet.js';
+import Workout from '../models/Workout.js';
+import CheckIn from '../models/CheckIn.js';
+import Plan from '../models/Plan.js';
+import ChatMessage from '../models/ChatMessage.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
@@ -314,5 +319,57 @@ export const resetPassword = async (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     return res.status(500).json({ message: 'Error resetting password' });
+  }
+};
+
+// Every collection that holds a user's records. Export and deletion both use this list,
+// so a new collection is exported and deleted with the account by adding it here.
+const OWNED_RECORDS = {
+  meals: Diet,
+  workouts: Workout,
+  checkIns: CheckIn,
+  plans: Plan,
+  chatMessages: ChatMessage,
+};
+
+/** GET /api/auth/me/export: everything stored for the account, as one JSON file. */
+export const exportAccount = async (req, res) => {
+  try {
+    const records = {};
+    for (const [name, Model] of Object.entries(OWNED_RECORDS)) {
+      records[name] = await Model.find({ user: req.user._id }).select('-user -__v').lean();
+    }
+    res.setHeader('Content-Disposition', `attachment; filename="nutriflow-data-${new Date().toISOString().slice(0, 10)}.json"`);
+    return res.json({
+      exportedAt: new Date().toISOString(),
+      account: { ...buildUserPayload(req.user), createdAt: req.user._id.getTimestamp().toISOString() },
+      ...records,
+    });
+  } catch (error) {
+    console.error('Export account error:', error);
+    return res.status(500).json({ message: 'Unable to export your data right now' });
+  }
+};
+
+/** DELETE /api/auth/me: deletes the account and every record it owns, after the password is confirmed. */
+export const deleteAccount = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await bcrypt.compare(String(req.body.password || ''), user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Password is incorrect' });
+    }
+
+    await Promise.all(Object.values(OWNED_RECORDS).map((Model) => Model.deleteMany({ user: user._id })));
+    await user.deleteOne();
+
+    return res.json({ message: 'Your account and all of its data were deleted' });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    return res.status(500).json({ message: 'Unable to delete your account right now' });
   }
 };

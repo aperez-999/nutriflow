@@ -47,6 +47,14 @@ function Privacy() {
             </Box>
 
             <Box>
+              <Heading size="lg" mb={4}>Your Data, Your Choice</Heading>
+              <Text>
+                You can download everything NutriFlow stores about you, or delete your account and all of
+                its data, at any time from Settings, under Your data. Deletion is immediate and permanent.
+              </Text>
+            </Box>
+
+            <Box>
               <Heading size="lg" mb={4}>Updates to This Policy</Heading>
               <Text>
                 We may update this privacy policy from time to time. We will notify you of

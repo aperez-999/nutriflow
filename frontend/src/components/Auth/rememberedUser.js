@@ -36,3 +36,18 @@ export function forgetRememberedUser() {
 
 /** Where a login should return to: only in-app paths, never another origin. */
 export const safeReturnPath = (from) => (typeof from === 'string' && /^\/(?!\/)/.test(from) ? from : null);
+
+/**
+ * After an account is deleted: removes everything this browser kept for it (cached plans
+ * and chats, onboarding flags; their keys end with the user id) and the login greeting.
+ */
+export function forgetAccountOnDevice(userId) {
+  try {
+    Object.keys(localStorage)
+      .filter((key) => key.startsWith('nutriflow.') && userId && key.endsWith(`.${userId}`))
+      .forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // Storage unavailable: nothing was kept.
+  }
+  forgetRememberedUser();
+}

@@ -18,7 +18,7 @@ missed day, and no food is labeled good or bad.
 | **Today** (`/dashboard`) | The daily verdict and readiness score, a 20-second check-in, meal and workout logging (USDA food and API Ninjas exercise search), goals, a 12-week rhythm map and a weekly calorie chart |
 | **Coach** (`/fitness-hub`) | AI chat that reads your own log, with short answers, up to four follow-ups per reply and several conversations; plus today's read and insights from your log |
 | **Library** (`/library`) | Plans the coach built (log a session or meal in one tap, with a muscle map of the week) and a 36-exercise library with muscle maps and form cues |
-| **Profile** and **Settings** | Your stats and most-logged foods and workouts; goals, appearance (light, dark, device) and profile details |
+| **Profile** and **Settings** | Your stats and most-logged foods and workouts; goals, appearance (light, dark, device), profile details, and your data (download it, or delete the account) |
 
 Sign-in pages adapt to the visit: returning users are greeted by name and sent back to where they
 were going, and new users see what their first day looks like.
@@ -103,6 +103,8 @@ All routes are under `/api`. Routes marked 🔒 need `Authorization: Bearer <tok
 **Auth**
 - `POST /auth/register`, `POST /auth/login`
 - `PUT /auth/me` 🔒 (name and email), `PUT /auth/me/password` 🔒, `PUT /auth/me/goals` 🔒 (calories, protein, weekly sessions)
+- `GET /auth/me/export` 🔒: everything stored for the account, as one JSON file
+- `DELETE /auth/me` 🔒 `{ password }`: deletes the account and every record it owns
 - `POST /auth/forgot-password` (rate limited; same answer whether or not the email exists)
 - `PUT /auth/reset-password/:token` (also accepts `POST`)
 

@@ -361,3 +361,22 @@ export const deleteSavedPlan = async (id) => {
     throw error.response?.data || { message: 'Failed to delete the plan' };
   }
 };
+
+// Your data: download everything, or delete the account and all of its records
+export const exportMyData = async () => {
+  try {
+    const response = await axios.get('/api/auth/me/export');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to export your data' };
+  }
+};
+
+export const deleteMyAccount = async (password) => {
+  try {
+    const response = await axios.delete('/api/auth/me', { data: { password } });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to delete your account' };
+  }
+};

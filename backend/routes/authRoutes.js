@@ -8,6 +8,8 @@ import {
   updateGoals,
   forgotPassword,
   resetPassword,
+  exportAccount,
+  deleteAccount,
 } from '../controllers/authController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { forgotPasswordLimiter } from '../middleware/rateLimits.js';
@@ -52,6 +54,9 @@ router.put(
   ],
   changePassword
 );
+
+router.get('/me/export', protect, exportAccount);
+router.delete('/me', protect, deleteAccount);
 
 router.put(
   '/me/goals',
