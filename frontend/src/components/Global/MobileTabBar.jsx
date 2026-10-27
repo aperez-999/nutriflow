@@ -19,7 +19,6 @@ const TABS = [
 
 /**
  * App-style bottom navigation for signed-in users on small screens.
- * Mirrors the iOS tab bar pattern so the Capacitor build feels native.
  */
 export default function MobileTabBar() {
   const { user } = useContext(AuthContext);

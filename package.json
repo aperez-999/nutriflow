@@ -1,5 +1,6 @@
 {
-  "name": "nutriflow-vercel",
+  "name": "nutriflow",
+  "private": true,
   "version": "1.0.0",
   "description": "NutriFlow: React frontend, Express API and the Vercel entry point that serves it.",
   "type": "module",
@@ -13,9 +14,6 @@
   },
   "keywords": [
     "fitness",
-    "nutrition",
-    "vercel"
-  ],
-  "author": "",
-  "license": "ISC"
+    "nutrition"
+  ]
 }

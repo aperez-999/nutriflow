@@ -1,13 +1,10 @@
 /**
  * AI Orchestrator — entry point for the AI layer.
  *
- * Receives the user message and context, detects intent (coach, workout_plan, meal_plan),
- * and routes to the appropriate agent. Phase 1 supports only "coach" intent; other
- * intents can be added in later phases (MealPlannerAgent, WorkoutPlannerAgent).
+ * Detects the intent of the user's message (coach, workout_plan, meal_plan, readiness,
+ * insights) and runs the matching agent from the registry in agents/index.js.
  *
- * Return format matches the current API: { content, suggestions, source } so that
- * the existing frontend (AIFitnessChat, chat history, JSON workout plan parsing)
- * continues to work without changes.
+ * Always returns the chat contract { content, suggestions, source }.
  */
 
 import { runHeadCoachAgent } from '../agents/HeadCoachAgent.js';
@@ -20,7 +17,7 @@ import { followUpsFor } from '../utils/followUps.js';
 
 
 /** Supported intents. */
-export const INTENT = {
+const INTENT = {
   COACH: 'coach',
   WORKOUT_PLAN: 'workout_plan',
   MEAL_PLAN: 'meal_plan',

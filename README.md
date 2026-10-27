@@ -2,13 +2,27 @@
 
 **Not another calorie counter.** NutriFlow treats every day as three flows, **Fuel** (what you
 eat), **Train** (how you move) and **Recover** (how you feel), and every morning turns them into
-one verdict: *Push day*, *Steady day* or *Recovery day*. No wearable needed, streaks forgive a
-missed day, and no food is labeled good or bad.
+one verdict: *Push day*, *Steady day* or *Recovery day*.
 
 - [DESIGN.md](DESIGN.md): the design system (tokens, type, motion, rules) every screen follows
-- [docs/ROADMAP.md](docs/ROADMAP.md): what is next, including the iOS app
+- [docs/ROADMAP.md](docs/ROADMAP.md): what has shipped and what is next
 - [backend/ai/README.md](backend/ai/README.md): how the AI coach answers
-- [AGENTS.md](AGENTS.md): rules for anyone (or any agent) changing the code
+
+## Why it is different
+
+Most nutrition apps are ledgers: count every calorie, keep the streak, feel bad when you miss.
+NutriFlow is built around rhythm instead.
+
+- **One verdict, not a spreadsheet.** Meals, training and a 20-second morning check-in become a
+  readiness score and a plain call for the day. No wearable needed.
+- **Fuel for training, not dieting.** Intake is read against the training ahead, and no food is
+  labeled good or bad.
+- **Consistency that forgives.** A streak survives one missed day, and the 12-week rhythm map
+  shows patterns rather than failures.
+- **A coach that knows your day.** The AI reads your own log, answers in a few lines, and suggests
+  what to ask next. Readiness and progress answers come from computed numbers, not guesses.
+- **Color means data.** Orange is training, green is fuel, blue is recovery; everything else stays
+  monochrome, so the screen reads at a glance.
 
 ## What's in the app
 
@@ -157,6 +171,16 @@ match), anything else → `index.html` (so deep links like `/library` work on re
   `VITE_API_URL` is not needed: in production the app calls the API on its own origin.
 
 After deploying, `GET /api/health` should answer `{"ok":true,"provider":"groq",...}`.
+
+## Conventions
+
+- **API contract:** the coach always answers `{ content, suggestions, source }`; chat text is
+  formatted for reading, never raw JSON.
+- **Backend layers:** routes wire URLs to middleware and controllers; controllers hold the logic;
+  everything AI lives in `backend/ai/`. Secrets come from environment variables only.
+- **Frontend:** follow [DESIGN.md](DESIGN.md) and the semantic tokens in `frontend/src/theme`.
+  Color only means data; panels use 1px borders; no gradients, glows or hover lift.
+- **Before committing:** `npm run check`.
 
 ## Shared code
 

@@ -22,7 +22,7 @@ NutriFlow is used in two moments: a quick check-in before training and a log at 
 
 Neutrals carry no tint. Flow colors were validated for color-vision deficiency (protan/deutan ΔE ≥ 10) and ≥ 3:1 against the surface in both modes.
 
-**Type:** Two self-hosted families (Fontsource, so they also work offline in the iOS build):
+**Type:** Two self-hosted families (Fontsource, so no third-party font requests):
 
 - **Big Shoulders** for display headings and every big number (`textStyle="figure"`). Drawn for Chicago's city signage; it reads like a scoreboard or race bib.
 - **Schibsted Grotesk** for text, labels and small headings (`Heading size="sm"`/`"xs"` switch to it). A sturdy newspaper grotesk that contrasts with the condensed display face on width.

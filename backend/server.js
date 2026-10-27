@@ -1,11 +1,10 @@
 /**
  * Local development entry: runs the Express app with app.listen().
- * Use this for npm run dev / npm run start. For Vercel, the serverless
- * handler is backend/api/index.js.
+ * Used by npm run dev and npm start. On Vercel, api/index.js runs the same app.
  */
 import app from './app.js';
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

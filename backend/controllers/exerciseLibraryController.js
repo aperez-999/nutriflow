@@ -18,7 +18,7 @@ export const buildExerciseQuery = ({ muscleGroup, equipment, difficulty, q } = {
 let catalogSync = null;
 
 /** Upserts the catalog once per process so the collection exists and matches the file. */
-export const ensureExerciseCatalog = () => {
+const ensureExerciseCatalog = () => {
   if (!catalogSync) {
     catalogSync = Exercise.bulkWrite(
       EXERCISE_CATALOG.map((exercise) => ({

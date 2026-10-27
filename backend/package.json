@@ -1,8 +1,8 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "NutriFlow API: Express, MongoDB and the AI coach.",
+  "private": true,
   "scripts": {
     "start": "node server.js",
     "start:prod": "NODE_ENV=production node server.js",

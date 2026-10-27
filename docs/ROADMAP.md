@@ -1,13 +1,7 @@
 # NutriFlow Roadmap
 
-## Product direction
-
-Most nutrition apps are calorie ledgers that punish missed days. NutriFlow's angle is **Fuel / Train / Recover in rhythm**:
-
-- **Readiness without a wearable.** Logs plus a 20-second check-in produce one honest daily score.
-- **Fuel for training, not dieting.** Meals are judged against the training ahead; no food is labeled good or bad.
-- **Consistency that forgives.** Streaks survive a single missed day; the rhythm map shows patterns, not failures.
-- **A coach that knows your day.** The AI reads your own data (only when you are signed in) and gives one next step.
+What has shipped and what comes next. The product angle (Fuel / Train / Recover in rhythm) is
+described in the README under "Why it is different".
 
 ## Shipped
 
@@ -24,24 +18,10 @@ Most nutrition apps are calorie ledgers that punish missed days. NutriFlow's ang
 ## Next
 
 1. **Deploy** the current version to Vercel (see the README's Deployment checklist).
-2. **iOS app** (plan below). Plans, conversations, export and account deletion, which it depends on, are done.
-3. **Morning check-in reminder.** Native notifications in iOS; web push for the site.
-4. **Safer sessions.** Move the token from `localStorage` to an httpOnly cookie and add refresh.
-5. **Error tracking** (for example Sentry, needs an account) and browser end-to-end tests in CI (Playwright).
-6. **Fuel timing.** If a hard session is planned and today's intake is low, nudge a pre-workout meal.
-
-## iOS app plan (Capacitor)
-
-Capacitor wraps the existing React + Chakra build in a native shell, so web and iOS share one codebase. React Native would mean rewriting every screen.
-
-1. `cd frontend && npm i @capacitor/core @capacitor/ios && npm i -D @capacitor/cli`
-2. `npx cap init NutriFlow com.<you>.nutriflow --web-dir dist`
-3. Point the API at the deployed backend: build with `VITE_API_URL=https://<your-domain>`. The native app is not served from your origin, so add `capacitor://localhost` to the backend CORS allow-list (it is currently a single `FRONTEND_URL`).
-4. `npm run build && npx cap add ios && npx cap sync && npx cap open ios` (needs Xcode on macOS).
-5. Native polish: `@capacitor/status-bar` (match `theme-color`), `@capacitor/haptics` on check-in save, `@capacitor/local-notifications` for the morning check-in, and `@capacitor/preferences` instead of `localStorage` for the auth token.
-6. App Store: privacy nutrition labels (health and fitness data, email), account deletion in-app (required by Apple; not implemented yet), and a support URL.
-
-Already in place for this: safe-area padding (`viewport-fit=cover`, `env(safe-area-inset-bottom)`), the bottom tab bar, PNG icons and the manifest.
+2. **Morning check-in reminder** through web push.
+3. **Safer sessions.** Move the token from `localStorage` to an httpOnly cookie and add refresh.
+4. **Error tracking** (for example Sentry) and browser end-to-end tests in CI (Playwright).
+5. **Fuel timing.** If a hard session is planned and today's intake is low, nudge a pre-workout meal.
 
 ## Known risks
 

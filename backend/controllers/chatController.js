@@ -4,7 +4,7 @@ import Conversation from '../models/Conversation.js';
 const MAX_HISTORY_MESSAGES = 100;
 const MAX_MESSAGE_LENGTH = 4000;
 
-export function sanitizeChatMessage(message) {
+function sanitizeChatMessage(message) {
   if (!message || typeof message !== 'object') {
     return null;
   }

@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Set base URL for all API calls
-// Prefer explicit VITE_API_URL, else localhost:3000 in dev, else current origin in prod
+// API base URL: VITE_API_URL when set (a localhost value is ignored in production),
+// else localhost:3000 in development, else the app's own origin.
 const inferBaseUrl = () => {
   const envUrl = import.meta.env.VITE_API_URL;
   // If a localhost URL is mistakenly present in production, ignore it
@@ -19,20 +19,6 @@ const base = inferBaseUrl().replace(/\/?api\/?$/, '');
 axios.defaults.baseURL = base;
 axios.defaults.timeout = 60000;
 
-// When deploying on Vercel Hobby, consolidate serverless routes under /api/[collection]
-// so FE calls need to support both styles
-const normalizePath = (p) => {
-  // diets/workouts collections map to /api/[collection]
-  if (/^\/api\/(diets|workouts)(\/.*)?$/.test(p)) return p; // keep standard paths
-  return p; // no change for other APIs
-};
-
-axios.interceptors.request.use((config) => {
-  if (config.url) {
-    config.url = normalizePath(config.url);
-  }
-  return config;
-});
 axios.defaults.withCredentials = true;
 
 // Get token function
@@ -243,7 +229,7 @@ export const resetPassword = async (token, password) => {
   }
 };
 
-// AI Fitness Chat & History
+// AI coach chat, and the single saved conversation older versions kept (imported once)
 export const aiChat = async (message, context, history = []) => {
   try {
     const safeHistory = sanitizeChatMessages(history, 'type');
@@ -254,35 +240,12 @@ export const aiChat = async (message, context, history = []) => {
   }
 };
 
-export const saveChatHistory = async (messages) => {
-  try {
-    const safeMessages = sanitizeChatMessages(messages, 'role');
-    if (safeMessages.length === 0) {
-      return { success: true, saved: 0, ignored: Array.isArray(messages) ? messages.length : 0 };
-    }
-
-    const response = await axios.post('/api/chat/history', { messages: safeMessages });
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Failed to save history' };
-  }
-};
-
 export const loadChatHistory = async (limit = 40) => {
   try {
     const response = await axios.get(`/api/chat/history?limit=${limit}`);
     return response.data;
   } catch (error) {
     throw error.response?.data || { message: 'Failed to load history' };
-  }
-};
-
-export const clearChatHistory = async () => {
-  try {
-    const response = await axios.delete('/api/chat/history');
-    return response.data;
-  } catch (error) {
-    throw error.response?.data || { message: 'Failed to clear history' };
   }
 };
 
