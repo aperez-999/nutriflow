@@ -18,7 +18,7 @@ missed day, and no food is labeled good or bad.
 | **Today** (`/dashboard`) | The daily verdict and readiness score, a 20-second check-in, meal and workout logging (USDA food and API Ninjas exercise search), goals, a 12-week rhythm map and a weekly calorie chart |
 | **Coach** (`/fitness-hub`) | AI chat that reads your own log, with short answers, up to four follow-ups per reply and several conversations that follow you across devices; plus today's read and insights from your log |
 | **Library** (`/library`) | Plans the coach built, saved to your account (log a session or meal in one tap, with a muscle map of the week), and a 36-exercise library with muscle maps and form cues |
-| **Profile** and **Settings** | Your stats and most-logged foods and workouts; goals, appearance (light, dark, device), profile details, and your data (download it, or delete the account) |
+| **Profile** and **Settings** | Your week (readiness for each of the last 7 days, the best day, totals vs the week before, shareable), your stats and most-logged foods and workouts; goals, appearance (light, dark, device), profile details, and your data (download it, or delete the account) |
 
 Sign-in pages adapt to the visit: returning users are greeted by name and sent back to where they
 were going, and new users see what their first day looks like.

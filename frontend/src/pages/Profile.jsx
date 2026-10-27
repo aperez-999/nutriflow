@@ -22,6 +22,8 @@ import { DURATION, EASE_OUT } from '../components/Motion/tokens';
 import { RhythmCard } from '../components/Dashboard/components';
 import { getRhythm } from '../components/Dashboard/utils/dashboardUtils';
 import { getProfileStats, memberSince } from '../components/Profile/profileUtils';
+import { getWeeklyRecap } from '../components/Profile/recapUtils';
+import WeeklyRecap from '../components/Profile/WeeklyRecap';
 
 const MotionBox = motion(Box);
 const FLOWS = [
@@ -119,6 +121,7 @@ function Profile() {
 
   const stats = useMemo(() => (logs ? getProfileStats(logs.diets, logs.workouts, logs.checkIns) : null), [logs]);
   const rhythm = useMemo(() => (logs ? getRhythm(logs.diets, logs.workouts, logs.checkIns) : null), [logs]);
+  const recap = useMemo(() => (logs ? getWeeklyRecap(logs.diets, logs.workouts, logs.checkIns) : null), [logs]);
   const since = memberSince(account._id);
 
   return (
@@ -169,6 +172,10 @@ function Profile() {
           </CardBody>
         </Card>
       </MotionBox>
+
+      <Box mt={6}>
+        {recap ? <WeeklyRecap recap={recap} /> : <Skeleton h="360px" borderRadius="panel" />}
+      </Box>
 
       {!stats ? (
         <Grid templateColumns={{ base: '1fr 1fr', md: 'repeat(4, 1fr)' }} gap={3} mt={6}>
