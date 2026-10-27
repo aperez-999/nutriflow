@@ -31,6 +31,8 @@ export default [
       'react/jsx-no-target-blank': 'off',
       // Components are not typed with PropTypes in this codebase.
       'react/prop-types': 'off',
+      // A const used before its declaration crashes at render (e.g. in a hook's deps array).
+      'no-use-before-define': ['error', { functions: false, classes: false, variables: true }],
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },

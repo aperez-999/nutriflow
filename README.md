@@ -16,8 +16,8 @@ missed day, and no food is labeled good or bad.
 | --- | --- |
 | **Landing** (`/`) | A live demo: set sleep, energy, soreness, training and eating, and the real readiness formula gives the verdict |
 | **Today** (`/dashboard`) | The daily verdict and readiness score, a 20-second check-in, meal and workout logging (USDA food and API Ninjas exercise search), goals, a 12-week rhythm map and a weekly calorie chart |
-| **Coach** (`/fitness-hub`) | AI chat that reads your own log, with short answers, up to four follow-ups per reply and several conversations; plus today's read and insights from your log |
-| **Library** (`/library`) | Plans the coach built (log a session or meal in one tap, with a muscle map of the week) and a 36-exercise library with muscle maps and form cues |
+| **Coach** (`/fitness-hub`) | AI chat that reads your own log, with short answers, up to four follow-ups per reply and several conversations that follow you across devices; plus today's read and insights from your log |
+| **Library** (`/library`) | Plans the coach built, saved to your account (log a session or meal in one tap, with a muscle map of the week), and a 36-exercise library with muscle maps and form cues |
 | **Profile** and **Settings** | Your stats and most-logged foods and workouts; goals, appearance (light, dark, device), profile details, and your data (download it, or delete the account) |
 
 Sign-in pages adapt to the visit: returning users are greeted by name and sent back to where they
@@ -128,7 +128,8 @@ All routes are under `/api`. Routes marked 🔒 need `Authorization: Bearer <tok
 - `POST /ai/chat` (rate limited, 20 a minute): `{ message, context?, history? }` →
   `{ content, suggestions, source }`. Uses the signed-in user's data when a token is sent.
   `POST /chat` is the older address and still works.
-- `GET | POST | DELETE /chat/history` 🔒: the saved conversation
+- `GET /chat/conversations` 🔒, `PUT | DELETE /chat/conversations/:id` 🔒: coach conversations, kept on the account so they follow you across devices
+- `GET | POST | DELETE /chat/history` 🔒: the single saved conversation used by older clients
 
 **Other**
 - `POST /contact`: the contact form (emailed to `EMAIL_USERNAME`)

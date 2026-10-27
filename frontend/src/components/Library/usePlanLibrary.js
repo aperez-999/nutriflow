@@ -1,7 +1,8 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useToast } from '@chakra-ui/react';
 import { addDiet, addWorkout, deleteSavedPlan, getSavedPlans, saveSavedPlan, searchFoods } from '../../services/api';
-import { mergePlans, planChanges } from './planSync';
+import { mergePlans, toWirePlan } from './planSync';
+import useServerSync from '../../utils/useServerSync';
 import { handleApiError } from '../../utils/apiErrorHandler';
 import { AuthContext } from '../../context/AuthContext';
 import { getTodayDayKey, toStoredIsoFromDayKey } from '../../utils/dateUtils';
@@ -56,6 +57,14 @@ const normalizeStoredPlan = (plan) => {
   };
 };
 
+const normalizeMealType = (mealType = 'Snack') => {
+  const normalized = String(mealType).trim().toLowerCase();
+  if (normalized.startsWith('breakfast')) return 'Breakfast';
+  if (normalized.startsWith('lunch')) return 'Lunch';
+  if (normalized.startsWith('dinner')) return 'Dinner';
+  return 'Snack';
+};
+
 const normalizeStoredMealPlan = (plan) => {
   if (!plan) return null;
 
@@ -108,14 +117,6 @@ const inferWorkoutType = (workout = {}) => {
   if (/(mobility|stretch|flexibility|yoga|recovery)/.test(text)) return 'Flexibility';
   if (/(sport|soccer|basketball|tennis)/.test(text)) return 'Sports';
   return 'Strength';
-};
-
-const normalizeMealType = (mealType = 'Snack') => {
-  const normalized = String(mealType).trim().toLowerCase();
-  if (normalized.startsWith('breakfast')) return 'Breakfast';
-  if (normalized.startsWith('lunch')) return 'Lunch';
-  if (normalized.startsWith('dinner')) return 'Dinner';
-  return 'Snack';
 };
 
 const parseWorkoutCalories = (value, duration = 45) => {
@@ -194,14 +195,9 @@ export default function usePlanLibrary() {
   const [mealPlansLoading, setMealPlansLoading] = useState(false);
   const [completingItems, setCompletingItems] = useState({});
   const completionLocksRef = useRef(new Set());
-  // Server sync: what the server last confirmed (id -> { kind, json }), and whether the
-  // first load finished. Nothing is saved or deleted before that, so a failed load can
-  // never delete plans on the account.
+  // What the server last confirmed (id -> JSON), and whether the first load finished.
   const syncedRef = useRef(new Map());
-  // One request per plan at a time, so an older save can never land after a newer one.
-  const inFlightRef = useRef(new Set());
   const [serverReady, setServerReady] = useState(false);
-  const [syncVersion, setSyncVersion] = useState(0);
 
   const activePlan = useMemo(
     () => savedPlans.find((plan) => plan.id === activePlanId) || savedPlans[0] || null,
@@ -211,6 +207,19 @@ export default function usePlanLibrary() {
     () => savedMealPlans.find((plan) => plan.id === activeMealPlanId) || savedMealPlans[0] || null,
     [activeMealPlanId, savedMealPlans]
   );
+
+  // After the first load, save changed plans and delete removed ones.
+  const syncEntries = useMemo(() => [
+    ...savedPlans.map((plan) => ({ id: plan.id, wire: toWirePlan('training', plan) })),
+    ...savedMealPlans.map((plan) => ({ id: plan.id, wire: toWirePlan('meal', plan) })),
+  ], [savedMealPlans, savedPlans]);
+  const syncVersion = useServerSync({
+    ready: serverReady,
+    entries: syncEntries,
+    syncedRef,
+    save: saveSavedPlan,
+    remove: deleteSavedPlan,
+  });
 
   // Save on every change, synchronously: a delayed write could be cancelled if the user
   // navigates away (e.g. Coach -> Library) right after a plan arrives, losing the plan.
@@ -240,11 +249,7 @@ export default function usePlanLibrary() {
       .then((data) => {
         if (cancelled) return;
         const remember = (kind, plans) => plans.forEach((plan) => {
-          const items = kind === 'meal' ? plan.meals : plan.workouts;
-          syncedRef.current.set(plan.id, {
-            kind,
-            json: JSON.stringify({ kind, title: plan.title, calories: plan.calories ?? null, generatedAt: plan.generatedAt, items }),
-          });
+          syncedRef.current.set(plan.id, JSON.stringify(toWirePlan(kind, plan)));
         });
         remember('training', data.plans || []);
         remember('meal', data.mealPlans || []);
@@ -258,30 +263,6 @@ export default function usePlanLibrary() {
     return () => { cancelled = true; };
   }, [stored.syncedIds, storageUserId]);
 
-  // After the first load, save changed plans and delete removed ones. When a request
-  // finishes, syncVersion changes and this runs again to send anything that changed meanwhile.
-  useEffect(() => {
-    if (!serverReady) return;
-    const send = (id, request, onDone) => {
-      if (inFlightRef.current.has(id)) return;
-      inFlightRef.current.add(id);
-      request()
-        .then(() => {
-          onDone();
-          inFlightRef.current.delete(id);
-          setSyncVersion((v) => v + 1);
-        })
-        .catch(() => {
-          // Left unsynced and retried on the next change; never in a loop.
-          inFlightRef.current.delete(id);
-        });
-    };
-    [['training', savedPlans], ['meal', savedMealPlans]].forEach(([kind, plans]) => {
-      const { upserts, removals } = planChanges(kind, plans, syncedRef.current);
-      upserts.forEach(({ id, wire, json }) => send(id, () => saveSavedPlan(id, wire), () => syncedRef.current.set(id, { kind, json })));
-      removals.forEach((id) => send(id, () => deleteSavedPlan(id), () => syncedRef.current.delete(id)));
-    });
-  }, [savedMealPlans, savedPlans, serverReady, syncVersion]);
 
   useEffect(() => {
     const onUpdated = (e) => {

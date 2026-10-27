@@ -5,6 +5,7 @@ import Workout from '../models/Workout.js';
 import CheckIn from '../models/CheckIn.js';
 import Plan from '../models/Plan.js';
 import ChatMessage from '../models/ChatMessage.js';
+import Conversation from '../models/Conversation.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
@@ -329,6 +330,7 @@ const OWNED_RECORDS = {
   workouts: Workout,
   checkIns: CheckIn,
   plans: Plan,
+  conversations: Conversation,
   chatMessages: ChatMessage,
 };
 

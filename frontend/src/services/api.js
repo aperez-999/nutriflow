@@ -380,3 +380,31 @@ export const deleteMyAccount = async (password) => {
     throw error.response?.data || { message: 'Failed to delete your account' };
   }
 };
+
+// Coach conversations, kept on the account so they follow the user across devices
+export const getConversations = async () => {
+  try {
+    const response = await axios.get('/api/chat/conversations');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to load conversations' };
+  }
+};
+
+export const saveConversation = async (id, conversation) => {
+  try {
+    const response = await axios.put(`/api/chat/conversations/${encodeURIComponent(id)}`, conversation);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to save the conversation' };
+  }
+};
+
+export const deleteConversation = async (id) => {
+  try {
+    const response = await axios.delete(`/api/chat/conversations/${encodeURIComponent(id)}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to delete the conversation' };
+  }
+};

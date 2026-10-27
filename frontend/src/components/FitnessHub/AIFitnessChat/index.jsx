@@ -17,7 +17,17 @@ import {
 } from '@chakra-ui/react';
 import { FiMoreHorizontal, FiPlus } from 'react-icons/fi';
 import { AuthContext } from '../../../context/AuthContext';
-import { aiChat, saveChatHistory, loadChatHistory, clearChatHistory, normalizeChatMessage, sanitizeChatMessages } from '../../../services/api';
+import {
+  aiChat,
+  loadChatHistory,
+  normalizeChatMessage,
+  sanitizeChatMessages,
+  getConversations,
+  saveConversation,
+  deleteConversation,
+} from '../../../services/api';
+import { mergeWithServer } from '../../../utils/serverSync';
+import useServerSync from '../../../utils/useServerSync';
 import { ChatEmptyState, ChatInput, ChatMessage, ConversationList, TypingIndicator } from './components';
 import { WELCOME_MESSAGE, CLEAR_MESSAGE, QUICK_ACTION_LABELS, TYPING_INDICATOR_TEXT } from './constants';
 import {
@@ -33,7 +43,6 @@ import {
   isGenericBackendFallback,
   buildConversationalFallbackResponse,
 } from './utils';
-import { handleApiError } from '../../../utils/apiErrorHandler';
 
 const CHAT_THREADS_STORAGE_KEY = 'nutriflow.fitnessHub.chatThreads';
 
@@ -105,30 +114,86 @@ const normalizeStoredConversations = (conversations = [], userKey = 'anonymous')
   }, []);
 };
 
-const processChatHistoryQueue = async (state, toast) => {
-  if (state.inFlight) return;
+const MAX_SYNCED_MESSAGES = 100;
+const isWelcome = (message) => Boolean(message?.id?.startsWith('welcome'));
+const byLatest = (a, b) => new Date(b.updatedAt) - new Date(a.updatedAt);
 
-  state.inFlight = true;
+/**
+ * What the server stores for a conversation: its real messages (never the built-in welcome),
+ * trimmed and capped exactly as the server does, so an unchanged conversation compares equal.
+ */
+const toWireConversation = (conversation) => ({
+  title: conversation.title,
+  updatedAt: conversation.updatedAt,
+  messages: conversation.messages
+    .filter((message) => !isWelcome(message) && String(message.content || '').trim())
+    .slice(-MAX_SYNCED_MESSAGES)
+    .map((message) => {
+      const suggestions = (message.suggestions || [])
+        .filter((suggestion) => typeof suggestion === 'string' && suggestion.trim())
+        .map((suggestion) => suggestion.trim().slice(0, 120))
+        .slice(0, 8);
+      return {
+        role: message.type === 'user' ? 'user' : 'assistant',
+        content: String(message.content).trim().slice(0, 4000),
+        ...(suggestions.length && { suggestions }),
+        createdAt: new Date(message.timestamp || Date.now()).toISOString(),
+      };
+    }),
+});
+
+const fromServerConversation = (conversation) => ({
+  id: conversation.id,
+  title: conversation.title,
+  updatedAt: conversation.updatedAt,
+  messages: [
+    WELCOME_MESSAGE,
+    ...conversation.messages.map((message, index) => ({
+      id: `${conversation.id}-m${index}`,
+      type: message.role === 'user' ? 'user' : 'ai',
+      content: message.content,
+      suggestions: message.suggestions || [],
+      timestamp: new Date(message.createdAt),
+    })),
+  ],
+});
+
+/** Both devices have the conversation: keep the copy with the latest message. */
+const newerConversation = (server, local) => (new Date(local.updatedAt) >= new Date(server.updatedAt) ? local : server);
+
+const readStoredThreads = (storageUserId) => {
   try {
-    while (state.queued) {
-      const payload = state.queued;
-      state.queued = null;
-
-      try {
-        await saveChatHistory(payload);
-      } catch (err) {
-        handleApiError(err, 'saving chat history', toast);
-      }
-    }
-  } finally {
-    state.inFlight = false;
-    if (state.queued) {
-      void processChatHistoryQueue(state, toast);
-    }
+    const parsed = JSON.parse(window.localStorage.getItem(`${CHAT_THREADS_STORAGE_KEY}.${storageUserId}`) || 'null');
+    return {
+      conversations: normalizeStoredConversations(parsed?.conversations, storageUserId),
+      activeConversationId: parsed?.activeConversationId || null,
+      syncedIds: Array.isArray(parsed?.syncedIds) ? parsed.syncedIds : [],
+    };
+  } catch {
+    return { conversations: [], activeConversationId: null, syncedIds: [] };
   }
 };
 
-const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, initialPrompt, onPromptConsumed }, ref) => {
+/** The single saved conversation older versions kept on the server, as one conversation. */
+const conversationFromLegacyHistory = (history) => {
+  if (!Array.isArray(history) || history.length === 0) return null;
+  const messages = history.reduce((acc, message, index) => {
+    const normalized = normalizeChatMessage(message, 'type');
+    if (normalized) {
+      acc.push({
+        id: `server-${index + 1}`,
+        type: normalized.type === 'assistant' ? 'ai' : 'user',
+        content: normalized.content,
+        timestamp: new Date(message?.createdAt || Date.now()),
+        suggestions: [],
+      });
+    }
+    return acc;
+  }, []);
+  return messages.length ? createConversation(getConversationTitle(messages, 'Earlier chat'), [WELCOME_MESSAGE, ...messages]) : null;
+};
+
+const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], initialPrompt, onPromptConsumed }, ref) => {
   const [conversations, setConversations] = useState([createConversation()]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [inputMessage, setInputMessage] = useState('');
@@ -136,8 +201,11 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
-  const suppressSaveRef = useRef(false);
-  const chatHistorySaveRef = useRef({ inFlight: false, queued: null });
+  // Server sync (see utils/useServerSync): what the server last confirmed, whether the
+  // first load finished, and the ids this browser had synced before this visit.
+  const syncedRef = useRef(new Map());
+  const storedSyncedIdsRef = useRef([]);
+  const [serverReady, setServerReady] = useState(false);
   const handledPromptRef = useRef(null);
   const pendingPromptRef = useRef(null);
 
@@ -213,107 +281,92 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
     return () => window.cancelAnimationFrame(frame);
   }, [activeConversationId, isFresh, isLoading, messages, scrollToBottom]);
 
-  // Runs again in StrictMode development; the cancelled flag (not a run-once ref) keeps
-  // the second run from being skipped while the first run's late result is ignored.
+  // Show this browser's conversations at once, then merge in the account's. Runs again in
+  // StrictMode development; the cancelled flag ignores the first run's late result.
   useEffect(() => {
     let cancelled = false;
+    const local = readStoredThreads(storageUserId);
+    storedSyncedIdsRef.current = local.syncedIds;
+    const starter = local.conversations.length ? null : createConversation();
+    setConversations(local.conversations.length ? local.conversations : [starter]);
+    setActiveConversationId(
+      local.conversations.some((conversation) => conversation.id === local.activeConversationId)
+        ? local.activeConversationId
+        : (local.conversations[0] || starter).id
+    );
 
-    const loadInitialState = async () => {
+    const loadAccount = async () => {
       try {
-        const localRaw = window.localStorage.getItem(`${CHAT_THREADS_STORAGE_KEY}.${storageUserId}`);
-        if (localRaw) {
-          const parsed = JSON.parse(localRaw);
-          if (Array.isArray(parsed?.conversations) && parsed.conversations.length > 0) {
-            const normalizedConversations = normalizeStoredConversations(parsed.conversations, storageUserId);
-            if (cancelled) return;
-            if (normalizedConversations.length > 0) {
-              setConversations(normalizedConversations);
-              setActiveConversationId(
-                normalizedConversations.some((conversation) => conversation.id === parsed.activeConversationId)
-                  ? parsed.activeConversationId
-                  : normalizedConversations[0].id
-              );
-              return;
-            }
-          }
-        }
-
-        const serverHistory = await loadChatHistory(40);
+        const { conversations: serverConversations = [] } = await getConversations();
         if (cancelled) return;
-        suppressSaveRef.current = true;
+        const fromServer = serverConversations.map(fromServerConversation);
+        fromServer.forEach((conversation) => syncedRef.current.set(conversation.id, JSON.stringify(toWireConversation(conversation))));
 
-        if (Array.isArray(serverHistory) && serverHistory.length) {
-          const hydrated = serverHistory.reduce((acc, message, index) => {
-            const normalized = normalizeChatMessage(message, 'type');
-            if (!normalized) {
-              return acc;
-            }
-
-            acc.push({
-              id: `server-${index + 1}`,
-              type: normalized.type === 'assistant' ? 'ai' : 'user',
-              content: normalized.content,
-              timestamp: new Date(message?.createdAt || Date.now()),
-              suggestions: Array.isArray(message?.suggestions)
-                ? message.suggestions.filter((suggestion) => typeof suggestion === 'string' && suggestion.trim()).slice(0, 8)
-                : [],
-            });
-            return acc;
-          }, []);
-          const importedConversation = createConversation('Imported chat', hydrated);
-          setConversations([importedConversation]);
-          setActiveConversationId(importedConversation.id);
-        } else {
-          const starterConversation = createConversation();
-          setConversations([starterConversation]);
-          setActiveConversationId(starterConversation.id);
-        }
-      } catch (err) {
+        // An account from before conversations were synced: bring its one saved chat over.
+        const hasLocalChats = local.conversations.some((conversation) => conversation.messages.some((m) => !isWelcome(m)));
+        const legacy = !fromServer.length && !hasLocalChats
+          ? conversationFromLegacyHistory(await loadChatHistory(40).catch(() => []))
+          : null;
         if (cancelled) return;
-        handleApiError(err, 'loading chat history', toast);
-        const starterConversation = createConversation();
-        setConversations([starterConversation]);
-        setActiveConversationId(starterConversation.id);
-      } finally {
-        if (!cancelled) {
-          suppressSaveRef.current = false;
-        }
+
+        const fromAccount = legacy ? [...fromServer, legacy] : fromServer;
+        setConversations((current) => {
+          // An untouched starter chat gives way to the account's conversations, so the most
+          // recent one opens (the active-conversation effect below picks it).
+          const untouchedStarter = current.length === 1 && current[0].messages.every(isWelcome);
+          const base = untouchedStarter && fromAccount.length ? [] : current;
+          const merged = mergeWithServer(fromAccount, base, local.syncedIds, newerConversation).sort(byLatest);
+          return merged.length ? merged : [createConversation()];
+        });
+        setServerReady(true);
+      } catch {
+        // Offline or the server failed: keep working from this browser's copy.
       }
     };
-
-    loadInitialState();
+    loadAccount();
 
     return () => {
       cancelled = true;
     };
-  }, [storageUserId, toast]);
+  }, [storageUserId]);
+
+  // The active conversation may have been dropped by the merge (deleted on another device).
+  useEffect(() => {
+    if (conversations.length && !conversations.some((conversation) => conversation.id === activeConversationId)) {
+      setActiveConversationId(conversations[0].id);
+    }
+  }, [activeConversationId, conversations]);
+
+  // Save changed conversations to the account; empty ones (only the welcome) are not kept.
+  const syncEntries = useMemo(
+    () => conversations
+      .filter((conversation) => conversation.messages.some((message) => !isWelcome(message)))
+      .map((conversation) => ({ id: conversation.id, wire: toWireConversation(conversation) })),
+    [conversations]
+  );
+  const syncVersion = useServerSync({
+    ready: serverReady,
+    entries: syncEntries,
+    syncedRef,
+    save: saveConversation,
+    remove: deleteConversation,
+  });
 
   useEffect(() => {
     if (!activeConversationId) return;
-    window.localStorage.setItem(
-      `${CHAT_THREADS_STORAGE_KEY}.${storageUserId}`,
-      JSON.stringify({
-        conversations,
-        activeConversationId,
-      })
-    );
-  }, [activeConversationId, conversations, storageUserId]);
-
-  const queueChatHistorySave = useCallback((payload) => {
-    chatHistorySaveRef.current.queued = payload;
-    void processChatHistoryQueue(chatHistorySaveRef.current, toast);
-  }, [toast]);
-
-  useEffect(() => {
-    if (suppressSaveRef.current || !activeConversationId) return;
-
-    const onlyWelcome = messages.length === 1 && messages[0]?.id?.startsWith('welcome');
-    if (onlyWelcome) return;
-
-    const toSave = sanitizeChatMessages(messages, 'role');
-    if (toSave.length === 0) return;
-    queueChatHistorySave(toSave);
-  }, [activeConversationId, messages, queueChatHistorySave]);
+    try {
+      window.localStorage.setItem(
+        `${CHAT_THREADS_STORAGE_KEY}.${storageUserId}`,
+        JSON.stringify({
+          conversations,
+          activeConversationId,
+          syncedIds: serverReady ? [...syncedRef.current.keys()] : storedSyncedIdsRef.current,
+        })
+      );
+    } catch {
+      // Storage full or unavailable: the account still has the conversations.
+    }
+  }, [activeConversationId, conversations, serverReady, storageUserId, syncVersion]);
 
   const generateAIResponse = useCallback(async (userMessage, historyMessages) => {
     setIsLoading(true);
@@ -414,15 +467,10 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], toast, in
     setInputMessage('');
   }, []);
 
-  const clearCurrentConversation = useCallback(async () => {
+  // An emptied conversation has nothing to keep, so the sync removes it from the account.
+  const clearCurrentConversation = useCallback(() => {
     updateActiveConversation([CLEAR_MESSAGE]);
-    try {
-      await clearChatHistory();
-      window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: [] }));
-    } catch (err) {
-      handleApiError(err, 'clearing chat history', toast);
-    }
-  }, [toast, updateActiveConversation]);
+  }, [updateActiveConversation]);
 
   const deleteCurrentConversation = useCallback(() => {
     setConversations((prev) => {

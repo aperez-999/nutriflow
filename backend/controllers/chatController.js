@@ -1,9 +1,10 @@
 import ChatMessage from '../models/ChatMessage.js';
+import Conversation from '../models/Conversation.js';
 
 const MAX_HISTORY_MESSAGES = 100;
 const MAX_MESSAGE_LENGTH = 4000;
 
-function sanitizeChatMessage(message) {
+export function sanitizeChatMessage(message) {
   if (!message || typeof message !== 'object') {
     return null;
   }
@@ -100,5 +101,81 @@ export const clearHistory = async (req, res) => {
   } catch (err) {
     console.error('Clear history error:', err);
     res.status(500).json({ message: 'Failed to clear history' });
+  }
+};
+
+const MAX_CONVERSATIONS = 50;
+const MAX_SUGGESTIONS = 8;
+
+/** A stored conversation message: role and content as for history, plus its follow-ups and time. */
+export function sanitizeConversationMessage(message) {
+  const base = sanitizeChatMessage(message);
+  if (!base) return null;
+  const suggestions = Array.isArray(message.suggestions)
+    ? message.suggestions.filter((s) => typeof s === 'string' && s.trim()).map((s) => s.trim().slice(0, 120)).slice(0, MAX_SUGGESTIONS)
+    : [];
+  const createdAt = Date.parse(message.createdAt);
+  return {
+    ...base,
+    ...(suggestions.length && { suggestions }),
+    createdAt: Number.isNaN(createdAt) ? new Date() : new Date(createdAt),
+  };
+}
+
+const toClientConversation = (conversation) => ({
+  id: conversation.clientId,
+  title: conversation.title,
+  updatedAt: new Date(conversation.updatedAt).toISOString(),
+  messages: conversation.messages.map((m) => ({
+    role: m.role,
+    content: m.content,
+    ...(m.suggestions?.length && { suggestions: m.suggestions }),
+    createdAt: new Date(m.createdAt).toISOString(),
+  })),
+});
+
+/** GET /api/chat/conversations: the latest conversations, most recent first. */
+export const getConversations = async (req, res) => {
+  try {
+    const conversations = await Conversation.find({ user: req.user._id }).sort({ updatedAt: -1 }).limit(MAX_CONVERSATIONS).lean();
+    res.json({ conversations: conversations.map(toClientConversation) });
+  } catch (err) {
+    console.error('Get conversations error:', err);
+    res.status(500).json({ message: 'Failed to load conversations' });
+  }
+};
+
+/** PUT /api/chat/conversations/:clientId: creates or replaces one conversation. */
+export const saveConversation = async (req, res) => {
+  try {
+    const { title, updatedAt, messages } = req.body || {};
+    if (!Array.isArray(messages) || messages.length === 0 || typeof title !== 'string' || !title.trim()) {
+      return res.status(400).json({ message: 'A conversation needs a title and at least one message' });
+    }
+    const clean = messages.map(sanitizeConversationMessage).filter(Boolean).slice(-MAX_HISTORY_MESSAGES);
+    if (clean.length === 0) {
+      return res.status(400).json({ message: 'A conversation needs at least one message' });
+    }
+    const at = Date.parse(updatedAt);
+    const conversation = await Conversation.findOneAndUpdate(
+      { user: req.user._id, clientId: req.params.clientId },
+      { title: title.trim().slice(0, 120), updatedAt: Number.isNaN(at) ? new Date() : new Date(at), messages: clean },
+      { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
+    ).lean();
+    res.json(toClientConversation(conversation));
+  } catch (err) {
+    console.error('Save conversation error:', err);
+    res.status(500).json({ message: 'Failed to save the conversation' });
+  }
+};
+
+/** DELETE /api/chat/conversations/:clientId */
+export const deleteConversation = async (req, res) => {
+  try {
+    await Conversation.deleteOne({ user: req.user._id, clientId: req.params.clientId });
+    res.json({ success: true });
+  } catch (err) {
+    console.error('Delete conversation error:', err);
+    res.status(500).json({ message: 'Failed to delete the conversation' });
   }
 };
