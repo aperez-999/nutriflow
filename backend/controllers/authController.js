@@ -28,6 +28,8 @@ function buildUserPayload(user) {
       dailyCarbs: user.goals?.dailyCarbs ?? null,
       dailyFats: user.goals?.dailyFats ?? null,
       fuelFollowsVerdict: user.goals?.fuelFollowsVerdict ?? true,
+      pushCarbBoost: user.goals?.pushCarbBoost ?? 20,
+      recoveryCarbCut: user.goals?.recoveryCarbCut ?? 15,
     },
   };
 }
@@ -120,6 +122,10 @@ export const login = async (req, res) => {
     return res.status(500).json({ message: 'Something went wrong' });
   }
 };
+
+// @desc    The signed-in account, so a client can pick up changes made elsewhere
+// @route   GET /api/auth/me
+export const getMe = async (req, res) => res.json({ user: buildUserPayload(req.user) });
 
 export const updateProfile = async (req, res) => {
   try {
@@ -236,6 +242,9 @@ export const updateGoals = async (req, res) => {
     }
     if (typeof req.body.fuelFollowsVerdict === 'boolean') {
       user.goals.fuelFollowsVerdict = req.body.fuelFollowsVerdict;
+    }
+    for (const field of ['pushCarbBoost', 'recoveryCarbCut']) {
+      if (req.body[field] !== undefined) user.goals[field] = Number(req.body[field]);
     }
     await user.save();
 

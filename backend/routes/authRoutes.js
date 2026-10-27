@@ -3,6 +3,7 @@ import { check } from 'express-validator';
 import {
   register,
   login,
+  getMe,
   updateProfile,
   changePassword,
   updateGoals,
@@ -55,6 +56,7 @@ router.put(
   changePassword
 );
 
+router.get('/me', protect, getMe);
 router.get('/me/export', protect, exportAccount);
 router.delete('/me', protect, deleteAccount);
 
@@ -68,6 +70,8 @@ router.put(
     check('dailyCarbs', 'Daily carbs must be between 0 and 1000 grams').optional({ values: 'null' }).isInt({ min: 0, max: 1000 }),
     check('dailyFats', 'Daily fat must be between 0 and 400 grams').optional({ values: 'null' }).isInt({ min: 0, max: 400 }),
     check('fuelFollowsVerdict', 'fuelFollowsVerdict must be true or false').optional().isBoolean({ strict: true }),
+    check('pushCarbBoost', 'The push-day carb boost must be between 0 and 50 percent').optional().isInt({ min: 0, max: 50 }),
+    check('recoveryCarbCut', 'The recovery-day carb cut must be between 0 and 40 percent').optional().isInt({ min: 0, max: 40 }),
   ],
   updateGoals
 );

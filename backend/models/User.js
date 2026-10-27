@@ -16,6 +16,9 @@ const userSchema = new mongoose.Schema({
     dailyFats: { type: Number, min: 0, max: 400 },
     // Whether the day's verdict moves the carb target (more on push days, less on recovery days).
     fuelFollowsVerdict: { type: Boolean, default: true },
+    // How far it moves them, in percent of the carb target.
+    pushCarbBoost: { type: Number, default: 20, min: 0, max: 50 },
+    recoveryCarbCut: { type: Number, default: 15, min: 0, max: 40 },
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date
