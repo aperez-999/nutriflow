@@ -116,7 +116,10 @@ All routes are under `/api`. Routes marked 🔒 need `Authorization: Bearer <tok
 
 **Auth**
 - `POST /auth/register`, `POST /auth/login`
-- `PUT /auth/me` 🔒 (name and email), `PUT /auth/me/password` 🔒, `PUT /auth/me/goals` 🔒 (calories, protein, weekly sessions)
+- `PUT /auth/me` 🔒 (name and email), `PUT /auth/me/password` 🔒
+- `PUT /auth/me/goals` 🔒: `dailyCalories`, `dailyProtein`, `weeklyWorkouts`, and optionally
+  `dailyCarbs` and `dailyFats` (grams; `null` clears them) and `fuelFollowsVerdict` (whether the
+  day's verdict moves the carb target). Fields left out keep their values.
 - `GET /auth/me/export` 🔒: everything stored for the account, as one JSON file
 - `DELETE /auth/me` 🔒 `{ password }`: deletes the account and every record it owns
 - `POST /auth/forgot-password` (rate limited; same answer whether or not the email exists)

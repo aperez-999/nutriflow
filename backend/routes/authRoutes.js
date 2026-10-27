@@ -65,6 +65,9 @@ router.put(
     check('dailyCalories', 'Daily calories must be between 800 and 6000').isInt({ min: 800, max: 6000 }),
     check('dailyProtein', 'Daily protein must be between 20 and 400 grams').isInt({ min: 20, max: 400 }),
     check('weeklyWorkouts', 'Weekly workouts must be between 0 and 14').isInt({ min: 0, max: 14 }),
+    check('dailyCarbs', 'Daily carbs must be between 0 and 1000 grams').optional({ values: 'null' }).isInt({ min: 0, max: 1000 }),
+    check('dailyFats', 'Daily fat must be between 0 and 400 grams').optional({ values: 'null' }).isInt({ min: 0, max: 400 }),
+    check('fuelFollowsVerdict', 'fuelFollowsVerdict must be true or false').optional().isBoolean({ strict: true }),
   ],
   updateGoals
 );

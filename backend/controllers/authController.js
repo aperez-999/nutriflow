@@ -25,6 +25,9 @@ function buildUserPayload(user) {
       dailyCalories: user.goals?.dailyCalories ?? 2000,
       dailyProtein: user.goals?.dailyProtein ?? 150,
       weeklyWorkouts: user.goals?.weeklyWorkouts ?? 5,
+      dailyCarbs: user.goals?.dailyCarbs ?? null,
+      dailyFats: user.goals?.dailyFats ?? null,
+      fuelFollowsVerdict: user.goals?.fuelFollowsVerdict ?? true,
     },
   };
 }
@@ -222,11 +225,18 @@ export const updateGoals = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    user.goals = {
-      dailyCalories: Number(req.body.dailyCalories),
-      dailyProtein: Number(req.body.dailyProtein),
-      weeklyWorkouts: Number(req.body.weeklyWorkouts),
-    };
+    // The three core goals are always sent; the others change only when given, so a client
+    // that doesn't know about them (the website's goals form) leaves them as they were.
+    user.goals.dailyCalories = Number(req.body.dailyCalories);
+    user.goals.dailyProtein = Number(req.body.dailyProtein);
+    user.goals.weeklyWorkouts = Number(req.body.weeklyWorkouts);
+    for (const field of ['dailyCarbs', 'dailyFats']) {
+      if (req.body[field] === null) user.goals[field] = undefined;
+      else if (req.body[field] !== undefined) user.goals[field] = Number(req.body[field]);
+    }
+    if (typeof req.body.fuelFollowsVerdict === 'boolean') {
+      user.goals.fuelFollowsVerdict = req.body.fuelFollowsVerdict;
+    }
     await user.save();
 
     return res.status(200).json({ message: 'Goals updated', user: buildUserPayload(user) });
