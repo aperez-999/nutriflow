@@ -1,0 +1,29 @@
+# Lint, backend and frontend tests, and a production build on every push and pull request.
+name: Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+            backend/package-lock.json
+
+      - name: Install
+        run: npm ci && npm --prefix frontend ci && npm --prefix backend ci
+
+      - name: Lint, test and build
+        run: npm run check

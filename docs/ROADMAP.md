@@ -12,24 +12,23 @@ Most nutrition apps are calorie ledgers that punish missed days. NutriFlow's ang
 ## Shipped
 
 - **Today:** daily verdict and readiness score, 20-second check-in, meal and workout logging in slide-in panels, goals, rhythm map, weekly calorie chart, a getting-started guide
-- **Coach:** AI chat on Groq (`openai/gpt-oss-120b`) that reads the user's own log, short answers, four follow-ups per reply, several conversations, today's read and log insights; readiness and progress answers come from computed numbers
-- **Library:** saved training and meal plans as tiles with per-item progress, one-tap logging, a muscle map per plan, and a 36-exercise library (MongoDB) with muscle maps and form cues
-- **Profile and Settings**, light/dark/device appearance
-- **Landing page** with a live readiness demo; sign-in pages that adapt to returning and new users
+- **Coach:** AI chat on Groq (`openai/gpt-oss-120b`) that reads the user's own log, short answers, four follow-ups per reply, conversations kept on the account (they follow the user across devices), today's read and log insights; readiness and progress answers come from computed numbers
+- **Library:** saved training and meal plans kept on the account, as tiles with per-item progress, one-tap logging, a muscle map per plan, and a 36-exercise library with muscle maps and form cues
+- **Profile:** "Your week" (readiness per day, best day, totals vs last week, shareable), stats, rhythm and favorites
+- **Settings:** goals, appearance, profile, password, and your data (download everything, or delete the account and all of it)
+- **Landing page** with a live readiness demo; sign-in pages that adapt to returning and new users; a 404 page; expired sessions return the user to where they were (sessions last 7 days)
 - **Design system** (`DESIGN.md`) across every screen; one swap animation; skeleton loading
-- **Platform:** shared readiness formula (`shared/readinessScore.js`), web app manifest and icons, mobile tab bar, `npm run check` (lint, tests, build)
-- **Security:** the AI only reads the data of the verified token's user; rate limits on AI chat and password reset; escaped contact-form email
+- **Platform:** shared readiness formula (`shared/readinessScore.js`), web app manifest and icons, mobile tab bar, `npm run check` (lint, tests, build) in CI on every push, the chart library loaded only where it is shown
+- **Security:** the AI only reads the data of the verified token's user; rate limits on AI chat and password reset; escaped contact-form email; a 401 always means "log in again"
 
 ## Next
 
-1. **Saved plans in MongoDB.** Plans live in `localStorage` today, so they do not sync across devices and vanish if storage is cleared. Required for the iOS app.
-2. **CI.** Run `npm run check` and the browser flows (Playwright) on every push.
-3. **Chat history per conversation.** The server keeps one conversation per user; the conversation list is per device.
-4. **Account deletion and data export.** Required by the App Store before the iOS release.
-5. **Morning check-in reminder.** Web push now, native notifications in iOS.
-6. **Safer sessions.** Move the token from `localStorage` to an httpOnly cookie, and add refresh (tokens last one day).
-7. **Error tracking** (for example Sentry) and split the large chart bundle.
-8. **Weekly recap.** A shareable Sunday card: rhythm, best day, readiness trend.
+1. **Deploy** the current version to Vercel (see the README's Deployment checklist).
+2. **iOS app** (plan below). Plans, conversations, export and account deletion, which it depends on, are done.
+3. **Morning check-in reminder.** Native notifications in iOS; web push for the site.
+4. **Safer sessions.** Move the token from `localStorage` to an httpOnly cookie and add refresh.
+5. **Error tracking** (for example Sentry, needs an account) and browser end-to-end tests in CI (Playwright).
+6. **Fuel timing.** If a hard session is planned and today's intake is low, nudge a pre-workout meal.
 
 ## iOS app plan (Capacitor)
 

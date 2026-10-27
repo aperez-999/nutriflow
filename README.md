@@ -88,7 +88,7 @@ From the repository root:
 
 | Command | What it does |
 | --- | --- |
-| `npm run check` | Lint, backend tests, frontend tests and a production build. Run before every commit. |
+| `npm run check` | Lint, backend tests, frontend tests and a production build. Run before every commit; GitHub Actions runs it on every push and pull request (`.github/workflows/check.yml`). |
 | `npm test` | Backend (`node:test`) and frontend (Vitest) tests |
 | `npm run lint` | ESLint on the frontend |
 | `npm run build` | Production build of the frontend |

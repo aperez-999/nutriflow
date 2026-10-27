@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useContext } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback, useMemo, useContext } from 'react';
 import {
   Box,
   Button,
@@ -50,7 +50,6 @@ import {
   RhythmCard,
   TodayFlowsCard,
   TodayScoreboard,
-  WeeklyCaloriesChart,
 } from '../components/Dashboard/components';
 import {
   calculateDailyCalories,
@@ -71,6 +70,7 @@ import { formatDayKey, getTodayDayKey, toDayKey } from '../utils/dateUtils';
 const DEFAULT_GOALS = { dailyCalories: 2000, dailyProtein: 150, weeklyWorkouts: 5 };
 const RECENT_LOG_LIMIT = 6;
 const MotionBox = motion(Box);
+const WeeklyCaloriesChart = lazy(() => import('../components/Dashboard/components/WeeklyCaloriesChart'));
 
 // Dashboard sections rise in once, in reading order.
 const enter = (index) => ({
@@ -428,7 +428,10 @@ function Dashboard() {
 
         <MotionBox {...enter(2)} display="grid" gridTemplateColumns={{ base: '1fr', lg: '7fr 5fr' }} gap={6}>
           <RhythmCard rhythm={rhythm} />
-          <WeeklyCaloriesChart data={weeklyCaloriesByDay} goal={goals.dailyCalories} />
+          {/* The chart library is large and the chart sits below the fold, so it loads on its own. */}
+          <Suspense fallback={<Skeleton h="100%" minH="320px" borderRadius="panel" />}>
+            <WeeklyCaloriesChart data={weeklyCaloriesByDay} goal={goals.dailyCalories} />
+          </Suspense>
         </MotionBox>
 
         <MotionBox {...enter(3)} id="log" scrollMarginTop="88px">
