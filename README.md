@@ -129,6 +129,9 @@ All routes are under `/api`. Routes marked 🔒 need `Authorization: Bearer <tok
 
 **Search and library**
 - `GET /food/search?query=apple` (USDA), `GET /exercise/search?query=squat` (API Ninjas)
+- `GET /food/barcode/:code`: a packaged food by its barcode (8 to 14 digits), from Open Food Facts
+  or else USDA branded foods: `{ food: { name, brand, source, unit, per100, serving } }`, with
+  nutrition per 100 g or ml and per serving when the label has one; 404 when neither knows it
 - `GET /exercises` 🔒: the exercise library with muscle maps, cues and filter values. Optional
   filters: `muscleGroup`, `equipment`, `difficulty`, `q`. Seeded from `backend/data/exerciseCatalog.js`
   on first request and kept in sync by slug.
