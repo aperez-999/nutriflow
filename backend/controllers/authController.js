@@ -31,6 +31,9 @@ function buildUserPayload(user) {
 
 const SESSION_LENGTH = '7d';
 
+// Names are unique, so two people called Alex need to tell themselves apart.
+const NAME_TAKEN = 'That name is taken. Try adding an initial or a nickname.';
+
 function signAuthToken(userId, expiresIn = SESSION_LENGTH) {
   if (!JWT_SECRET) {
     throw new Error('Authentication is not configured');
@@ -57,8 +60,9 @@ export const register = async (req, res) => {
     const existingUser = await User.findOne({
       $or: [{ email }, { username }],
     });
+    // An email with an account keeps "User already exists", which clients turn into "log in instead".
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: existingUser.email === email ? 'User already exists' : NAME_TAKEN });
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -71,7 +75,7 @@ export const register = async (req, res) => {
     return res.status(201).json({ result: buildUserPayload(newUser), token });
   } catch (error) {
     if (error?.code === 11000) {
-      return res.status(400).json({ message: 'User already exists' });
+      return res.status(400).json({ message: error.keyPattern?.username ? NAME_TAKEN : 'User already exists' });
     }
     console.error('Register error:', error);
     return res.status(500).json({ message: 'Something went wrong' });
