@@ -1,5 +1,5 @@
 /**
- * HeadCoachAgent — handles general fitness and nutrition conversation.
+ * HeadCoachAgent: handles general fitness and nutrition conversation.
  *
  * Uses NutriFlow data to personalize advice: when context.userId is present,
  * calls get_user_stats(userId) to load recent workouts, diets, and user name

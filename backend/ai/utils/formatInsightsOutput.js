@@ -10,7 +10,7 @@
  */
 export function formatInsightsForChat(result) {
   if (!result || result.type !== 'insights' || !Array.isArray(result.insights)) {
-    return result?.rawContent || 'No insights available yet. Log workouts and meals to get personalized insights.';
+    return result?.rawContent || 'Nothing to read yet. Log a few workouts and meals, and the read on your week gets specific.';
   }
   if (result.insights.length === 0) {
     return result.rawContent || 'Keep logging to receive insights.';

@@ -66,7 +66,7 @@ const getInsightContent = (userWorkouts, userDiets) => {
       : {
           type: 'training',
           title: 'Training Load',
-          content: 'You have meal data available, but no recent workouts logged yet. Add a session to unlock training-specific guidance.',
+          content: 'You have meal data available, but no recent workouts logged yet. Log a session and the training advice gets specific.',
         },
     recentDiets.length
       ? {
@@ -77,7 +77,7 @@ const getInsightContent = (userWorkouts, userDiets) => {
       : {
           type: 'nutrition',
           title: 'Nutrition Snapshot',
-          content: 'You have workout data available, but no recent nutrition logs yet. Add meals to generate more personalized fueling insights.',
+          content: 'You have workout data available, but no recent nutrition logs yet. Log a few meals and the fuel advice gets specific.',
         },
     {
       type: 'consistency',

@@ -1,5 +1,5 @@
 /**
- * VerifierAgent — validates and lightly normalizes AI-generated plans.
+ * VerifierAgent: validates and lightly normalizes AI-generated plans.
  *
  * This is intentionally conservative: it does not make additional LLM calls.
  * Instead it checks for obviously unreasonable values and ensures shapes are

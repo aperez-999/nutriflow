@@ -56,7 +56,7 @@ export function formatMealPlanForChat(result) {
     const meal = String(m.meal || 'Meal').trim();
     const food = String(m.food || '').trim();
     lines.push(meal);
-    lines.push(food || '—');
+    lines.push(food || 'Not listed');
     lines.push('');
   }
 

@@ -74,20 +74,20 @@ const getFallbackContent = (type, ctx) => {
 
   switch (type) {
     case 'greeting':
-      return `Hey ${name} - I can help with training, nutrition, recovery, or your next plan. Tell me your goal and I'll help you map the next step.`;
+      return `Hey ${name}. Ask me about training, food, recovery or your next plan, and I'll give you the next step.`;
     case 'muscle':
       return `If your goal is to build muscle, focus on progressive overload, enough protein, and consistent training. Tell me how many days you train and what equipment you have, and I'll help you shape a plan.`;
     case 'workout':
-      return `I'll help you design an effective workout based on your goals and fitness level. What type of workout interests you most: strength, cardio, or flexibility?`;
+      return `Happy to plan a workout. What do you want from it: strength, cardio or mobility? And how long do you have?`;
     case 'nutrition':
-      return `I can help you tune your nutrition around your goal. If you want, tell me whether you're trying to gain muscle, cut fat, or just eat better, and I'll tailor the advice.`;
+      return `Tell me your goal (gain muscle, lose fat, or just eat better) and I'll point out the first thing to change in what you eat.`;
     case 'form':
-      return `Proper form is essential for both results and safety. Which exercise would you like to learn more about?`;
+      return `Good form keeps you progressing and out of trouble. Which exercise do you want to check?`;
     case 'progress':
-      return `Let's analyze your progress and set some new goals. What specific aspects of your fitness journey would you like to focus on?`;
+      return `Your logs are the best place to start. Is it training, food or recovery you want to look at first?`;
     case 'plan':
-      return `I'll help you create a personalized plan. What are your main fitness goals right now?`;
+      return `What's the plan for: getting stronger, losing fat, or training for something? Tell me and how many days a week you can train.`;
     default:
-      return `I'm here for the full coaching side of your fitness journey: training, nutrition, recovery, and planning. Tell me what you want to improve, and I'll help you move forward.`;
+      return `Ask me about training, food or recovery. Tell me what you want to improve and I'll give you the next step.`;
   }
 };

@@ -1,5 +1,5 @@
 /**
- * MealPlannerAgent — generates structured meal plans.
+ * MealPlannerAgent: generates structured meal plans.
  *
  * Step 1: strip bullet characters (*, -, •).
  * Step 2: detect meal labels (Breakfast, Lunch, Dinner, Snack).
@@ -7,6 +7,7 @@
  * Caps meals at 6.
  */
 
+import { VOICE_RULES } from '../prompts/voice.js';
 import { get_user_stats } from '../tools/get_user_stats.js';
 import { generateChatCompletion } from '../config/aiProvider.js';
 
@@ -58,6 +59,7 @@ export async function runMealPlannerAgent({ message, context = {}, history = [] 
     'You are the NutriFlow Meal Planner Agent.',
     'Create a realistic daily meal plan. Use exactly these meal labels: Breakfast, Lunch, Dinner, Snack.',
     'You can write "Breakfast: description" or "Breakfast - description" or "Breakfast description".',
+    VOICE_RULES,
   ].join(' ');
 
   const contextSummary = stats
@@ -103,7 +105,7 @@ export async function runMealPlannerAgent({ message, context = {}, history = [] 
     const mealType = detectMealType(line);
     if (mealType) {
       if (currentMeal && currentFood !== null) {
-        meals.push({ meal: currentMeal, food: currentFood || '—' });
+        meals.push({ meal: currentMeal, food: currentFood || 'Not listed' });
       }
       currentMeal = mealType.charAt(0).toUpperCase() + mealType.slice(1);
       currentFood = extractFoodAfterLabel(line, mealType);
@@ -112,7 +114,7 @@ export async function runMealPlannerAgent({ message, context = {}, history = [] 
     }
   }
   if (currentMeal) {
-    meals.push({ meal: currentMeal, food: currentFood || '—' });
+    meals.push({ meal: currentMeal, food: currentFood || 'Not listed' });
   }
 
   const capped = meals.slice(0, MAX_MEALS);

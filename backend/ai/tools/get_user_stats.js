@@ -1,5 +1,5 @@
 /**
- * get_user_stats — AI layer tool.
+ * get_user_stats: AI layer tool.
  *
  * Gathers user context for the AI agents: recent workouts, recent diet entries,
  * and the user's display name. Uses existing Diet and Workout models.

@@ -33,7 +33,7 @@ function Contact() {
       await axios.post('/api/contact', formData);
       
       toast({
-        title: 'Message sent!',
+        title: 'Message sent.',
         description: "We'll get back to you as soon as possible.",
         status: 'success',
         duration: 5000,

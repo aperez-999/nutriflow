@@ -5,7 +5,7 @@ import { runInsightsAgent } from './InsightsAgent.js';
 import { runReadinessAgent } from './ReadinessAgent.js';
 
 /**
- * Agent registry — maps logical agent keys to their runner functions.
+ * Agent registry: maps logical agent keys to their runner functions.
  *
  * Each runner has the signature:
  *   ({ message, context, history }) => Promise<AgentResult>

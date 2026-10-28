@@ -1,5 +1,5 @@
 /**
- * InsightsAgent — analyzes user workout and diet data and produces
+ * InsightsAgent: analyzes user workout and diet data and produces
  * actionable insights about habits, trends, and improvements.
  *
  * Uses get_user_stats(userId) when context.userId is available.
@@ -97,7 +97,7 @@ export async function runInsightsAgent({ message, context = {}, history = [] }) 
   }
 
   if (insights.length === 0) {
-    insights.push("Keep logging workouts and meals to get personalized insights.");
+    insights.push("Log a few more workouts and meals, and the read on your week gets specific.");
   }
 
   return {

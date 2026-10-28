@@ -260,8 +260,8 @@ export const parseAIMealPlan = (content) => {
 };
 
 const ACTION_PROMPT_MAP = {
-  'Generate Weekly Plan': 'Can you generate a personalized weekly fitness plan for me based on my recent activity and fitness level? Include a short readable overview with headings for each workout day, and also include the machine-readable plan payload. [[RETURN_JSON_WORKOUT_PLAN]]',
-  'Create Meal Plan': 'Create a personalized meal plan for today based on my recent activity and nutrition patterns: one line per meal for Breakfast, Lunch, Dinner and a Snack. Respond in plain language, not JSON.',
+  'Generate Weekly Plan': 'Can you generate a weekly fitness plan for me based on my recent activity and fitness level? Include a short readable overview with headings for each workout day, and also include the machine-readable plan payload. [[RETURN_JSON_WORKOUT_PLAN]]',
+  'Create Meal Plan': 'Create a meal plan for today based on my recent activity and nutrition patterns: one line per meal for Breakfast, Lunch, Dinner and a Snack. Respond in plain language, not JSON.',
   'Analyze My Progress': 'How is my week going? Give me the one thing that is working and the one thing to change, briefly. Respond in plain language, not JSON.',
   'How ready am I?': 'Based on my recent workouts and nutrition, how ready am I for a harder training day today? Keep it short: my score, the main reason, and what to do today. Respond in plain language, not JSON.',
   'Nutrition Advice': 'Give me the most useful nutrition change for me right now, based on my recent habits, briefly. Respond in plain language, not JSON.',

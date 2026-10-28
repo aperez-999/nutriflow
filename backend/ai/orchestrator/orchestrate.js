@@ -1,5 +1,5 @@
 /**
- * AI Orchestrator — entry point for the AI layer.
+ * AI Orchestrator: entry point for the AI layer.
  *
  * Detects the intent of the user's message (coach, workout_plan, meal_plan, readiness,
  * insights) and runs the matching agent from the registry in agents/index.js.
@@ -14,6 +14,7 @@ import { formatWorkoutPlanForChat, formatMealPlanForChat } from '../utils/format
 import { formatInsightsForChat } from '../utils/formatInsightsOutput.js';
 import { narrateFacts } from '../utils/narrateFacts.js';
 import { followUpsFor } from '../utils/followUps.js';
+import { humanize } from '../prompts/voice.js';
 
 
 /** Supported intents. */
@@ -146,5 +147,5 @@ async function runAgent(intent, { message, context, history }) {
 export async function orchestrateAI({ message, context = {}, history = [] }) {
   const intent = detectIntent(message);
   const { content, source } = await runAgent(intent, { message, context, history });
-  return { content, suggestions: followUpsFor({ message, intent }), source };
+  return { content: humanize(content), suggestions: followUpsFor({ message, intent }), source };
 }

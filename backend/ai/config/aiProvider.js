@@ -1,5 +1,5 @@
 /**
- * aiProvider — central AI provider configuration.
+ * aiProvider: central AI provider configuration.
  *
  * This module is responsible for:
  * - Choosing provider (Groq in production, Ollama in development)

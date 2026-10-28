@@ -1,5 +1,5 @@
 /**
- * narrateFacts — lets the LLM answer the user's actual question from numbers
+ * narrateFacts: lets the LLM answer the user's actual question from numbers
  * NutriFlow computed itself (readiness, progress insights).
  *
  * The rule-based agents stay the source of truth for the figures; the model only

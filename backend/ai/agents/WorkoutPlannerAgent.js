@@ -1,5 +1,5 @@
 /**
- * WorkoutPlannerAgent — generates structured workout plans.
+ * WorkoutPlannerAgent: generates structured workout plans.
  *
  * Day headings: Monday–Sunday (optionally with suffix like "Monday (Push Day)"
  * or "Monday - Push Day"), or standalone split labels (Push Day, Pull Day, etc.).
@@ -8,6 +8,7 @@
  * NOTE: [[RETURN_JSON_WORKOUT_PLAN]] is still handled by HeadCoachAgent.
  */
 
+import { VOICE_RULES } from '../prompts/voice.js';
 import { get_user_stats } from '../tools/get_user_stats.js';
 import { generateChatCompletion } from '../config/aiProvider.js';
 
@@ -77,6 +78,7 @@ export async function runWorkoutPlannerAgent({ message, context = {}, history = 
     'Use clear day headings: either weekday names (Monday, Tuesday, ...) or split names (Push Day, Pull Day, Leg Day, Upper, Lower, Rest Day).',
     'Under each day, list 3–5 exercises as bullet points (e.g. "- Bench Press" or "• Squats") or with reps (e.g. "Bench Press (3x10)" or "Squats 4x8").',
     'Do not use exercise names as day headings.',
+    VOICE_RULES,
   ].join(' ');
 
   const contextSummary = stats

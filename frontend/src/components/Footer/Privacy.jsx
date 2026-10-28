@@ -20,7 +20,8 @@ function Privacy() {
               <Text>
                 We collect information you provide directly to us when you create an account,
                 including your name, email address, and password. We also collect data about
-                your workouts and dietary preferences to provide you with a personalized experience.
+                the workouts, meals and check-ins you log, so your verdict, targets and coach
+                answers are based on your own days.
               </Text>
             </Box>
 

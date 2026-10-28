@@ -1,5 +1,5 @@
 /**
- * followUps — the (at most four) suggestions shown under a coach reply.
+ * followUps: the (at most four) suggestions shown under a coach reply.
  *
  * They continue what was just discussed. Entries that match a chat quick action
  * ('Generate Weekly Plan', 'Create Meal Plan', 'Analyze My Progress', 'How ready am I?')
