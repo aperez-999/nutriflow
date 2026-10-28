@@ -250,6 +250,35 @@ export const loadChatHistory = async (limit = 40) => {
 };
 
 // Daily check-ins (sleep, energy, soreness, water)
+/** What the person is training for and how they eat, for the coach. */
+export const updateAbout = async (about) => {
+  try {
+    const response = await axios.put('/api/auth/me/about', about);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to save that' };
+  }
+};
+
+/** What the coach has saved from earlier chats, newest first. */
+export const getCoachNotes = async () => {
+  try {
+    const response = await axios.get('/api/auth/me/notes');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to load what your coach remembers' };
+  }
+};
+
+export const deleteCoachNote = async (id) => {
+  try {
+    const response = await axios.delete(`/api/auth/me/notes/${id}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to remove that note' };
+  }
+};
+
 export const getCheckIns = async (limit = 90) => {
   try {
     const response = await axios.get('/api/checkins', { params: { limit } });

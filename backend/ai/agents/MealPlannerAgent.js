@@ -8,7 +8,7 @@
  */
 
 import { VOICE_RULES } from '../prompts/voice.js';
-import { get_user_stats } from '../tools/get_user_stats.js';
+import { get_coach_context } from '../tools/get_coach_context.js';
 import { generateChatCompletion } from '../config/aiProvider.js';
 
 const MEAL_LABELS = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -46,12 +46,13 @@ function extractFoodAfterLabel(line, mealType) {
 }
 
 export async function runMealPlannerAgent({ message, context = {}, history = [] }) {
-  let stats = null;
+  // The person's account (goals, diet, injuries, recent days, saved notes), when signed in.
+  let brief = null;
   if (context.userId) {
     try {
-      stats = await get_user_stats(context.userId);
+      ({ summary: brief } = await get_coach_context(context.userId, context));
     } catch (err) {
-      console.error('MealPlannerAgent get_user_stats error:', err);
+      console.error('MealPlannerAgent get_coach_context error:', err);
     }
   }
 
@@ -62,9 +63,7 @@ export async function runMealPlannerAgent({ message, context = {}, history = [] 
     VOICE_RULES,
   ].join(' ');
 
-  const contextSummary = stats
-    ? `Recent diet entries: ${stats.recentDiets.length}. User: ${stats.userName || 'User'}.`
-    : 'No diet history. Suggest a balanced plan (e.g. 1800–2200 calories).';
+  const contextSummary = brief ? `Fit the plan to the person below: their calorie and protein targets, and never a food their diet rules out.\n\n${brief}` : 'No diet history. Suggest a balanced plan (e.g. 1800–2200 calories).';
 
   const messages = [
     { role: 'system', content: systemPrompt },

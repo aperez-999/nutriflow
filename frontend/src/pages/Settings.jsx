@@ -28,6 +28,7 @@ import PageBand from '../components/Global/PageBand';
 import useAppearance from '../theme/useAppearance';
 import { isGuideHidden, setGuideHidden } from '../components/Dashboard/utils/onboarding';
 import YourData from '../components/Settings/YourData';
+import YourCoach from '../components/Settings/YourCoach';
 import { forgetAccountOnDevice } from '../components/Auth/rememberedUser';
 
 const getAccount = (user) => user?.user || user?.result || user || {};
@@ -222,6 +223,10 @@ function Settings() {
             </Grid>
             <Button type="submit" mt={4} isLoading={isSavingGoals} isDisabled={!goalsValid}>Save goals</Button>
           </form>
+        </SettingsSection>
+
+        <SettingsSection id="coach" title="Your coach" description="What it should know about you, and what it has remembered.">
+          <YourCoach about={account.about} toast={toast} onSaved={(saved) => updateUser({ ...user, user: saved })} />
         </SettingsSection>
 
         <SettingsSection title="Appearance" description="Pick a mode, or let NutriFlow follow your device.">

@@ -4,7 +4,7 @@ import AIFitnessChat from './AIFitnessChat/index.jsx';
 
 // Forwards the chat's handle ({ send, clear }) so the page can ask questions from outside it.
 const FitnessHubChatSection = forwardRef(function FitnessHubChatSection(
-  { userWorkouts = [], userDiets = [], initialPrompt, onPromptConsumed },
+  { userWorkouts = [], userDiets = [], readiness, initialPrompt, onPromptConsumed },
   ref
 ) {
   return (
@@ -13,6 +13,7 @@ const FitnessHubChatSection = forwardRef(function FitnessHubChatSection(
         ref={ref}
         userWorkouts={userWorkouts}
         userDiets={userDiets}
+        readiness={readiness}
         initialPrompt={initialPrompt}
         onPromptConsumed={onPromptConsumed}
       />

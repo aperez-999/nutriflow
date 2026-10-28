@@ -14,6 +14,7 @@ import {
   MenuItem,
   MenuList,
   Select,
+  useToast,
 } from '@chakra-ui/react';
 import { FiMoreHorizontal, FiPlus } from 'react-icons/fi';
 import { AuthContext } from '../../../context/AuthContext';
@@ -193,7 +194,7 @@ const conversationFromLegacyHistory = (history) => {
   return messages.length ? createConversation(getConversationTitle(messages, 'Earlier chat'), [WELCOME_MESSAGE, ...messages]) : null;
 };
 
-const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], initialPrompt, onPromptConsumed }, ref) => {
+const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], readiness, initialPrompt, onPromptConsumed }, ref) => {
   const [conversations, setConversations] = useState([createConversation()]);
   const [activeConversationId, setActiveConversationId] = useState(null);
   const [inputMessage, setInputMessage] = useState('');
@@ -210,6 +211,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], initialPr
   const pendingPromptRef = useRef(null);
 
   const { user } = useContext(AuthContext);
+  const toast = useToast();
   const storageUserId = user?.user?._id || user?._id || user?.result?._id || 'anonymous';
 
 
@@ -384,7 +386,9 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], initialPr
         recentWorkouts: userWorkouts.slice(-5),
         recentDiets: userDiets.slice(-5),
         userName: user?.result?.username || user?.username || 'there',
-        ...((user?.user?._id || user?._id) && { userId: user?.user?._id || user._id }),
+        // So the coach counts "today" on this person's calendar and talks about the verdict on screen.
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        ...(readiness && { verdict: { level: readiness.level, score: readiness.score } }),
       };
 
       const history = sanitizeChatMessages(historyMessages, 'type');
@@ -429,11 +433,20 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], initialPr
         };
       }
 
+      if (data.remembered) {
+        toast({
+          title: 'Your coach will remember this',
+          description: `${data.remembered}. See or remove it in Settings, under Your coach.`,
+          status: 'info',
+          duration: 5000,
+          isClosable: true,
+        });
+      }
       return { content: data.content, suggestions: data.suggestions, parsedRecommendations: false };
     } finally {
       setIsLoading(false);
     }
-  }, [userWorkouts, userDiets, user]);
+  }, [userWorkouts, userDiets, user, readiness, toast]);
 
   const sendMessage = useCallback(async (promptText, displayText = promptText) => {
     if (!promptText.trim() || !activeConversationId) return;

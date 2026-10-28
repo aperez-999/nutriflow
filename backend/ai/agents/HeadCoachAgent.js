@@ -1,18 +1,16 @@
 /**
  * HeadCoachAgent: handles general fitness and nutrition conversation.
  *
- * Uses NutriFlow data to personalize advice: when context.userId is present,
- * calls get_user_stats(userId) to load recent workouts, diets, and user name
- * from the database. The structured context summary (workouts this week,
- * diet entries, average calories) is passed into the coach prompt so the AI
- * can analyze patterns and recommend improvements (e.g. more strength work,
- * calorie adjustment). Preserves existing behavior: [[RETURN_JSON_WORKOUT_PLAN]],
- * fallback responses and Groq/Ollama. Follow-up suggestions are chosen by the
- * orchestrator (ai/utils/followUps.js).
+ * For a signed-in person it reads their account first (get_coach_context): who they are,
+ * their day against today's targets, the last seven days, and the notes it saved from
+ * earlier chats. A note in the reply ([[REMEMBER: ...]]) is taken out and saved
+ * (coachMemory). Keeps [[RETURN_JSON_WORKOUT_PLAN]], fallback responses and Groq/Ollama.
+ * Follow-up suggestions are chosen by the orchestrator (ai/utils/followUps.js).
  */
 
-import { get_user_stats } from '../tools/get_user_stats.js';
-import { COACH_SYSTEM_PROMPT, buildContextSummary } from '../prompts/coachPrompt.js';
+import { get_coach_context } from '../tools/get_coach_context.js';
+import { COACH_SYSTEM_PROMPT, buildGuestSummary } from '../prompts/coachPrompt.js';
+import { groundedNote, rememberNote, takeRememberedNote } from '../utils/coachMemory.js';
 import { generateChatCompletion } from '../config/aiProvider.js';
 import { getDefaultWorkoutPlan, generateFallbackResponse } from '../../utils/aiUtils.js';
 
@@ -70,32 +68,26 @@ function canParsePlanArray(content) {
 }
 
 /**
- * Runs the HeadCoachAgent: optionally enriches context from DB via get_user_stats,
- * builds messages with the structured context summary, calls LLM, returns the content.
+ * Runs the HeadCoachAgent: reads the person's account (when signed in), calls the LLM,
+ * and saves anything lasting it was told.
  * @param {Object} params
  * @param {string} params.message - User message.
- * @param {Object} [params.context] - { userId?, recentWorkouts?, recentDiets?, userName? }. If userId is set, get_user_stats(userId) is called and its result is used for the prompt.
+ * @param {Object} [params.context] - { userId?, timeZone?, verdict?: { level, score }, userName? }. userId comes from the verified token only.
  * @param {Array<{ type: string, content: string }>} [params.history] - Previous chat turns.
- * @returns {Promise<{ content: string, source: 'groq'|'ollama'|'fallback' }>}
+ * @returns {Promise<{ content: string, source: 'groq'|'ollama'|'fallback', remembered?: string }>}
  */
 export async function runHeadCoachAgent({ message, context = {}, history = [] }) {
-  // When userId is available, load fresh stats from the DB for personalized coaching.
-  let coachingContext = context;
+  let contextSummary = buildGuestSummary(context);
+  let userName = '';
   if (context.userId) {
     try {
-      const stats = await get_user_stats(context.userId);
-      coachingContext = {
-        recentWorkouts: stats.recentWorkouts,
-        recentDiets: stats.recentDiets,
-        userName: stats.userName,
-      };
+      const brief = await get_coach_context(context.userId, context);
+      contextSummary = brief.summary;
+      userName = brief.user?.username || '';
     } catch (err) {
-      console.error('HeadCoachAgent get_user_stats error:', err);
-      // Keep client-supplied context if DB call fails.
+      console.error('HeadCoachAgent get_coach_context error:', err);
     }
   }
-
-  const contextSummary = buildContextSummary(coachingContext);
   const isPlanRequest = /\[\[RETURN_JSON_WORKOUT_PLAN\]\]/i.test(message);
 
   const messages = [
@@ -128,14 +120,23 @@ export async function runHeadCoachAgent({ message, context = {}, history = [] })
       content = JSON.stringify(getDefaultWorkoutPlan());
     }
 
+    let remembered = null;
     if (!isPlanRequest) {
-      content = clampUnsafeCalorieContent(content);
+      const taken = takeRememberedNote(content);
+      content = clampUnsafeCalorieContent(taken.content);
+      const note = groundedNote(taken.note, { message, userName });
+      if (note && context.userId) {
+        remembered = await rememberNote(context.userId, note).catch((err) => {
+          console.error('HeadCoachAgent rememberNote error:', err);
+          return null;
+        });
+      }
     }
 
-    return { content, source: usedProvider };
+    return { content, source: usedProvider, ...(remembered && { remembered }) };
   } catch (err) {
     console.error('HeadCoachAgent provider error:', err);
-    const fallback = generateFallbackResponse(message, coachingContext);
+    const fallback = generateFallbackResponse(message, context);
     return { content: fallback.content, source: 'fallback' };
   }
 }

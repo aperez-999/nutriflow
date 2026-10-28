@@ -204,6 +204,7 @@ function FitnessHub() {
               ref={chatRef}
               userWorkouts={userWorkouts}
               userDiets={userDiets}
+              readiness={readiness}
               initialPrompt={askPrompt}
               onPromptConsumed={clearAsk}
             />

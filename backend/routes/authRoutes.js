@@ -11,7 +11,11 @@ import {
   resetPassword,
   exportAccount,
   deleteAccount,
+  updateAbout,
+  getCoachNotes,
+  deleteCoachNote,
 } from '../controllers/authController.js';
+import { ABOUT_DIETS, ABOUT_GOALS } from '../models/User.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { forgotPasswordLimiter } from '../middleware/rateLimits.js';
 
@@ -57,6 +61,20 @@ router.put(
 );
 
 router.get('/me', protect, getMe);
+router.put(
+  '/me/about',
+  protect,
+  [
+    check('goal', 'Pick one of the listed goals').optional({ values: 'falsy' }).isIn(ABOUT_GOALS),
+    check('diet', 'Diet must be a list').optional({ values: 'null' }).isArray({ max: ABOUT_DIETS.length }),
+    check('diet.*', 'Pick from the listed diets').isIn(ABOUT_DIETS),
+    check('injuries', 'Keep injuries under 200 characters').optional({ values: 'null' }).isString().isLength({ max: 200 }),
+    check('note', 'Keep the note under 300 characters').optional({ values: 'null' }).isString().isLength({ max: 300 }),
+  ],
+  updateAbout
+);
+router.get('/me/notes', protect, getCoachNotes);
+router.delete('/me/notes/:id', protect, deleteCoachNote);
 router.get('/me/export', protect, exportAccount);
 router.delete('/me', protect, deleteAccount);
 

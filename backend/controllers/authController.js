@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import Diet from '../models/Diet.js';
 import Workout from '../models/Workout.js';
@@ -6,6 +7,7 @@ import CheckIn from '../models/CheckIn.js';
 import Plan from '../models/Plan.js';
 import ChatMessage from '../models/ChatMessage.js';
 import Conversation from '../models/Conversation.js';
+import CoachNote from '../models/CoachNote.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
@@ -30,6 +32,12 @@ function buildUserPayload(user) {
       fuelFollowsVerdict: user.goals?.fuelFollowsVerdict ?? true,
       pushCarbBoost: user.goals?.pushCarbBoost ?? 20,
       recoveryCarbCut: user.goals?.recoveryCarbCut ?? 15,
+    },
+    about: {
+      goal: user.about?.goal ?? null,
+      diet: user.about?.diet ?? [],
+      injuries: user.about?.injuries ?? '',
+      note: user.about?.note ?? '',
     },
   };
 }
@@ -346,6 +354,50 @@ export const resetPassword = async (req, res) => {
   }
 };
 
+/** PUT /api/auth/me/about: what the person is training for, how they eat, and anything else the coach should know. */
+export const updateAbout = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid details' });
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const { goal, diet, injuries, note } = req.body;
+    user.about = {
+      goal: goal || undefined,
+      diet: [...new Set(diet || [])],
+      injuries: String(injuries || '').trim() || undefined,
+      note: String(note || '').trim() || undefined,
+    };
+    await user.save();
+    return res.json({ user: buildUserPayload(user) });
+  } catch (error) {
+    console.error('Update about error:', error);
+    return res.status(500).json({ message: 'Unable to save that right now' });
+  }
+};
+
+/** GET /api/auth/me/notes: what the coach has saved about the person, newest first. */
+export const getCoachNotes = async (req, res) => {
+  const notes = await CoachNote.find({ user: req.user._id }).sort({ createdAt: -1 }).select('text createdAt').lean();
+  return res.json(notes);
+};
+
+/** DELETE /api/auth/me/notes/:id: the person removes something the coach saved. */
+export const deleteCoachNote = async (req, res) => {
+  if (!mongoose.isValidObjectId(req.params.id)) {
+    return res.status(404).json({ message: 'That note is already gone' });
+  }
+  const { deletedCount } = await CoachNote.deleteOne({ _id: req.params.id, user: req.user._id });
+  if (!deletedCount) {
+    return res.status(404).json({ message: 'That note is already gone' });
+  }
+  return res.json({ message: 'Your coach forgot it' });
+};
+
 // Every collection that holds a user's records. Export and deletion both use this list,
 // so a new collection is exported and deleted with the account by adding it here.
 const OWNED_RECORDS = {
@@ -355,6 +407,7 @@ const OWNED_RECORDS = {
   plans: Plan,
   conversations: Conversation,
   chatMessages: ChatMessage,
+  coachNotes: CoachNote,
 };
 
 /** GET /api/auth/me/export: everything stored for the account, as one JSON file. */

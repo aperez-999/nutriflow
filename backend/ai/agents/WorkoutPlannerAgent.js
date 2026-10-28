@@ -9,7 +9,7 @@
  */
 
 import { VOICE_RULES } from '../prompts/voice.js';
-import { get_user_stats } from '../tools/get_user_stats.js';
+import { get_coach_context } from '../tools/get_coach_context.js';
 import { generateChatCompletion } from '../config/aiProvider.js';
 
 // Weekday with optional suffix: Monday (Push Day), Monday - Push Day, Monday – Push Day
@@ -63,12 +63,13 @@ function buildFallbackWeeklyPlan(rawContent) {
 }
 
 export async function runWorkoutPlannerAgent({ message, context = {}, history = [] }) {
-  let stats = null;
+  // The person's account (goals, diet, injuries, recent days, saved notes), when signed in.
+  let brief = null;
   if (context.userId) {
     try {
-      stats = await get_user_stats(context.userId);
+      ({ summary: brief } = await get_coach_context(context.userId, context));
     } catch (err) {
-      console.error('WorkoutPlannerAgent get_user_stats error:', err);
+      console.error('WorkoutPlannerAgent get_coach_context error:', err);
     }
   }
 
@@ -81,9 +82,7 @@ export async function runWorkoutPlannerAgent({ message, context = {}, history = 
     VOICE_RULES,
   ].join(' ');
 
-  const contextSummary = stats
-    ? `Recent workouts: ${stats.recentWorkouts.length}. Recent diets: ${stats.recentDiets.length}. User: ${stats.userName || 'User'}.`
-    : 'No user stats available.';
+  const contextSummary = brief ? `Fit the plan to the person below: their goal, sessions a week, recent training, and any injuries or limits.\n\n${brief}` : 'No user stats available.';
 
   const messages = [
     { role: 'system', content: systemPrompt },

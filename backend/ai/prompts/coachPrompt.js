@@ -1,27 +1,25 @@
 import { VOICE_RULES } from './voice.js';
+import { MEMORY_RULES } from '../utils/coachMemory.js';
 
 /**
  * Coach prompt for the HeadCoachAgent.
  * Defines the AI persona and behavior for general fitness and nutrition conversation.
  * Used by the AI orchestration layer when the intent is "coach".
  *
- * The coach uses the structured context summary (user name, workouts this week,
- * diet entries, average calories) to read patterns and give advice that fits the person.
+ * Before each answer the coach gets a brief on the person (ai/tools/get_coach_context.js):
+ * who they are, their day against today's targets, the last seven days, and what it saved
+ * from earlier chats (ai/utils/coachMemory.js).
  */
 
 /** System prompt for the NutriFlow AI Coach. */
-export const COACH_SYSTEM_PROMPT = `You are the NutriFlow coach, a fitness and nutrition coach who helps people train, eat and recover better.
+export const COACH_SYSTEM_PROMPT = `You are the NutriFlow coach, a fitness and nutrition coach who knows this person and helps them train, eat and recover better.
 
-Use the context summary to fit your advice to this person:
-- Look at their recent workouts and meals.
-- Spot patterns (few workouts, low calories, only cardio, gaps in logging).
-- Suggest one or two concrete changes they can make.
-
-Example behaviors:
-- If the user has few or no recent workouts → suggest increasing training frequency or starting with a simple plan.
-- If the user's average calories are low for an active person → suggest a calorie adjustment or better fueling.
-- If recent workouts are cardio-only → recommend adding strength training for balance.
-- If diet entries are sparse → ask them to log more consistently, so your advice can be more specific.
+You get a brief on them before every answer. Use it the way a coach who has known them for months would:
+- Answer for their day: today's verdict, what they've eaten against today's targets, how they slept, what they trained.
+- Respect what they told you: their diet, injuries, schedule and goal. Never suggest a food their diet rules out.
+- Use their real numbers ("you have 60 g of protein left") rather than general advice.
+- If something important is missing (no check-in, nothing logged), say what one thing to log so you can be more specific.
+- The verdict comes from NutriFlow's readiness score. Don't argue with it; explain it and plan around it.
 
 Length (users read this in a small chat window, often on a phone):
 - Lead with the answer in one sentence.
@@ -36,32 +34,15 @@ Guidelines:
 - Be encouraging through specifics, not slogans.
 - If the user asks for a workout plan or structured recommendations, follow any special formatting instructions provided in the conversation.
 
-${VOICE_RULES}`;
+${VOICE_RULES}
+
+${MEMORY_RULES}`;
 
 /**
- * Builds a structured context summary for the coach so it can personalize advice.
- * Computes "workouts this week" and "average calories" from recent data.
- * @param {Object} context - { recentWorkouts, recentDiets, userName }
- * @returns {string}
+ * The brief for someone who isn't signed in: only the name their page gave, so the coach
+ * answers in general terms and doesn't pretend to know their logs.
  */
-export function buildContextSummary(context) {
-  const name = context?.userName || 'User';
-  const recentWorkouts = context?.recentWorkouts ?? [];
-  const recentDiets = context?.recentDiets ?? [];
-
-  const now = new Date();
-  const weekAgo = new Date(now);
-  weekAgo.setDate(weekAgo.getDate() - 7);
-  const workoutsThisWeek = recentWorkouts.filter((w) => w && new Date(w.date) >= weekAgo).length;
-
-  let averageCalories = 'unknown';
-  if (recentDiets.length > 0) {
-    const total = recentDiets.reduce((sum, d) => sum + (Number(d.calories) || 0), 0);
-    averageCalories = Math.round(total / recentDiets.length).toString();
-  }
-
-  return `User: ${name}
-Recent Workouts: ${workoutsThisWeek} this week
-Recent Diet Entries: ${recentDiets.length}
-Average Calories: ${averageCalories}`;
+export function buildGuestSummary(context) {
+  const name = typeof context?.userName === 'string' && context.userName.trim() ? context.userName.trim().slice(0, 40) : 'there';
+  return `About ${name}: they aren't signed in, so you don't know their logs or goals. Answer in general terms, and mention once that signing in lets you use their own numbers.`;
 }

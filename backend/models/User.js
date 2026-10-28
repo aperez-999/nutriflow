@@ -1,5 +1,9 @@
 import mongoose from 'mongoose';
 
+// What the person is training for and how they eat, so the coach's answers and plans fit them.
+export const ABOUT_GOALS = ['Lose fat', 'Build muscle', 'Get stronger', 'Train for an event', 'Feel better'];
+export const ABOUT_DIETS = ['Vegetarian', 'Vegan', 'Pescatarian', 'Halal', 'Kosher', 'Gluten-free', 'Dairy-free', 'No nuts'];
+
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
@@ -19,6 +23,12 @@ const userSchema = new mongoose.Schema({
     // How far it moves them, in percent of the carb target.
     pushCarbBoost: { type: Number, default: 20, min: 0, max: 50 },
     recoveryCarbCut: { type: Number, default: 15, min: 0, max: 40 },
+  },
+  about: {
+    goal: { type: String, enum: ABOUT_GOALS },
+    diet: { type: [{ type: String, enum: ABOUT_DIETS }], default: undefined },
+    injuries: { type: String, trim: true, maxlength: 200 },
+    note: { type: String, trim: true, maxlength: 300 },
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date

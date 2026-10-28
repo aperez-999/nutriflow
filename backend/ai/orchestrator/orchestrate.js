@@ -93,11 +93,10 @@ async function withNarration(response, { message, history }) {
   }
 }
 
-/** Runs the agent for an intent and normalizes its result to { content, source }. */
+/** Runs the agent for an intent and normalizes its result to { content, source, remembered? }. */
 async function runAgent(intent, { message, context, history }) {
   if (intent === INTENT.COACH) {
-    const { content, source } = await runHeadCoachAgent({ message, context, history });
-    return { content, source };
+    return runHeadCoachAgent({ message, context, history });
   }
 
   let agentKey = 'coach';
@@ -140,12 +139,18 @@ async function runAgent(intent, { message, context, history }) {
  * attaches the follow-up suggestions (chosen here only, at most four per reply).
  * @param {Object} params
  * @param {string} params.message - User message.
- * @param {Object} [params.context] - { recentWorkouts, recentDiets, userName } (optional, from client).
+ * @param {Object} [params.context] - { userId (from the token), timeZone, verdict, userName, recentWorkouts, recentDiets }.
  * @param {Array<{ type: string, content: string }>} [params.history] - Previous chat messages.
- * @returns {Promise<{ content: string, suggestions: string[], source: string }>}
+ * @returns {Promise<{ content: string, suggestions: string[], source: string, remembered?: string }>}
  */
 export async function orchestrateAI({ message, context = {}, history = [] }) {
   const intent = detectIntent(message);
-  const { content, source } = await runAgent(intent, { message, context, history });
-  return { content: humanize(content), suggestions: followUpsFor({ message, intent }), source };
+  const { content, source, remembered } = await runAgent(intent, { message, context, history });
+  return {
+    content: humanize(content),
+    suggestions: followUpsFor({ message, intent }),
+    source,
+    // What the coach saved from this message, so the chat can say so.
+    ...(remembered && { remembered }),
+  };
 }
