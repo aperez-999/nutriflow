@@ -63,7 +63,7 @@ export async function runMealPlannerAgent({ message, context = {}, history = [] 
     VOICE_RULES,
   ].join(' ');
 
-  const contextSummary = brief ? `Fit the plan to the person below: their calorie and protein targets, and never a food their diet rules out.\n\n${brief}` : 'No diet history. Suggest a balanced plan (e.g. 1800–2200 calories).';
+  const contextSummary = brief ? `Fit the plan to the person below: the whole day adds up to their calorie target for today (within about 10%) and reaches their protein target, with portions big enough to get there; never a food their diet rules out.\n\n${brief}` : 'No diet history. Suggest a balanced plan (e.g. 1800–2200 calories).';
 
   const messages = [
     { role: 'system', content: systemPrompt },

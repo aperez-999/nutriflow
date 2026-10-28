@@ -16,19 +16,28 @@ function tokenizeSearchText(text = '') {
     .filter((token) => token && !FOOD_STOP_WORDS.has(token));
 }
 
-function rankFoodResult(food, query) {
+// Words that describe how a food is prepared, not a different food.
+const DESCRIPTORS = new Set(['raw', 'cooked', 'plain', 'whole', 'fresh', 'nfs', 'regular', 'prepared', 'boiled', 'baked',
+  'grilled', 'roasted', 'steamed', 'no', 'added', 'fat', 'salt', 'skin', 'not', 'eaten', 'without', 'unsalted', 'large', 'medium', 'small']);
+
+/**
+ * How well a food matches the search. USDA names plain foods "Rice, white, cooked" and
+ * "Fish, salmon, grilled", so a name part that is the search itself counts most; then the
+ * words matched; then a small preference for plainer names and foods with household measures.
+ */
+export function rankFoodResult(food, query) {
   const normalizedQuery = query.trim().toLowerCase();
   const description = (food.description || '').toLowerCase();
-  const brandOwner = (food.brandOwner || '').toLowerCase();
-  const ingredients = (food.ingredients || '').toLowerCase();
-  const haystack = `${description} ${brandOwner} ${ingredients}`;
+  const haystack = `${description} ${(food.brandOwner || '').toLowerCase()} ${(food.ingredients || '').toLowerCase()}`;
   const tokens = tokenizeSearchText(query);
+  const sameWords = (a, b) => a.length === b.length && a.every((word) => b.includes(word));
+  const segments = description.split(',').map((part) => tokenizeSearchText(part));
 
   let score = 0;
-
   if (description === normalizedQuery) score += 120;
-  if (description.startsWith(normalizedQuery)) score += 60;
-  if (description.includes(normalizedQuery)) score += 45;
+  if (segments.some((part) => sameWords(part, tokens)) || sameWords(segments.slice(0, 2).flat(), tokens)) score += 45;
+  if (description.startsWith(normalizedQuery)) score += 40;
+  if (description.includes(normalizedQuery)) score += 25;
 
   const matchedTokens = tokens.filter((token) => haystack.includes(token)).length;
   score += matchedTokens * 18;
@@ -43,7 +52,35 @@ function rankFoodResult(food, query) {
   if (food.nutrition?.protein >= 15) score += 4;
   if (food.nutrition?.calories > 0) score += 8;
 
+  // The plainer match first: "Banana, raw" before "Banana split".
+  const extraWords = segments.flat().filter((word) => !DESCRIPTORS.has(word) && !tokens.some((token) => word.startsWith(token))).length;
+  score -= Math.min(extraWords, 6) * 3;
+  // A food with cups, slices or pieces is easier to log, and the common ones have the most.
+  score += Math.min(food.measures?.length || 0, 5) * 1.5;
+
   return score;
+}
+
+/**
+ * The results in the order to show them. A search that names a brand ("quest bar") shows
+ * that brand first. Otherwise plain foods come first (up to five), then packaged ones: a
+ * packaged food called just "BANANA" is usually a flavor or a mix, not a banana.
+ */
+export function orderFoodResults(foods, query) {
+  const tokens = tokenizeSearchText(query);
+  const ranked = foods
+    .map((food) => ({ ...food, matchScore: rankFoodResult(food, query) }))
+    .sort((a, b) => b.matchScore - a.matchScore);
+  // A search word names a brand when packaged foods carry it in their maker's name and no
+  // plain food is called by it ("quest" in "quest bar", but not "protein").
+  const isBranded = (food) => (food.dataType || '').toLowerCase().includes('branded');
+  const plainNames = ranked.filter((food) => !isBranded(food)).map((food) => (food.description || '').toLowerCase()).join(' ');
+  const brandWords = tokens.filter((token) => token.length > 2 && !plainNames.includes(token));
+  const fromNamedBrand = ranked.filter((food) => isBranded(food) && brandWords.some((token) => (food.brandOwner || '').toLowerCase().includes(token)));
+  const rest = ranked.filter((food) => !fromNamedBrand.includes(food));
+  const plain = rest.filter((food) => !isBranded(food));
+  const packaged = rest.filter(isBranded);
+  return [...fromNamedBrand, ...plain.slice(0, 5), ...packaged, ...plain.slice(5)].slice(0, 8);
 }
 
 function buildFallbackFoods(query) {
@@ -69,6 +106,82 @@ function buildFallbackFoods(query) {
     .slice(0, 5);
 }
 
+const round1 = (value) => Math.round(value * 10) / 10;
+
+// USDA rows that aren't a measure someone would pick.
+const NOT_A_MEASURE = /^(quantity not specified|guideline amount|nfs\b)/i;
+// Units the app already offers on its own.
+const PLAIN_UNIT = /^(oz|ounces?|fl oz|g|grams?|ml|millilit(er|re)s?)\b/i;
+
+/**
+ * A food's household measures, as "1 <label>" = grams: { label: 'cup, cooked', grams: 158 }.
+ * Most useful first (USDA's rank), at most five.
+ */
+export function householdMeasures(food) {
+  const seen = new Set();
+  const measures = [];
+  const ranked = [...(food.foodMeasures || [])].sort((a, b) => (a.rank ?? 99) - (b.rank ?? 99));
+  for (const measure of ranked) {
+    const text = String(measure.disseminationText || '').trim();
+    const grams = Number(measure.gramWeight);
+    const label = text.match(/^1\s+(.+)$/)?.[1]?.trim();
+    if (!label || !(grams > 0) || NOT_A_MEASURE.test(text) || NOT_A_MEASURE.test(label) || PLAIN_UNIT.test(label)) continue;
+    if (seen.has(label.toLowerCase())) continue;
+    seen.add(label.toLowerCase());
+    measures.push({ label, grams: round1(grams) });
+    if (measures.length === 5) break;
+  }
+  return measures;
+}
+
+/** A USDA search result as the clients use it: nutrition per 100 g (or ml), plus serving and measures. */
+export function toFoodResult(food) {
+  const nutrients = food.foodNutrients || [];
+  const getNutrient = (nutrientId) => {
+    const nutrient = nutrients.find((n) => n.nutrientId === nutrientId);
+    return nutrient ? Math.round(nutrient.value * 100) / 100 : 0;
+  };
+  // Servings only count in grams or millilitres (some labels say "45 IU").
+  const servingUnit = String(food.servingSizeUnit || 'g').trim().toLowerCase();
+  const hasServing = ['g', 'grm', 'gm', 'ml', 'mlt'].includes(servingUnit) && Number(food.servingSize) > 0;
+  const household = hasServing && typeof food.householdServingFullText === 'string' ? food.householdServingFullText.trim() : '';
+
+  return {
+    fdcId: food.fdcId,
+    description: food.description,
+    brandOwner: food.brandOwner || null,
+    ingredients: food.ingredients || null,
+    dataType: food.dataType || null,
+    nutrition: {
+      calories: getNutrient(1008), // Energy (kcal)
+      protein: getNutrient(1003),  // Protein
+      carbs: getNutrient(1005),    // Carbohydrates
+      fats: getNutrient(1004),     // Total lipid (fat)
+      fiber: getNutrient(1079),    // Fiber
+      sugar: getNutrient(2000),    // Sugars
+      sodium: getNutrient(1093),   // Sodium
+    },
+    servingSize: hasServing ? food.servingSize : 100,
+    servingSizeUnit: hasServing ? food.servingSizeUnit : 'g',
+    // A packaged food's serving as its label words it ("2 Tbsp"), when it has one.
+    ...(household && { householdServing: household }),
+    measures: householdMeasures(food),
+  };
+}
+
+async function searchUsda(query, dataType) {
+  const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${encodeURIComponent(process.env.USDA_API_KEY)}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, dataType, pageSize: 25 }),
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(`USDA API error: ${response.status} - ${errorData.error || response.statusText}`);
+  }
+  return response.json();
+}
+
 export const searchFood = async (req, res) => {
   try {
     const rawQuery = typeof req.query?.query === 'string' ? req.query.query : '';
@@ -91,71 +204,24 @@ export const searchFood = async (req, res) => {
       });
     }
 
-    const usdaApiUrl = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${encodeURIComponent(process.env.USDA_API_KEY)}`;
-    const response = await fetch(usdaApiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        query,
-        dataType: ['Foundation', 'SR Legacy', 'Survey (FNDDS)', 'Branded'],
-        pageSize: 20,
-        sortBy: 'dataType.keyword',
-        sortOrder: 'asc',
-      }),
-    });
+    // Plain foods (with household measures like "1 cup, cooked") and packaged ones are asked
+    // for separately, each in USDA's relevance order, so a search for "banana" finds bananas
+    // before banana syrup; the ranking below then merges them.
+    const [generic, branded] = await Promise.allSettled([
+      searchUsda(query, ['Foundation', 'SR Legacy', 'Survey (FNDDS)']),
+      searchUsda(query, ['Branded']),
+    ]);
+    if (generic.status === 'rejected' && branded.status === 'rejected') throw generic.reason;
+    const found = [generic, branded].flatMap((result) => (result.status === 'fulfilled' ? result.value.foods || [] : []));
+    const totalHits = [generic, branded].reduce((sum, result) => sum + (result.status === 'fulfilled' ? result.value.totalHits || 0 : 0), 0);
+    const transformedFoods = found.map(toFoodResult);
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(`USDA API error: ${response.status} - ${errorData.error || response.statusText}`);
-    }
-
-    const data = await response.json();
-    
-    // Transform USDA data to our format
-    const transformedFoods = data.foods?.map(food => {
-      // Extract nutrition data
-      const nutrients = food.foodNutrients || [];
-      
-      // Find specific nutrients by their nutrient IDs
-      const getNutrient = (nutrientId) => {
-        const nutrient = nutrients.find(n => n.nutrientId === nutrientId);
-        return nutrient ? Math.round(nutrient.value * 100) / 100 : 0;
-      };
-
-      return {
-        fdcId: food.fdcId,
-        description: food.description,
-        brandOwner: food.brandOwner || null,
-        ingredients: food.ingredients || null,
-        dataType: food.dataType || null,
-        nutrition: {
-          calories: getNutrient(1008), // Energy (kcal)
-          protein: getNutrient(1003),  // Protein
-          carbs: getNutrient(1005),    // Carbohydrates
-          fats: getNutrient(1004),     // Total lipid (fat)
-          fiber: getNutrient(1079),    // Fiber
-          sugar: getNutrient(2000),    // Sugars
-          sodium: getNutrient(1093),   // Sodium
-        },
-        servingSize: food.servingSize || 100,
-        servingSizeUnit: food.servingSizeUnit || 'g',
-      };
-    }) || [];
-
-    // Filter out foods with no calorie data (incomplete entries)
-    const validFoods = transformedFoods
-      .filter((food) => food.nutrition.calories > 0)
-      .map((food) => ({
-        ...food,
-        matchScore: rankFoodResult(food, query),
-      }))
-      .sort((a, b) => b.matchScore - a.matchScore);
+    // No calories means an incomplete entry; over 900 per 100 g (pure fat) is a typo.
+    const validFoods = transformedFoods.filter((food) => food.nutrition.calories > 0 && food.nutrition.calories <= 900);
 
     res.status(200).json({
-      foods: validFoods.slice(0, 8),
-      totalResults: data.totalHits || 0,
+      foods: orderFoodResults(validFoods, query),
+      totalResults: totalHits,
     });
 
   } catch (error) {

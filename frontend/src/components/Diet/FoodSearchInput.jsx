@@ -207,7 +207,8 @@ const FoodSearchInput = ({ value, onChange, onFoodSelect, placeholder = 'Search 
                 </Flex>
                 <Text fontSize="xs" color="fg.muted" noOfLines={1}>
                   {formatMacro(food.nutrition.protein)} protein, {formatMacro(food.nutrition.carbs)} carbs, {formatMacro(food.nutrition.fats)} fat
-                  {' '}per {food.servingSize || 100} {food.servingSizeUnit || 'g'}
+                  {/* USDA's numbers are per 100 g (or ml); the offline suggestions are per serving. */}
+                  {food.servingSizeUnit === 'serving' ? ' per serving' : ` per 100 ${/^(ml|mlt)$/i.test(food.servingSizeUnit || '') ? 'ml' : 'g'}`}
                   {food.brandOwner ? `, ${food.brandOwner}` : ''}
                 </Text>
               </Box>
