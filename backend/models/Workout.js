@@ -36,11 +36,22 @@ const workoutSchema = new mongoose.Schema({
   },
   notes: {
     type: String
+  },
+  // The id a workout had where it was recorded (a watch, another app), so importing it again
+  // finds this one instead of logging it twice.
+  externalId: {
+    type: String,
+    trim: true,
+    maxlength: 200
   }
 }, {
   timestamps: true
 });
 
 workoutSchema.index({ user: 1, date: -1 });
+workoutSchema.index(
+  { user: 1, externalId: 1 },
+  { unique: true, partialFilterExpression: { externalId: { $type: 'string' } } }
+);
 
 export default mongoose.model('Workout', workoutSchema);

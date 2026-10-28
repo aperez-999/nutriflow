@@ -201,13 +201,25 @@ export const createWorkout = async (req, res) => {
       return res.status(400).json({ message: error.message });
     }
 
+    const externalId = typeof req.body.externalId === 'string' ? req.body.externalId.trim() : '';
+    if (externalId) {
+      const existing = await Workout.findOne({ user: req.user._id, externalId });
+      if (existing) return res.json(existing);
+    }
+
     const workout = new Workout({
       user: req.user._id,
       ...workoutInput,
+      ...(externalId && { externalId }),
     });
     const savedWorkout = await workout.save();
     res.status(201).json(savedWorkout);
   } catch (error) {
+    // Two imports of the same workout at once: the second finds the first.
+    if (error?.code === 11000 && req.body.externalId) {
+      const existing = await Workout.findOne({ user: req.user._id, externalId: String(req.body.externalId).trim() });
+      if (existing) return res.json(existing);
+    }
     res.status(400).json({ message: 'Error creating workout', error: error.message });
   }
 };

@@ -62,3 +62,29 @@ describe('calculateBodyScore', () => {
     assert.equal(calculateBodyScore(null), null);
   });
 });
+
+describe('measured heart signals', () => {
+  const felt = { sleepHours: 7.5, energy: 3, soreness: 2, waterCups: 6 };
+
+  it('leave a hand-typed check-in alone', () => {
+    const base = calculateBodyScore(felt);
+    assert.equal(calculateBodyScore({ ...felt, hrvChange: null, restingHrChange: undefined }), base);
+    assert.equal(calculateBodyScore({ ...felt, hrvChange: 3, restingHrChange: 2 }), base);
+  });
+
+  it('lower the body score when HRV drops or resting heart rate climbs', () => {
+    const base = calculateBodyScore(felt);
+    assert.equal(calculateBodyScore({ ...felt, hrvChange: -10 }), base - 5);
+    assert.equal(calculateBodyScore({ ...felt, hrvChange: -20 }), base - 10);
+    assert.equal(calculateBodyScore({ ...felt, hrvChange: 12 }), base + 4);
+    assert.equal(calculateBodyScore({ ...felt, hrvChange: -20, restingHrChange: 6 }), base - 15);
+    assert.equal(calculateBodyScore({ sleepHours: 8, energy: 5, soreness: 1, waterCups: 10, hrvChange: 20 }), 100);
+    assert.equal(calculateBodyScore({ sleepHours: 3, energy: 1, soreness: 5, waterCups: 0, hrvChange: -40, restingHrChange: 9 }), 0);
+  });
+
+  it('say why first, in plain numbers', () => {
+    const result = calculateReadinessScore({ now: NOW, checkIn: { ...felt, hrvChange: -18.4, restingHrChange: 6 } });
+    assert.equal(result.recommendations[0], 'Your HRV is 18% under your usual, a sign your body is still recovering. Keep today easy.');
+    assert.match(result.recommendations[1], /^Your resting heart rate is 6 beats above your usual\./);
+  });
+});

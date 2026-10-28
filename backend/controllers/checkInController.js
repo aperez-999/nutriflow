@@ -20,14 +20,20 @@ export const getCheckIns = asyncHandler(async (req, res) => {
 // @access  Private
 export const upsertCheckIn = asyncHandler(async (req, res) => {
     const { sleepHours, energy, soreness, waterCups = 0 } = req.body;
+    const update = {
+        sleepHours: Number(sleepHours),
+        energy: Number(energy),
+        soreness: Number(soreness),
+        waterCups: Number(waterCups),
+    };
+    // Heart signals are only sent by a client that measured them; leaving them out keeps
+    // what was measured earlier in the day.
+    for (const field of ['hrvChange', 'restingHrChange']) {
+        if (req.body[field] !== undefined) update[field] = Number(req.body[field]);
+    }
     const checkIn = await CheckIn.findOneAndUpdate(
         { user: req.user._id, dayKey: req.params.dayKey },
-        {
-            sleepHours: Number(sleepHours),
-            energy: Number(energy),
-            soreness: Number(soreness),
-            waterCups: Number(waterCups),
-        },
+        update,
         { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     );
     res.json(checkIn);

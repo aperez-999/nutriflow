@@ -30,6 +30,7 @@ router.route('/')
             check('date', 'Date is required').exists({ checkFalsy: true }),
             check('type', 'Workout type is required').exists({ checkFalsy: true }),
             check('duration', 'Duration must be a valid number').isFloat({ min: 0 }),
+            check('externalId', 'External id must be text').optional().isString().isLength({ max: 200 }),
         ],
         validateRequest,
         createWorkout

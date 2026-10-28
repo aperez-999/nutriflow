@@ -102,9 +102,34 @@ function getWorkoutLoadSnapshot(workouts = [], now = new Date()) {
   };
 }
 
+function isMeasured(value) {
+  return value !== null && value !== undefined && Number.isFinite(Number(value));
+}
+
 /**
- * Converts a subjective daily check-in into a 0-100 body score.
- * Sleep matters most, then perceived energy, soreness, and hydration.
+ * How far a measured heart signal moves the body score. `hrvChange` is today's heart rate
+ * variability against the person's own 30-day average, in percent; `restingHrChange` is
+ * today's resting heart rate against its average, in beats per minute. Both are optional:
+ * a check-in typed by hand has neither.
+ */
+function heartAdjustment(checkIn) {
+  let adjustment = 0;
+  if (isMeasured(checkIn.hrvChange)) {
+    const hrv = Number(checkIn.hrvChange);
+    if (hrv <= -15) adjustment -= 10;
+    else if (hrv <= -8) adjustment -= 5;
+    else if (hrv >= 8) adjustment += 4;
+  }
+  if (isMeasured(checkIn.restingHrChange) && Number(checkIn.restingHrChange) >= 5) {
+    adjustment -= 5;
+  }
+  return adjustment;
+}
+
+/**
+ * Converts a daily check-in into a 0-100 body score.
+ * Sleep matters most, then perceived energy, soreness, and hydration; a measured heart
+ * signal, when there is one, moves the result a little.
  */
 export function calculateBodyScore(checkIn) {
   if (!checkIn) return null;
@@ -119,12 +144,19 @@ export function calculateBodyScore(checkIn) {
   const soreness = (5 - clamp(toNumber(checkIn.soreness), 1, 5)) / 4;
   const water = clamp(toNumber(checkIn.waterCups) / 8, 0, 1);
 
-  return Math.round(sleep * 40 + energy * 30 + soreness * 20 + water * 10);
+  const felt = Math.round(sleep * 40 + energy * 30 + soreness * 20 + water * 10);
+  return clamp(felt + heartAdjustment(checkIn), 0, 100);
 }
 
 function buildCheckInRecommendations(checkIn) {
   if (!checkIn) return [];
   const notes = [];
+  if (isMeasured(checkIn.hrvChange) && Number(checkIn.hrvChange) <= -15) {
+    notes.push(`Your HRV is ${Math.round(Math.abs(Number(checkIn.hrvChange)))}% under your usual, a sign your body is still recovering. Keep today easy.`);
+  }
+  if (isMeasured(checkIn.restingHrChange) && Number(checkIn.restingHrChange) >= 5) {
+    notes.push(`Your resting heart rate is ${Math.round(Number(checkIn.restingHrChange))} beats above your usual. That often comes before feeling run down, so go lighter.`);
+  }
   if (toNumber(checkIn.sleepHours) < 6) {
     notes.push('Sleep ran short last night, so keep intensity moderate and aim for an earlier night.');
   }

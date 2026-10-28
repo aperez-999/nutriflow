@@ -26,6 +26,8 @@ router.put(
         check('energy', 'Energy must be a rating from 1 to 5').isInt({ min: 1, max: 5 }),
         check('soreness', 'Soreness must be a rating from 1 to 5').isInt({ min: 1, max: 5 }),
         check('waterCups', 'Water must be between 0 and 20 cups').optional().isInt({ min: 0, max: 20 }),
+        check('hrvChange', 'HRV change must be a percentage').optional().isFloat({ min: -100, max: 300 }),
+        check('restingHrChange', 'Resting heart rate change must be in beats per minute').optional().isFloat({ min: -60, max: 60 }),
     ],
     validateRequest,
     upsertCheckIn
