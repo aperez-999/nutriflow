@@ -24,6 +24,23 @@ const userSchema = new mongoose.Schema({
     pushCarbBoost: { type: Number, default: 20, min: 0, max: 50 },
     recoveryCarbCut: { type: Number, default: 15, min: 0, max: 40 },
   },
+  // Optional, for suggesting targets. Birth year rather than a date: enough for the formula.
+  body: {
+    heightCm: { type: Number, min: 100, max: 250 },
+    weightKg: { type: Number, min: 30, max: 300 },
+    birthYear: { type: Number, min: 1920, max: 2015 },
+    sex: { type: String, enum: ['female', 'male'] },
+  },
+  // A small square photo (the apps send it already cropped and compressed). The bytes are only
+  // read by the avatar route, never with the rest of the account.
+  avatar: {
+    data: { type: Buffer, select: false },
+    contentType: { type: String, enum: ['image/jpeg', 'image/png'] },
+    updatedAt: Date,
+  },
+  // A friend's link signs people up with this code; referredBy is whose link it was.
+  inviteCode: { type: String, unique: true, sparse: true },
+  referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   about: {
     goal: { type: String, enum: ABOUT_GOALS },
     diet: { type: [{ type: String, enum: ABOUT_DIETS }], default: undefined },

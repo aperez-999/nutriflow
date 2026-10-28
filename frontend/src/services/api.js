@@ -124,12 +124,13 @@ export const login = async (credentials) => {
     }
 };
 
-export const register = async ({ username, email, password }) => {
+export const register = async ({ username, email, password, invite }) => {
     try {
         const response = await axios.post('/api/auth/register', {
             username,
             email,
-            password
+            password,
+            ...(invite && { invite }),
         });
 
         if (response.data.token) {
@@ -250,6 +251,36 @@ export const loadChatHistory = async (limit = 40) => {
 };
 
 // Daily check-ins (sleep, energy, soreness, water)
+/** The account's profile photo as an object URL, or null without one. */
+export const getAvatarUrl = async () => {
+    try {
+        const response = await axios.get('/api/auth/me/avatar', { responseType: 'blob' });
+        return URL.createObjectURL(response.data);
+    } catch (error) {
+        if (error.response?.status === 404) return null;
+        throw error.response?.data || { message: 'Failed to load your photo' };
+    }
+};
+
+/** A small square photo, as base64 JPEG (see Settings → Profile). */
+export const uploadAvatar = async (image) => {
+    try {
+        const response = await axios.put('/api/auth/me/avatar', { image });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to save your photo' };
+    }
+};
+
+export const deleteAvatar = async () => {
+    try {
+        const response = await axios.delete('/api/auth/me/avatar');
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Failed to remove your photo' };
+    }
+};
+
 /** What the person is training for and how they eat, for the coach. */
 export const updateAbout = async (about) => {
   try {

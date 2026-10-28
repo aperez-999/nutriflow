@@ -31,6 +31,8 @@ function Register() {
   // The landing page's "try it" result, if they came from there.
   const demo = location.state?.demo;
   const triedDemo = Boolean(demo && LEVEL_LABEL[demo.level] && Number.isFinite(demo.score));
+  // A friend's link: /register?invite=CODE.
+  const invite = new URLSearchParams(location.search).get('invite') || undefined;
   const { login } = useContext(AuthContext);
 
   const handleChange = (e) => setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -50,6 +52,7 @@ function Register() {
         username: formData.username,
         email: formData.email,
         password: formData.password,
+        invite,
       });
       // Registration returns a session, so go straight to the dashboard.
       login(response);

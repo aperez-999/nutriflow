@@ -29,6 +29,7 @@ import useAppearance from '../theme/useAppearance';
 import { isGuideHidden, setGuideHidden } from '../components/Dashboard/utils/onboarding';
 import YourData from '../components/Settings/YourData';
 import YourCoach from '../components/Settings/YourCoach';
+import ProfilePhoto from '../components/Settings/ProfilePhoto';
 import { forgetAccountOnDevice } from '../components/Auth/rememberedUser';
 
 const getAccount = (user) => user?.user || user?.result || user || {};
@@ -245,6 +246,7 @@ function Settings() {
 
         <SettingsSection title="Profile" description="How you appear in the app.">
           <VStack spacing={4} align="stretch">
+            <ProfilePhoto account={account} toast={toast} onSaved={(saved) => updateUser({ ...user, user: saved })} />
             <FormControl>
               <FormLabel>Name</FormLabel>
               <Input value={profileForm.username} autoComplete="nickname" onChange={(e) => handleProfileChange('username', e.target.value)} />

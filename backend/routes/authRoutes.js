@@ -12,6 +12,11 @@ import {
   exportAccount,
   deleteAccount,
   updateAbout,
+  updateBody,
+  updateAvatar,
+  getAvatar,
+  deleteAvatar,
+  getInvites,
   getCoachNotes,
   deleteCoachNote,
 } from '../controllers/authController.js';
@@ -73,6 +78,21 @@ router.put(
   ],
   updateAbout
 );
+router.put(
+  '/me/body',
+  protect,
+  [
+    check('heightCm', 'Height must be between 100 and 250 cm').optional({ values: 'null' }).isFloat({ min: 100, max: 250 }),
+    check('weightKg', 'Weight must be between 30 and 300 kg').optional({ values: 'null' }).isFloat({ min: 30, max: 300 }),
+    check('birthYear', 'Birth year must be between 1920 and 2015').optional({ values: 'null' }).isInt({ min: 1920, max: 2015 }),
+    check('sex', 'Sex must be female or male').optional({ values: 'null' }).isIn(['female', 'male']),
+  ],
+  updateBody
+);
+router.get('/me/avatar', protect, getAvatar);
+router.put('/me/avatar', protect, updateAvatar);
+router.delete('/me/avatar', protect, deleteAvatar);
+router.get('/me/invites', protect, getInvites);
 router.get('/me/notes', protect, getCoachNotes);
 router.delete('/me/notes/:id', protect, deleteCoachNote);
 router.get('/me/export', protect, exportAccount);

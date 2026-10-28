@@ -33,6 +33,14 @@ function buildUserPayload(user) {
       pushCarbBoost: user.goals?.pushCarbBoost ?? 20,
       recoveryCarbCut: user.goals?.recoveryCarbCut ?? 15,
     },
+    body: {
+      heightCm: user.body?.heightCm ?? null,
+      weightKg: user.body?.weightKg ?? null,
+      birthYear: user.body?.birthYear ?? null,
+      sex: user.body?.sex ?? null,
+    },
+    // Clients fetch the photo itself from /api/auth/me/avatar, and refetch when this changes.
+    avatarUpdatedAt: user.avatar?.updatedAt ? user.avatar.updatedAt.toISOString() : null,
     about: {
       goal: user.about?.goal ?? null,
       diet: user.about?.diet ?? [],
@@ -80,6 +88,12 @@ export const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const newUser = new User({ username, email, password: hashedPassword });
+    // Signed up from a friend's link: remember whose, so they can see their friends joined.
+    const invite = typeof req.body.invite === 'string' ? req.body.invite.trim().toUpperCase() : '';
+    if (/^[A-Z2-9]{6,10}$/.test(invite)) {
+      const inviter = await User.findOne({ inviteCode: invite }).select('_id').lean();
+      if (inviter) newUser.referredBy = inviter._id;
+    }
 
     await newUser.save();
 
@@ -380,6 +394,111 @@ export const updateAbout = async (req, res) => {
   }
 };
 
+/** PUT /api/auth/me/body: height, weight, birth year and sex, each optional (null clears it). */
+export const updateBody = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid details' });
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const { heightCm, weightKg, birthYear, sex } = req.body;
+    const number = (value) => (value === null || value === undefined || value === '' ? undefined : Number(value));
+    user.body = { heightCm: number(heightCm), weightKg: number(weightKg), birthYear: number(birthYear), sex: sex || undefined };
+    await user.save();
+    return res.json({ user: buildUserPayload(user) });
+  } catch (error) {
+    console.error('Update body error:', error);
+    return res.status(500).json({ message: 'Unable to save that right now' });
+  }
+};
+
+const AVATAR_MAX_BYTES = 200 * 1024;
+
+/** What an image's first bytes say it is: only JPEG and PNG are kept. */
+export function imageType(bytes) {
+  if (bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return 'image/jpeg';
+  if (bytes.length > 8 && bytes.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
+  return null;
+}
+
+/** PUT /api/auth/me/avatar { image: base64 }: a small square photo, JPEG or PNG, up to 200 KB. */
+export const updateAvatar = async (req, res) => {
+  try {
+    const encoded = typeof req.body?.image === 'string' ? req.body.image.replace(/^data:image\/\w+;base64,/, '') : '';
+    const bytes = Buffer.from(encoded, 'base64');
+    const contentType = imageType(bytes);
+    if (!contentType) {
+      return res.status(400).json({ message: 'Use a JPEG or PNG photo.' });
+    }
+    if (bytes.length > AVATAR_MAX_BYTES) {
+      return res.status(400).json({ message: 'That photo is too large. Try a smaller one.' });
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    user.avatar = { data: bytes, contentType, updatedAt: new Date() };
+    await user.save();
+    return res.json({ user: buildUserPayload(user) });
+  } catch (error) {
+    console.error('Update avatar error:', error);
+    return res.status(500).json({ message: 'Unable to save your photo right now' });
+  }
+};
+
+/** GET /api/auth/me/avatar: the photo's bytes, or 404 without one. */
+export const getAvatar = async (req, res) => {
+  const user = await User.findById(req.user._id).select('+avatar.data avatar.contentType').lean();
+  if (!user?.avatar?.data) {
+    return res.status(404).json({ message: 'No photo' });
+  }
+  res.set('Content-Type', user.avatar.contentType);
+  res.set('Cache-Control', 'private, max-age=86400');
+  return res.send(Buffer.from(user.avatar.data.buffer ?? user.avatar.data));
+};
+
+/** DELETE /api/auth/me/avatar */
+export const deleteAvatar = async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+  user.avatar = undefined;
+  await user.save();
+  return res.json({ user: buildUserPayload(user) });
+};
+
+// Letters and digits that can't be mistaken for each other when read aloud or retyped.
+const INVITE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function newInviteCode() {
+  const bytes = crypto.randomBytes(8);
+  return Array.from(bytes, (byte) => INVITE_ALPHABET[byte % INVITE_ALPHABET.length]).join('');
+}
+
+/** GET /api/auth/me/invites: the person's invite code (made the first time) and how many joined with it. */
+export const getInvites = async (req, res) => {
+  try {
+    let code = req.user.inviteCode;
+    for (let attempt = 0; !code && attempt < 3; attempt += 1) {
+      const candidate = newInviteCode();
+      const saved = await User.updateOne({ _id: req.user._id, inviteCode: { $exists: false } }, { $set: { inviteCode: candidate } })
+        .catch((error) => (error?.code === 11000 ? null : Promise.reject(error)));
+      if (saved?.modifiedCount) code = candidate;
+      else code = (await User.findById(req.user._id).select('inviteCode').lean())?.inviteCode;
+    }
+    const joined = await User.countDocuments({ referredBy: req.user._id });
+    return res.json({ code, joined });
+  } catch (error) {
+    console.error('Invites error:', error);
+    return res.status(500).json({ message: 'Unable to load your invite right now' });
+  }
+};
+
 /** GET /api/auth/me/notes: what the coach has saved about the person, newest first. */
 export const getCoachNotes = async (req, res) => {
   const notes = await CoachNote.find({ user: req.user._id }).sort({ createdAt: -1 }).select('text createdAt').lean();
@@ -420,7 +539,7 @@ export const exportAccount = async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="nutriflow-data-${new Date().toISOString().slice(0, 10)}.json"`);
     return res.json({
       exportedAt: new Date().toISOString(),
-      account: { ...buildUserPayload(req.user), createdAt: req.user._id.getTimestamp().toISOString() },
+      account: { ...buildUserPayload(req.user), inviteCode: req.user.inviteCode ?? null, createdAt: req.user._id.getTimestamp().toISOString() },
       ...records,
     });
   } catch (error) {
