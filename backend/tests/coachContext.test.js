@@ -104,3 +104,11 @@ describe('what the coach may remember', () => {
     assert.equal(groundedNote(null, { message: 'anything' }), null);
   });
 });
+
+describe('the coach brief and weight', () => {
+  it('includes the weight trend and burn once the weekly check-in knows them', () => {
+    const energy = { status: 'ready', trendKg: 78.1, weeklyChangeKg: -0.5, expenditure: 2550, suggestion: { calories: 2000 } };
+    const brief = describeCoachContext({ user: { username: 'Sam', goals: {} }, energy, timeZone: NY, now: NOW });
+    assert.match(brief, /Weight trend 78\.1 kg \(-0\.5 kg a week\)\. From their logs they burn about 2,550 kcal a day; for their goal NutriFlow suggests 2,000 kcal\./);
+  });
+});

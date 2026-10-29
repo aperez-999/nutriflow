@@ -11,6 +11,8 @@ import User from '../../models/User.js';
 import CheckIn from '../../models/CheckIn.js';
 import CoachNote from '../../models/CoachNote.js';
 import { calculateReadinessScore } from '../../../shared/readinessScore.js';
+import WeighIn from '../../models/WeighIn.js';
+import { energyBalance } from '../../utils/energyBalance.js';
 
 const LEVEL_LABEL = { high: 'Push day', moderate: 'Steady day', low: 'Recovery day' };
 const DAY_MS = 86400000;
@@ -74,7 +76,7 @@ function heartLine(checkIn) {
  * The brief the coach reads before answering, as plain lines. Pure, so it can be tested:
  * `diets` and `workouts` cover at least the last eight days, `now` is the moment of the question.
  */
-export function describeCoachContext({ user, diets = [], workouts = [], checkIns = [], notes = [], timeZone = 'UTC', verdict = null, now = new Date() }) {
+export function describeCoachContext({ user, diets = [], workouts = [], checkIns = [], notes = [], energy = null, timeZone = 'UTC', verdict = null, now = new Date() }) {
   const today = dayKeyIn(now, timeZone);
   const name = user?.username || 'this person';
   const lines = [`About ${name} (fit every answer to them; don't recite this back):`];
@@ -151,21 +153,30 @@ export function describeCoachContext({ user, diets = [], workouts = [], checkIns
   } else {
     lines.push('- No food logged on the previous 7 days.');
   }
+  if (energy?.status === 'ready') {
+    const change = energy.weeklyChangeKg === 0 ? 'steady' : `${energy.weeklyChangeKg > 0 ? '+' : ''}${energy.weeklyChangeKg} kg a week`;
+    lines.push(`- Weight trend ${energy.trendKg} kg (${change}). From their logs they burn about ${kcal(energy.expenditure)} a day; for their goal NutriFlow suggests ${kcal(energy.suggestion.calories)}.`);
+  } else if (energy?.trendKg) {
+    lines.push(`- Weight about ${energy.trendKg} kg.`);
+  }
   return lines.join('\n');
 }
 
 /** Loads the account and builds the brief. `timeZone` and `verdict` come from the client that asked. */
 export async function get_coach_context(userId, { timeZone, verdict, now = new Date() } = {}) {
-  const since = new Date(now.getTime() - 8 * DAY_MS);
-  const [user, diets, workouts, checkIns, notes] = await Promise.all([
+  const since = new Date(now.getTime() - 29 * DAY_MS);
+  const [user, diets, workouts, checkIns, notes, weighIns] = await Promise.all([
     User.findById(userId).select('username goals about').lean(),
     Diet.find({ user: userId, date: { $gte: since } }).lean(),
     Workout.find({ user: userId, date: { $gte: since } }).lean(),
     CheckIn.find({ user: userId }).sort({ dayKey: -1 }).limit(2).lean(),
     CoachNote.find({ user: userId }).sort({ createdAt: -1 }).limit(NOTE_LIMIT).lean(),
+    WeighIn.find({ user: userId, dayKey: { $gte: since.toISOString().slice(0, 10) } }).select('dayKey kg').lean(),
   ]);
+  const zone = safeTimeZone(timeZone);
+  const energy = energyBalance({ weighIns, diets, today: dayKeyIn(now, zone), timeZone: zone, goal: user?.about?.goal, currentTarget: user?.goals?.dailyCalories });
   return {
     user,
-    summary: describeCoachContext({ user, diets, workouts, checkIns, notes, timeZone: safeTimeZone(timeZone), verdict, now }),
+    summary: describeCoachContext({ user, diets, workouts, checkIns, notes, energy, timeZone: zone, verdict, now }),
   };
 }

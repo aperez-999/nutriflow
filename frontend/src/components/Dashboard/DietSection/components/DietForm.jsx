@@ -61,6 +61,8 @@ const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
         protein: food.nutrition.protein.toString(),
         carbs: food.nutrition.carbs.toString(),
         fats: food.nutrition.fats.toString(),
+        // Not shown in the form; saved when the food's data has it.
+        fiber: food.nutrition.fiber > 0 ? food.nutrition.fiber : undefined,
       }));
     }
   };
@@ -69,6 +71,7 @@ const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
     setField('foodName', value);
     if (selectedFood && value !== selectedFood.description) {
       setSelectedFood(null);
+      setField('fiber', undefined);
     }
   };
 

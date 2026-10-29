@@ -20,13 +20,15 @@ export function normalizeBarcode(value) {
 
 const round = (value) => Math.round(Number(value) * 10) / 10;
 
-function nutrition(calories, protein, carbs, fats) {
+function nutrition(calories, protein, carbs, fats, fiber) {
   if (!Number.isFinite(Number(calories)) || calories === null || calories === undefined) return null;
   return {
     calories: round(calories),
     protein: round(protein ?? 0),
     carbs: round(carbs ?? 0),
     fats: round(fats ?? 0),
+    // Only when the label gives it.
+    ...(Number.isFinite(Number(fiber)) && fiber !== null && fiber !== undefined && { fiber: round(fiber) }),
   };
 }
 
@@ -36,8 +38,8 @@ const unitOf = (unit) => (/^(ml|mlt|l)$/i.test(String(unit || '').trim()) ? 'ml'
 export function foodFromOpenFoodFacts(product, barcode) {
   if (!product) return null;
   const n = product.nutriments || {};
-  const per100 = nutrition(n['energy-kcal_100g'], n.proteins_100g, n.carbohydrates_100g, n.fat_100g);
-  const servingNutrition = nutrition(n['energy-kcal_serving'], n.proteins_serving, n.carbohydrates_serving, n.fat_serving);
+  const per100 = nutrition(n['energy-kcal_100g'], n.proteins_100g, n.carbohydrates_100g, n.fat_100g, n.fiber_100g);
+  const servingNutrition = nutrition(n['energy-kcal_serving'], n.proteins_serving, n.carbohydrates_serving, n.fat_serving, n.fiber_serving);
   const servingAmount = Number(product.serving_quantity);
   const unit = unitOf(product.serving_quantity_unit || product.product_quantity_unit);
 
@@ -50,7 +52,8 @@ export function foodFromOpenFoodFacts(product, barcode) {
         (per100.calories * servingAmount) / 100,
         (per100.protein * servingAmount) / 100,
         (per100.carbs * servingAmount) / 100,
-        (per100.fats * servingAmount) / 100
+        (per100.fats * servingAmount) / 100,
+        per100.fiber === undefined ? undefined : (per100.fiber * servingAmount) / 100
       ),
     };
   } else if (servingNutrition) {
@@ -73,7 +76,7 @@ export function foodFromOpenFoodFacts(product, barcode) {
 export function foodFromUsda(food, barcode) {
   if (!food) return null;
   const value = (id) => food.foodNutrients?.find((item) => item.nutrientId === id)?.value;
-  const per100 = nutrition(value(1008), value(1003), value(1005), value(1004));
+  const per100 = nutrition(value(1008), value(1003), value(1005), value(1004), value(1079));
   if (!per100) return null;
 
   const amount = Number(food.servingSize);
@@ -88,7 +91,8 @@ export function foodFromUsda(food, barcode) {
           (per100.calories * amount) / 100,
           (per100.protein * amount) / 100,
           (per100.carbs * amount) / 100,
-          (per100.fats * amount) / 100
+          (per100.fats * amount) / 100,
+          per100.fiber === undefined ? undefined : (per100.fiber * amount) / 100
         ),
       }
     : null;

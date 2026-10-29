@@ -316,6 +316,27 @@ export const deleteCoachNote = async (id) => {
   }
 };
 
+/** The weekly check-in: weight trend, daily burn and the calories for the goal. */
+export const getEnergy = async () => {
+  try {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const response = await axios.get('/api/weights/energy', { params: { timeZone } });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to load your weekly check-in' };
+  }
+};
+
+/** Today's (or a day's) weight, in kilograms. */
+export const saveWeighIn = async (dayKey, kg) => {
+  try {
+    const response = await axios.put(`/api/weights/${dayKey}`, { kg });
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Failed to save your weight' };
+  }
+};
+
 export const getCheckIns = async (limit = 90) => {
   try {
     const response = await axios.get('/api/checkins', { params: { limit } });

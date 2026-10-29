@@ -39,6 +39,7 @@ import {
 } from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 // Diet sub-components
+import WeeklyCheckInCard from '../components/Dashboard/components/WeeklyCheckInCard';
 import { DailySummaryCard as DietDailySummaryCard, DietForm, DietCard } from '../components/Dashboard/DietSection/components';
 // Workout sub-components
 import { DailySummaryCard as WorkoutDailySummaryCard, WorkoutForm, WorkoutCard } from '../components/Dashboard/WorkoutSection/components';
@@ -221,7 +222,7 @@ function Dashboard() {
         setWorkouts(Array.isArray(workoutData) ? workoutData : []);
         setCheckIns(Array.isArray(checkInData) ? checkInData : []);
       } catch (error) {
-        handleApiError(error, toast, 'fetching data');
+        handleApiError(error, 'fetching data', toast);
         setDiets([]);
         setWorkouts([]);
       } finally {
@@ -265,7 +266,7 @@ function Dashboard() {
       handleApiSuccess(toast, 'Meal logged');
       return true;
     } catch (error) {
-      handleApiError(error, toast, 'adding diet');
+      handleApiError(error, 'adding diet', toast);
       return false;
     }
   }, [toast]);
@@ -278,7 +279,7 @@ function Dashboard() {
       handleApiSuccess(toast, 'Meal updated');
       return true;
     } catch (error) {
-      handleApiError(error, toast, 'updating diet');
+      handleApiError(error, 'updating diet', toast);
       return false;
     }
   }, [toast]);
@@ -289,7 +290,7 @@ function Dashboard() {
       setDiets((prev) => prev.filter((diet) => diet._id !== id));
       handleApiSuccess(toast, 'Meal deleted');
     } catch (error) {
-      handleApiError(error, toast, 'deleting diet record');
+      handleApiError(error, 'deleting diet record', toast);
     }
   }, [toast]);
 
@@ -301,7 +302,7 @@ function Dashboard() {
       handleApiSuccess(toast, 'Workout logged');
       return true;
     } catch (error) {
-      handleApiError(error, toast, 'adding workout');
+      handleApiError(error, 'adding workout', toast);
       return false;
     }
   }, [toast]);
@@ -314,7 +315,7 @@ function Dashboard() {
       handleApiSuccess(toast, 'Workout updated');
       return true;
     } catch (error) {
-      handleApiError(error, toast, 'updating workout');
+      handleApiError(error, 'updating workout', toast);
       return false;
     }
   }, [toast]);
@@ -325,7 +326,7 @@ function Dashboard() {
       setWorkouts((prev) => prev.filter((w) => w._id !== id));
       handleApiSuccess(toast, 'Workout deleted');
     } catch (error) {
-      handleApiError(error, toast, 'deleting workout');
+      handleApiError(error, 'deleting workout', toast);
     }
   }, [toast]);
 
@@ -341,7 +342,7 @@ function Dashboard() {
       onClose();
       handleApiSuccess(toast, 'Goals updated successfully');
     } catch (error) {
-      handleApiError(error, toast, 'updating goals');
+      handleApiError(error, 'updating goals', toast);
     }
   }, [editingGoals, onClose, toast, updateUser, user]);
 
@@ -356,7 +357,7 @@ function Dashboard() {
       handleApiSuccess(toast, 'Check-in saved');
       setPanel(null);
     } catch (error) {
-      handleApiError(error, toast, 'saving check-in');
+      handleApiError(error, 'saving check-in', toast);
     } finally {
       setIsSavingCheckIn(false);
     }
@@ -432,6 +433,10 @@ function Dashboard() {
           <Suspense fallback={<Skeleton h="100%" minH="320px" borderRadius="panel" />}>
             <WeeklyCaloriesChart data={weeklyCaloriesByDay} goal={goals.dailyCalories} />
           </Suspense>
+        </MotionBox>
+
+        <MotionBox {...enter(2)}>
+          <WeeklyCheckInCard goals={goals} toast={toast} onGoalsSaved={(saved) => updateUser({ ...user, user: saved })} />
         </MotionBox>
 
         <MotionBox {...enter(3)} id="log" scrollMarginTop="88px">

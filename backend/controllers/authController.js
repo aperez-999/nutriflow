@@ -8,6 +8,7 @@ import Plan from '../models/Plan.js';
 import ChatMessage from '../models/ChatMessage.js';
 import Conversation from '../models/Conversation.js';
 import CoachNote from '../models/CoachNote.js';
+import WeighIn from '../models/WeighIn.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
@@ -527,6 +528,7 @@ const OWNED_RECORDS = {
   conversations: Conversation,
   chatMessages: ChatMessage,
   coachNotes: CoachNote,
+  weighIns: WeighIn,
 };
 
 /** GET /api/auth/me/export: everything stored for the account, as one JSON file. */

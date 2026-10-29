@@ -90,6 +90,14 @@ function buildDietInput(body, { partial = false } = {}) {
     next.fats = fats;
   }
 
+  if (body.fiber !== undefined && body.fiber !== null && body.fiber !== '') {
+    const fiber = parseNumber(body.fiber);
+    if (fiber === null || fiber < 0) {
+      throw new Error('Please provide valid fiber');
+    }
+    next.fiber = fiber;
+  }
+
   if (body.notes !== undefined) {
     const notes = String(body.notes || '').trim();
     next.notes = notes || undefined;

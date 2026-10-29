@@ -15,6 +15,7 @@ import planRoutes from './routes/planRoutes.js';
 import aiRoutes from './routes/aiRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
+import weighInRoutes from './routes/weighInRoutes.js';
 import { getHealth } from './controllers/aiController.js';
 import { apiLimiter } from './middleware/rateLimits.js';
 
@@ -42,6 +43,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/diets', dietRoutes);
 app.use('/api/workouts', workoutRoutes);
 app.use('/api/checkins', checkInRoutes);
+app.use('/api/weights', weighInRoutes);
 app.use('/api/food', foodRoutes);
 app.use('/api/exercise', exerciseRoutes);
 app.use('/api/exercises', exerciseLibraryRoutes);

@@ -10,7 +10,7 @@ const MAX_ITEMS = 12;
 
 const ESTIMATE_PROMPT = `You estimate the nutrition of a meal someone describes, for a food log.
 Reply with JSON only, no other text:
-{"title": "<what they'd call the meal, under 40 characters>", "items": [{"name": "<short food name>", "grams": <number>, "calories": <number>, "protein": <number>, "carbs": <number>, "fats": <number>}]}
+{"title": "<what they'd call the meal, under 40 characters>", "items": [{"name": "<short food name>", "grams": <number>, "calories": <number>, "protein": <number>, "carbs": <number>, "fats": <number>, "fiber": <number>}]}
 - One item per food. Use the amounts they give (convert cups, pieces or ounces to grams); otherwise a typical single portion.
 - Numbers are for that amount, not per 100 g. Drinks: grams equal millilitres.
 - Use common restaurant or USDA values. Don't round everything to tens.
@@ -45,11 +45,12 @@ export function parseMealEstimate(content) {
       const protein = number(item?.protein, 300);
       const carbs = number(item?.carbs, 500);
       const fats = number(item?.fats, 300);
+      const fiber = number(item?.fiber, 100);
       let calories = number(item?.calories, 4000);
       if (!name || !grams || calories === null || protein === null || carbs === null || fats === null) return null;
       const fromMacros = protein * 4 + carbs * 4 + fats * 9;
       if (fromMacros > 0 && Math.abs(calories - fromMacros) > fromMacros * 0.25) calories = Math.round(fromMacros);
-      return { name: name.charAt(0).toUpperCase() + name.slice(1), grams, calories, protein, carbs, fats };
+      return { name: name.charAt(0).toUpperCase() + name.slice(1), grams, calories, protein, carbs, fats, ...(fiber !== null && { fiber }) };
     })
     .filter(Boolean);
   if (!items.length) return null;
