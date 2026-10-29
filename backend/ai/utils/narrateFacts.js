@@ -36,6 +36,6 @@ export async function narrateFacts({ message, facts, history = [] }) {
     { role: 'user', content: message },
   ];
 
-  const { content, provider } = await generateChatCompletion(messages, { temperature: 0.5 });
+  const { content, provider } = await generateChatCompletion(messages, { temperature: 0.5, light: true });
   return { content, source: provider };
 }

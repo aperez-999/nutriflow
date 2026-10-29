@@ -1,6 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { AuthContext } from './AuthContext';
 import { rememberUser } from '../components/Auth/rememberedUser';
+import { getMe } from '../services/api';
+
+// How often coming back to the tab re-reads the account, at most.
+const REFRESH_EVERY_MS = 60 * 1000;
 
 const normalizeUserRecord = (payload) => {
   if (!payload) return null;
@@ -57,6 +61,37 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setUser(null);
   };
+
+  // The account saved at login goes stale when the app changes it (a new photo, goals, a
+  // name), so it is re-read from the server on load and when the tab comes back into view.
+  const refresh = useCallback(async () => {
+    if (!localStorage.getItem('token')) return;
+    try {
+      const { user: account } = await getMe();
+      setUser((current) => {
+        if (!current) return current;
+        const next = normalizeUserRecord({ ...current, user: account });
+        localStorage.setItem('user', JSON.stringify(next));
+        return next;
+      });
+    } catch (error) {
+      // An expired session ends here, as any other request would end it.
+      if (error?.response?.status === 401) logout();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (loading) return undefined;
+    refresh();
+    let last = Date.now();
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible' || Date.now() - last < REFRESH_EVERY_MS) return;
+      last = Date.now();
+      refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [loading, refresh]);
 
   if (loading) {
     return null; // or a loading spinner

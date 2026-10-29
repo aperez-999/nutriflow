@@ -24,6 +24,7 @@ import { AuthContext } from '../context/AuthContext';
 import useAppearance from '../theme/useAppearance';
 import { useColorMode } from '@chakra-ui/react';
 import Logo from './Global/Logo';
+import useAvatarUrl from '../utils/useAvatarUrl';
 
 // Labels match the mobile tab bar so the app reads the same on every screen size.
 const NAV_ITEMS = [
@@ -45,6 +46,7 @@ function Navbar() {
   // Also keeps 'follow device' in effect on every page, since the navbar is always mounted.
   const [, setAppearance] = useAppearance();
   const account = getAccount(user);
+  const avatarSrc = useAvatarUrl(account);
 
   const isAuthPage = ['/login', '/register', '/forgot-password'].includes(location.pathname) || location.pathname.startsWith('/reset-password/');
   const isLoggedIn = Boolean(user);
@@ -142,7 +144,7 @@ function Navbar() {
                   px={1}
                   aria-label="Account menu"
                 >
-                  <Avatar size="xs" name={account.username || 'User'} bg="fg" color="bg.surface" />
+                  <Avatar size="xs" name={account.username || 'User'} src={avatarSrc || undefined} bg="fg" color="bg.surface" />
                 </MenuButton>
                 <MenuList>
                   <Box px={3} py={2} maxW="240px">

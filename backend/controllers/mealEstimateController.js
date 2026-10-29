@@ -70,7 +70,7 @@ export const estimateMeal = async (req, res) => {
     const { content } = await generateChatCompletion([
       { role: 'system', content: ESTIMATE_PROMPT },
       { role: 'user', content: description },
-    ], { temperature: 0.2 });
+    ], { temperature: 0.2, light: true });
     const estimate = parseMealEstimate(content);
     if (!estimate) {
       return res.status(422).json({ message: "That didn't read as a meal. Try naming the foods, like \"chicken, rice and broccoli\"." });

@@ -22,12 +22,13 @@ import {
 } from '../controllers/authController.js';
 import { ABOUT_DIETS, ABOUT_GOALS } from '../models/User.js';
 import { protect } from '../middleware/authMiddleware.js';
-import { forgotPasswordLimiter } from '../middleware/rateLimits.js';
+import { forgotPasswordLimiter, logInLimiter, photoLimiter, signUpLimiter } from '../middleware/rateLimits.js';
 
 const router = express.Router();
 
 router.post(
   '/register',
+  signUpLimiter,
   [
     check('username', 'Username is required').trim().not().isEmpty(),
     check('email', 'Please include a valid email').trim().isEmail().normalizeEmail(),
@@ -38,6 +39,7 @@ router.post(
 
 router.post(
   '/login',
+  logInLimiter,
   [
     check('email', 'Please include a valid email').trim().isEmail().normalizeEmail(),
     check('password', 'Password is required').exists(),
@@ -90,7 +92,7 @@ router.put(
   updateBody
 );
 router.get('/me/avatar', protect, getAvatar);
-router.put('/me/avatar', protect, updateAvatar);
+router.put('/me/avatar', protect, photoLimiter, updateAvatar);
 router.delete('/me/avatar', protect, deleteAvatar);
 router.get('/me/invites', protect, getInvites);
 router.get('/me/notes', protect, getCoachNotes);

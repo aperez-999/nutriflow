@@ -12,11 +12,20 @@
  */
 
 import { fetchCompat } from '../utils/fetchCompat.js';
+import { bump, nextUtcMidnight } from '../../utils/counters.js';
 
 const DEFAULT_GROQ_TIMEOUT_MS = 20000;
 /** Used when GROQ_MODEL is unset, and when the configured model has been retired by Groq. */
 export const DEFAULT_GROQ_MODEL = 'openai/gpt-oss-120b';
 const RETIRED_MODEL_ERROR = /decommissioned|model_not_found|does not exist/i;
+/** A smaller model with its own free allowance: small jobs start here, and the coach falls over to it. */
+export const LIGHT_GROQ_MODEL = 'openai/gpt-oss-20b';
+/**
+ * Groq's free tier allows each model about 1,000 requests a day for the whole app. Each model
+ * stops a little short of that, so a busy day falls over to the next model, and then to the
+ * coach's built-in answers, instead of to errors.
+ */
+const DAILY_BUDGET_PER_MODEL = Number(process.env.AI_DAILY_BUDGET) || 950;
 const DEFAULT_OLLAMA_TIMEOUT_MS = 45000;
 
 function getTimeoutMs(envKey, fallback) {
@@ -90,32 +99,47 @@ function requestGroq(model, messages, temperature) {
   });
 }
 
-async function callGroq(messages, temperature) {
+/** True while a model still has today's budget; counts this request against it. */
+async function takeFromBudget(model) {
+  try {
+    const day = new Date().toISOString().slice(0, 10);
+    return (await bump(`ai-budget:${model}:${day}`, nextUtcMidnight())) <= DAILY_BUDGET_PER_MODEL;
+  } catch {
+    // Without the database the budget can't be checked; Groq's own limit still applies.
+    return true;
+  }
+}
+
+/** The models to try, in order: the configured one first, or the light one for small jobs. */
+export function groqModelOrder({ light = false } = {}) {
+  const main = process.env.GROQ_MODEL?.trim() || DEFAULT_GROQ_MODEL;
+  return [...new Set(light ? [LIGHT_GROQ_MODEL, main] : [main, LIGHT_GROQ_MODEL, DEFAULT_GROQ_MODEL])];
+}
+
+async function callGroq(messages, temperature, { light = false } = {}) {
   if (!process.env.GROQ_API_KEY) {
     throw new Error('Missing GROQ_API_KEY');
   }
 
-  const configured = process.env.GROQ_MODEL?.trim() || DEFAULT_GROQ_MODEL;
-  let response = await requestGroq(configured, messages, temperature);
-
-  // Groq retires models over time; fall back to the default rather than failing every reply.
-  if (!response.ok && configured !== DEFAULT_GROQ_MODEL && [400, 404].includes(response.status)) {
-    const body = await response.text();
-    if (RETIRED_MODEL_ERROR.test(body)) {
-      console.warn(`GROQ_MODEL "${configured}" is no longer available; using ${DEFAULT_GROQ_MODEL}. Update GROQ_MODEL in backend/.env.`);
-      response = await requestGroq(DEFAULT_GROQ_MODEL, messages, temperature);
-    } else {
-      throw new Error(`Groq error ${response.status}`);
+  const errors = [];
+  for (const model of groqModelOrder({ light })) {
+    if (!(await takeFromBudget(model))) {
+      errors.push(`${model}: daily budget used`);
+      continue;
     }
+    const response = await requestGroq(model, messages, temperature);
+    if (response.ok) {
+      const data = await response.json();
+      return { content: data?.choices?.[0]?.message?.content?.trim() || '', provider: 'groq' };
+    }
+    const body = await response.text().catch(() => '');
+    // Busy (429), retired (Groq retires models over time) or down: try the next model.
+    if (RETIRED_MODEL_ERROR.test(body)) {
+      console.warn(`Groq model "${model}" is no longer available. Update GROQ_MODEL in backend/.env.`);
+    }
+    errors.push(`${model}: Groq error ${response.status}`);
   }
-
-  if (!response.ok) {
-    throw new Error(`Groq error ${response.status}`);
-  }
-
-  const data = await response.json();
-  const content = data?.choices?.[0]?.message?.content?.trim() || '';
-  return { content, provider: 'groq' };
+  throw new Error(errors.join(' | '));
 }
 
 async function callOllama(messages, temperature) {
@@ -145,7 +169,8 @@ async function callOllama(messages, temperature) {
  * Generates a chat completion using the configured provider.
  *
  * @param {ChatMessage[]} messages
- * @param {{ temperature?: number }} [options]
+ * @param {{ temperature?: number, light?: boolean }} [options] light: a small job (an estimate, a
+ *   summary) that starts on the smaller model, saving the main one for the coach.
  * @returns {Promise<{ content: string, provider: 'groq'|'ollama' }>}
  */
 export async function generateChatCompletion(messages, options = {}) {
@@ -156,7 +181,7 @@ export async function generateChatCompletion(messages, options = {}) {
   for (const candidate of attemptOrder) {
     try {
       if (candidate === 'groq') {
-        const result = await callGroq(messages, temperature);
+        const result = await callGroq(messages, temperature, { light: Boolean(options.light) });
         if (result.content) return result;
         errors.push(new Error('Groq returned an empty response'));
       } else {

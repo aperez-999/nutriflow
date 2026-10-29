@@ -251,6 +251,12 @@ export const loadChatHistory = async (limit = 40) => {
 };
 
 // Daily check-ins (sleep, energy, soreness, water)
+/** The account as the server has it now (the app may have changed it). */
+export const getMe = async () => {
+    const response = await axios.get('/api/auth/me');
+    return response.data;
+};
+
 /** The account's profile photo as an object URL, or null without one. */
 export const getAvatarUrl = async () => {
     try {

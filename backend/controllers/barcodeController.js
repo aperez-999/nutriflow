@@ -2,6 +2,8 @@
 // USDA branded foods by UPC. Both answers become one shape, with nutrition per 100 g (or ml)
 // and per serving when the label gives one.
 
+import { cached } from '../utils/lookupCache.js';
+
 const LOOKUP_TIMEOUT_MS = 6000;
 const USER_AGENT = 'NutriFlow/1.0 (https://nutriflowdev.vercel.app)';
 const NOT_FOUND = "We couldn't find that barcode. You can still log it by typing the numbers.";
@@ -153,9 +155,10 @@ export const lookUpBarcode = async (req, res) => {
 
   // One source being down shouldn't hide an answer from the other.
   let failures = 0;
-  for (const source of [fromOpenFoodFacts, fromUsda]) {
+  for (const [name, source] of [['off', fromOpenFoodFacts], ['usda', fromUsda]]) {
     try {
-      const food = await source(barcode);
+      // A product found once is kept for 30 days.
+      const food = await cached(`barcode:${name}:${barcode}`, 30, () => source(barcode));
       if (food) return res.json({ food });
     } catch (error) {
       failures += 1;

@@ -343,10 +343,11 @@ export const createAIMessage = (content, suggestions, offline = false) => ({
   ...(offline && { offline: true }),
 });
 
-export const createErrorMessage = () => ({
+/** A reply that couldn't be given, saying why when the server said (e.g. today's allowance is used). */
+export const createErrorMessage = (reason) => ({
   id: `error-${Date.now()}`,
   type: 'ai',
-  content: "Sorry, I'm having trouble connecting right now. Please try again in a moment! 🤖",
+  content: reason || "I couldn't answer just now. Try again in a moment.",
   timestamp: new Date(),
 });
 

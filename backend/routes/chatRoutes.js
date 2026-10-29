@@ -1,6 +1,6 @@
 import express from 'express';
 import { protect, identifyUser } from '../middleware/authMiddleware.js';
-import { aiChatLimiter } from '../middleware/rateLimits.js';
+import { aiBurstLimiter, dailyAllowance } from '../middleware/rateLimits.js';
 import {
   saveHistory,
   getHistory,
@@ -14,7 +14,7 @@ import { chatWithCoach } from '../controllers/aiController.js';
 const router = express.Router();
 
 // POST /api/chat is the original address of the AI chat, kept for older clients.
-router.post('/', aiChatLimiter, identifyUser, chatWithCoach);
+router.post('/', aiBurstLimiter, identifyUser, dailyAllowance('coach'), chatWithCoach);
 
 router.get('/conversations', protect, getConversations);
 router.put('/conversations/:clientId', protect, saveConversation);

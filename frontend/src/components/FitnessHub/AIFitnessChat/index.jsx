@@ -433,6 +433,16 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], readiness
         };
       }
 
+      // Only mentioned when it is running low.
+      if (data.allowance && data.allowance.left <= 5) {
+        toast({
+          title: data.allowance.left === 0 ? 'That was today’s last coach message' : `${data.allowance.left} coach messages left today`,
+          description: 'They come back tomorrow.',
+          status: 'info',
+          duration: 4000,
+          isClosable: true,
+        });
+      }
       if (data.remembered) {
         toast({
           title: 'Your coach will remember this',
@@ -465,7 +475,7 @@ const AIFitnessChat = forwardRef(({ userWorkouts = [], userDiets = [], readiness
       console.error('Error generating AI response:', error);
       window.dispatchEvent(new CustomEvent('ai-recommendations-updated', { detail: [] }));
       window.dispatchEvent(new CustomEvent('ai-meal-plan-updated', { detail: null }));
-      updateConversationById(sourceConversationId, (currentMessages) => [...currentMessages, createErrorMessage()]);
+      updateConversationById(sourceConversationId, (currentMessages) => [...currentMessages, createErrorMessage(error?.allowance ? error.message : undefined)]);
     }
   }, [activeConversationId, generateAIResponse, messages, updateActiveConversation, updateConversationById]);
 

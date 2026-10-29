@@ -3,8 +3,9 @@ export const categorizeMessage = (text) => {
 
   if (/^(hi|hello|hey|yo|good (morning|afternoon|evening)|what'?s up)\b/.test(m)) return 'greeting';
   if (m.includes('build muscle') || m.includes('gain muscle') || m.includes('muscle') || m.includes('hypertrophy') || m.includes('bulk')) return 'muscle';
-  if (m.includes('workout') || m.includes('exercise') || m.includes('train') || m.includes('lift')) return 'workout';
+  // Food first: "protein after training" is a food question.
   if (m.includes('nutrition') || m.includes('protein') || m.includes('calorie') || m.includes('meal') || m.includes('eat')) return 'nutrition';
+  if (m.includes('workout') || m.includes('exercise') || m.includes('train') || m.includes('lift')) return 'workout';
   if (m.includes('form') || m.includes('technique') || m.includes('how to')) return 'form';
   if (m.includes('progress') || m.includes('analyze') || m.includes('track')) return 'progress';
   if (m.includes('plan') || m.includes('schedule') || m.includes('week')) return 'plan';

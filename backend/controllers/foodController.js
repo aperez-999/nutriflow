@@ -1,3 +1,5 @@
+import { cached } from '../utils/lookupCache.js';
+
 
 const FOOD_STOP_WORDS = new Set(['and', '&', 'with', 'the', 'a', 'an', 'of']);
 const FOOD_FALLBACKS = [
@@ -169,6 +171,12 @@ export function toFoodResult(food) {
   };
 }
 
+/** One USDA search, trimmed to what the apps use (USDA's own answer is far larger). */
+async function searchUsdaFoods(query, dataType) {
+  const data = await searchUsda(query, dataType);
+  return { foods: (data.foods || []).map(toFoodResult), totalHits: data.totalHits || 0 };
+}
+
 async function searchUsda(query, dataType) {
   const response = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${encodeURIComponent(process.env.USDA_API_KEY)}`, {
     method: 'POST',
@@ -207,14 +215,16 @@ export const searchFood = async (req, res) => {
     // Plain foods (with household measures like "1 cup, cooked") and packaged ones are asked
     // for separately, each in USDA's relevance order, so a search for "banana" finds bananas
     // before banana syrup; the ranking below then merges them.
+    // Each half is cached for 30 days by the words searched.
+    const words = queryTokens.join(' ');
     const [generic, branded] = await Promise.allSettled([
-      searchUsda(query, ['Foundation', 'SR Legacy', 'Survey (FNDDS)']),
-      searchUsda(query, ['Branded']),
+      cached(`usda:plain:${words}`, 30, () => searchUsdaFoods(query, ['Foundation', 'SR Legacy', 'Survey (FNDDS)'])),
+      cached(`usda:branded:${words}`, 30, () => searchUsdaFoods(query, ['Branded'])),
     ]);
     if (generic.status === 'rejected' && branded.status === 'rejected') throw generic.reason;
-    const found = [generic, branded].flatMap((result) => (result.status === 'fulfilled' ? result.value.foods || [] : []));
-    const totalHits = [generic, branded].reduce((sum, result) => sum + (result.status === 'fulfilled' ? result.value.totalHits || 0 : 0), 0);
-    const transformedFoods = found.map(toFoodResult);
+    const halves = [generic, branded].filter((result) => result.status === 'fulfilled').map((result) => result.value);
+    const transformedFoods = halves.flatMap((half) => half.foods);
+    const totalHits = halves.reduce((sum, half) => sum + half.totalHits, 0);
 
     // No calories means an incomplete entry; over 900 per 100 g (pure fat) is a typo.
     const validFoods = transformedFoods.filter((food) => food.nutrition.calories > 0 && food.nutrition.calories <= 900);

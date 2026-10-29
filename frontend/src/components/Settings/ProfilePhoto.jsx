@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Avatar, Button, Flex, Input, Stack, Text } from '@chakra-ui/react';
-import { deleteAvatar, getAvatarUrl, uploadAvatar } from '../../services/api';
+import { deleteAvatar, uploadAvatar } from '../../services/api';
+import useAvatarUrl from '../../utils/useAvatarUrl';
 import { handleApiError } from '../../utils/apiErrorHandler';
 
 /** A picked image as a 256 px square JPEG (the centre of it), base64 without the data: prefix. */
@@ -24,27 +25,8 @@ const squareJpeg = (file) => new Promise((resolve, reject) => {
 /** Settings → Profile: your photo, as the app shows it. */
 export default function ProfilePhoto({ account, toast, onSaved }) {
   const input = useRef(null);
-  const [src, setSrc] = useState(null);
+  const src = useAvatarUrl(account);
   const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    let url = null;
-    let active = true;
-    if (account.avatarUpdatedAt) {
-      getAvatarUrl()
-        .then((loaded) => {
-          url = loaded;
-          if (active) setSrc(loaded);
-        })
-        .catch(() => active && setSrc(null));
-    } else {
-      setSrc(null);
-    }
-    return () => {
-      active = false;
-      if (url) URL.revokeObjectURL(url);
-    };
-  }, [account.avatarUpdatedAt]);
 
   const save = async (work) => {
     setIsSaving(true);
