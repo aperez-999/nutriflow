@@ -429,14 +429,14 @@ function Dashboard() {
 
         <MotionBox {...enter(2)} display="grid" gridTemplateColumns={{ base: '1fr', lg: '7fr 5fr' }} gap={6}>
           <RhythmCard rhythm={rhythm} />
-          {/* The chart library is large and the chart sits below the fold, so it loads on its own. */}
-          <Suspense fallback={<Skeleton h="100%" minH="320px" borderRadius="panel" />}>
-            <WeeklyCaloriesChart data={weeklyCaloriesByDay} goal={goals.dailyCalories} />
-          </Suspense>
+          <WeeklyCheckInCard goals={goals} toast={toast} onGoalsSaved={(saved) => updateUser({ ...user, user: saved })} />
         </MotionBox>
 
         <MotionBox {...enter(2)}>
-          <WeeklyCheckInCard goals={goals} toast={toast} onGoalsSaved={(saved) => updateUser({ ...user, user: saved })} />
+          {/* The chart library is large and the chart sits below the fold, so it loads on its own. */}
+          <Suspense fallback={<Skeleton h="320px" borderRadius="panel" />}>
+            <WeeklyCaloriesChart data={weeklyCaloriesByDay} goal={goals.dailyCalories} />
+          </Suspense>
         </MotionBox>
 
         <MotionBox {...enter(3)} id="log" scrollMarginTop="88px">
