@@ -37,11 +37,11 @@ const dietSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    // Grams; optional, since many foods and older entries don't say.
-    fiber: {
-        type: Number,
-        min: 0
-    },
+    // Optional, since many foods and older entries don't say: fiber and sugar in grams,
+    // sodium in milligrams.
+    fiber: { type: Number, min: 0 },
+    sugar: { type: Number, min: 0 },
+    sodium: { type: Number, min: 0 },
     notes: {
         type: String
     }

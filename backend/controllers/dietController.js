@@ -87,12 +87,13 @@ function buildDietInput(body, { partial = false } = {}) {
     next.fats = fats;
   }
 
-  if (body.fiber !== undefined && body.fiber !== null && body.fiber !== '') {
-    const fiber = parseNumber(body.fiber);
-    if (fiber === null || fiber < 0) {
-      throw new Error('Please provide valid fiber');
+  for (const field of ['fiber', 'sugar', 'sodium']) {
+    if (body[field] === undefined || body[field] === null || body[field] === '') continue;
+    const value = parseNumber(body[field]);
+    if (value === null || value < 0) {
+      throw new Error(`Please provide valid ${field}`);
     }
-    next.fiber = fiber;
+    next[field] = value;
   }
 
   if (body.notes !== undefined) {
