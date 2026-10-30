@@ -30,6 +30,8 @@ const userSchema = new mongoose.Schema({
     weightKg: { type: Number, min: 30, max: 300 },
     birthYear: { type: Number, min: 1920, max: 2015 },
     sex: { type: String, enum: ['female', 'male'] },
+    // Where they want their weight to be, for the weight timeline.
+    goalKg: { type: Number, min: 25, max: 350 },
   },
   // A small square photo (the apps send it already cropped and compressed). The bytes are only
   // read by the avatar route, never with the rest of the account.

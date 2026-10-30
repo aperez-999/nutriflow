@@ -89,6 +89,7 @@ router.put(
     check('weightKg', 'Weight must be between 30 and 300 kg').optional({ values: 'null' }).isFloat({ min: 30, max: 300 }),
     check('birthYear', 'Birth year must be between 1920 and 2015').optional({ values: 'null' }).isInt({ min: 1920, max: 2015 }),
     check('sex', 'Sex must be female or male').optional({ values: 'null' }).isIn(['female', 'male']),
+    check('goalKg', 'Goal weight must be between 25 and 350 kg').optional({ values: 'null' }).isFloat({ min: 25, max: 350 }),
   ],
   updateBody
 );

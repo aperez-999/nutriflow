@@ -41,6 +41,7 @@ function buildUserPayload(user) {
       weightKg: user.body?.weightKg ?? null,
       birthYear: user.body?.birthYear ?? null,
       sex: user.body?.sex ?? null,
+      goalKg: user.body?.goalKg ?? null,
     },
     // Clients fetch the photo itself from /api/auth/me/avatar, and refetch when this changes.
     avatarUpdatedAt: user.avatar?.updatedAt ? user.avatar.updatedAt.toISOString() : null,
@@ -442,8 +443,17 @@ export const updateBody = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
     const { heightCm, weightKg, birthYear, sex } = req.body;
+    // A goal weight is sent on its own from the weight timeline; leaving it out keeps it.
+    const goalKg = req.body.goalKg === undefined ? user.body?.goalKg : req.body.goalKg;
     const number = (value) => (value === null || value === undefined || value === '' ? undefined : Number(value));
-    user.body = { heightCm: number(heightCm), weightKg: number(weightKg), birthYear: number(birthYear), sex: sex || undefined };
+    const keep = (field, value) => (value === undefined ? user.body?.[field] : number(value));
+    user.body = {
+      heightCm: keep('heightCm', heightCm),
+      weightKg: keep('weightKg', weightKg),
+      birthYear: keep('birthYear', birthYear),
+      sex: sex === undefined ? user.body?.sex : sex || undefined,
+      goalKg: number(goalKg),
+    };
     await user.save();
     return res.json({ user: buildUserPayload(user) });
   } catch (error) {
