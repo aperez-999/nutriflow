@@ -12,6 +12,7 @@ import {
   exportAccount,
   deleteAccount,
   updateAbout,
+  updateMeals,
   updateBody,
   updateAvatar,
   getAvatar,
@@ -95,6 +96,7 @@ router.get('/me/avatar', protect, getAvatar);
 router.put('/me/avatar', protect, photoLimiter, updateAvatar);
 router.delete('/me/avatar', protect, deleteAvatar);
 router.get('/me/invites', protect, getInvites);
+router.put('/me/meals', protect, updateMeals);
 router.get('/me/notes', protect, getCoachNotes);
 router.delete('/me/notes/:id', protect, deleteCoachNote);
 router.get('/me/export', protect, exportAccount);

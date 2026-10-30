@@ -16,6 +16,8 @@ import { isMailConfigured, sendMail } from '../utils/mailer.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 
+const DEFAULT_MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+
 function buildUserPayload(user) {
   return {
     _id: user._id,
@@ -42,6 +44,7 @@ function buildUserPayload(user) {
     },
     // Clients fetch the photo itself from /api/auth/me/avatar, and refetch when this changes.
     avatarUpdatedAt: user.avatar?.updatedAt ? user.avatar.updatedAt.toISOString() : null,
+    meals: user.meals?.length ? user.meals : DEFAULT_MEALS,
     about: {
       goal: user.about?.goal ?? null,
       diet: user.about?.diet ?? [],
@@ -370,6 +373,38 @@ export const resetPassword = async (req, res) => {
 };
 
 /** PUT /api/auth/me/about: what the person is training for, how they eat, and anything else the coach should know. */
+/**
+ * PUT /api/auth/me/meals { meals: ["Breakfast", "Lunch", ...] }: the day's meals, in order, 1 to
+ * 6 of them. A meal renamed in place takes its logged entries with it.
+ */
+export const updateMeals = async (req, res) => {
+  try {
+    const meals = (Array.isArray(req.body?.meals) ? req.body.meals : [])
+      .map((name) => String(name || '').trim().replace(/\s+/g, ' '))
+      .filter(Boolean);
+    const unique = new Set(meals.map((name) => name.toLowerCase()));
+    if (meals.length < 1 || meals.length > 6 || meals.some((name) => name.length > 30) || unique.size !== meals.length) {
+      return res.status(400).json({ message: 'Use 1 to 6 meals, each with its own name of up to 30 characters.' });
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    const before = user.meals?.length ? [...user.meals] : DEFAULT_MEALS;
+    for (let i = 0; i < Math.min(before.length, meals.length); i += 1) {
+      if (before[i] !== meals[i] && !before.includes(meals[i])) {
+        await Diet.updateMany({ user: user._id, mealType: before[i] }, { $set: { mealType: meals[i] } });
+      }
+    }
+    user.meals = meals;
+    await user.save();
+    return res.json({ user: buildUserPayload(user) });
+  } catch (error) {
+    console.error('Update meals error:', error);
+    return res.status(500).json({ message: 'Unable to save your meals right now' });
+  }
+};
+
 export const updateAbout = async (req, res) => {
   try {
     const errors = validationResult(req);

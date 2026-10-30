@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import {
   Box,
   Button,
@@ -15,8 +15,9 @@ import {
   VStack,
 } from '@chakra-ui/react';
 import FoodSearchInput from '../../../Diet/FoodSearchInput';
+import { AuthContext } from '../../../../context/AuthContext';
 
-const MEAL_TYPES = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+const DEFAULT_MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 const MACRO_FIELDS = [
   { name: 'calories', label: 'Calories', unit: 'kcal', isRequired: true },
@@ -34,18 +35,26 @@ const mealTypeForNow = (date = new Date()) => {
   return 'Snack';
 };
 
-const withDefaults = (data, isEditing) => ({
-  ...data,
-  mealType: data.mealType || (isEditing ? '' : mealTypeForNow()),
-});
+const withDefaults = (data, isEditing, meals) => {
+  const suggested = mealTypeForNow();
+  return {
+    ...data,
+    mealType: data.mealType || (isEditing ? '' : meals.includes(suggested) ? suggested : meals[0]),
+  };
+};
 
 const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
-  const [formData, setFormData] = useState(() => withDefaults(initialData, isEditing));
+  // The account's meals: the usual four unless renamed or added to in the app.
+  const { user } = useContext(AuthContext);
+  const meals = user?.user?.meals?.length ? user.user.meals : DEFAULT_MEALS;
+  const [formData, setFormData] = useState(() => withDefaults(initialData, isEditing, meals));
   const [selectedFood, setSelectedFood] = useState(null);
 
   useEffect(() => {
-    setFormData(withDefaults(initialData, isEditing));
+    setFormData(withDefaults(initialData, isEditing, meals));
     setSelectedFood(null);
+    // Only a new entry or edit resets the form, not the account being re-read.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialData, isEditing]);
 
   const setField = (name, value) => setFormData((prev) => ({ ...prev, [name]: value }));
@@ -111,7 +120,7 @@ const DietForm = ({ isEditing, onSubmit, onCancel, initialData }) => {
           <FormControl isRequired>
             <FormLabel id="meal-type-label">Meal</FormLabel>
             <ButtonGroup role="radiogroup" aria-labelledby="meal-type-label" isAttached size="sm" w="100%" variant="outline">
-              {MEAL_TYPES.map((type) => {
+              {meals.map((type) => {
                 const selected = formData.mealType === type;
                 return (
                   <Button

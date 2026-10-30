@@ -2,16 +2,13 @@ import Diet from '../models/Diet.js';
 import asyncHandler from 'express-async-handler';
 import { validationResult } from 'express-validator';
 
-function normalizeMealType(value) {
-  const mealType = String(value || '').trim().toLowerCase();
-  const map = {
-    breakfast: 'Breakfast',
-    lunch: 'Lunch',
-    dinner: 'Dinner',
-    snack: 'Snack',
-  };
+// The usual four in their usual spelling; any other name an account gave its meals is kept as typed.
+const STANDARD_MEALS = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner', snack: 'Snack' };
 
-  return map[mealType] || null;
+export function normalizeMealType(value) {
+  const mealType = String(value || '').trim().replace(/\s+/g, ' ');
+  if (!mealType || mealType.length > 30) return null;
+  return STANDARD_MEALS[mealType.toLowerCase()] || mealType;
 }
 
 function parseNumber(value) {

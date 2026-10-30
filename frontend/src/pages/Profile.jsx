@@ -1,5 +1,6 @@
 import { useContext, useEffect, useMemo, useState } from 'react';
 import {
+  Image,
   Box,
   Button,
   Card,
@@ -24,6 +25,7 @@ import { getRhythm } from '../components/Dashboard/utils/dashboardUtils';
 import { getProfileStats, memberSince } from '../components/Profile/profileUtils';
 import { getWeeklyRecap } from '../components/Profile/recapUtils';
 import WeeklyRecap from '../components/Profile/WeeklyRecap';
+import useAvatarUrl from '../utils/useAvatarUrl';
 
 const MotionBox = motion(Box);
 const FLOWS = [
@@ -104,6 +106,7 @@ function FavoriteList({ title, items, empty }) {
 function Profile() {
   const { user } = useContext(AuthContext);
   const account = user?.user || {};
+  const avatarSrc = useAvatarUrl(account);
   const goals = { ...DEFAULT_GOALS, ...account.goals };
   const [logs, setLogs] = useState(null);
 
@@ -146,8 +149,11 @@ function Profile() {
                 fontWeight="800"
                 fontSize={{ base: '5xl', md: '6xl' }}
                 aria-hidden="true"
+                overflow="hidden"
               >
-                {initialsOf(account.username)}
+                {avatarSrc
+                  ? <Image src={avatarSrc} alt="" boxSize="100%" objectFit="cover" />
+                  : initialsOf(account.username)}
               </Flex>
               <Box minW={0} flex="1">
                 {/* Long names step down a size so they wrap at most once instead of mid-word. */}

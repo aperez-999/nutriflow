@@ -13,7 +13,9 @@ const dietSchema = new mongoose.Schema({
     mealType: {
         type: String,
         required: true,
-        enum: ['Breakfast', 'Lunch', 'Dinner', 'Snack']
+        // One of the account's meals (User.meals): the usual four, or names the person chose.
+        trim: true,
+        maxlength: 30
     },
     foodName: {
         type: String,

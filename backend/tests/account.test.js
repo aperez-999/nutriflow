@@ -10,3 +10,13 @@ describe('profile photos', () => {
     assert.equal(imageType(Buffer.alloc(0)), null);
   });
 });
+
+describe('meal names', async () => {
+  const { normalizeMealType } = await import('../controllers/dietController.js');
+  it('keep the usual four spelled the usual way, and any other name as typed', () => {
+    assert.equal(normalizeMealType('breakfast'), 'Breakfast');
+    assert.equal(normalizeMealType('  Pre  workout '), 'Pre workout');
+    assert.equal(normalizeMealType(''), null);
+    assert.equal(normalizeMealType('x'.repeat(31)), null);
+  });
+});

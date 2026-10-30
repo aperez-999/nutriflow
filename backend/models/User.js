@@ -41,6 +41,8 @@ const userSchema = new mongoose.Schema({
   // A friend's link signs people up with this code; referredBy is whose link it was.
   inviteCode: { type: String, unique: true, sparse: true },
   referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  // The meals of a day, in order; the four usual ones unless the person renamed or added some.
+  meals: { type: [{ type: String, trim: true, maxlength: 30 }], default: undefined },
   about: {
     goal: { type: String, enum: ABOUT_GOALS },
     diet: { type: [{ type: String, enum: ABOUT_DIETS }], default: undefined },
