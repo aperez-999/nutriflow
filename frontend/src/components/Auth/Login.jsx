@@ -16,6 +16,7 @@ import { AuthContext } from '../../context/AuthContext';
 import { login as loginApi } from '../../services/api';
 import AuthLayout from './AuthLayout';
 import { LoginPanel } from './AuthPanels';
+import GoogleButton from './GoogleButton';
 import PasswordInput from './PasswordInput';
 import { forgetRememberedUser, readRememberedUser, safeReturnPath } from './rememberedUser';
 
@@ -75,6 +76,7 @@ function Login() {
       }
       footer={<>New to NutriFlow? <Link as={RouterLink} to="/register" color="fg" fontWeight="600" textDecoration="underline">Create an account</Link></>}
     >
+      <GoogleButton to={from || '/dashboard'} />
       <form onSubmit={handleSubmit}>
         <VStack spacing={4} align="stretch">
           {formError && (

@@ -10,11 +10,10 @@ import Conversation from '../models/Conversation.js';
 import CoachNote from '../models/CoachNote.js';
 import WeighIn from '../models/WeighIn.js';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import { validationResult } from 'express-validator';
-import { isMailConfigured, sendMail } from '../utils/mailer.js';
-
-const JWT_SECRET = process.env.JWT_SECRET;
+import { escapeHtml, isMailConfigured, sendMail } from '../utils/mailer.js';
+import { PASSWORD_MIN, PASSWORD_RULE, clearSessionCookie, startSession } from '../utils/session.js';
+import { verifyGoogleIdToken } from '../utils/googleAuth.js';
 
 const DEFAULT_MEALS = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
@@ -23,6 +22,10 @@ function buildUserPayload(user) {
     _id: user._id,
     username: user.username,
     email: user.email,
+    emailVerified: Boolean(user.emailVerified),
+    // Whether the account has a password (Google accounts start without one) and Google linked.
+    hasPassword: Boolean(user.password),
+    google: Boolean(user.googleId),
     preferences: {
       notificationsEnabled: user.preferences?.notificationsEnabled ?? true,
     },
@@ -55,17 +58,68 @@ function buildUserPayload(user) {
   };
 }
 
-const SESSION_LENGTH = '7d';
-
 // Names are unique, so two people called Alex need to tell themselves apart.
 const NAME_TAKEN = 'That name is taken. Try adding an initial or a nickname.';
 
-function signAuthToken(userId, expiresIn = SESSION_LENGTH) {
-  if (!JWT_SECRET) {
-    throw new Error('Authentication is not configured');
-  }
+const frontendUrl = () => (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+const VERIFY_TOKEN_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
-  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn });
+/**
+ * Emails a link that confirms the address. Best effort: an account works without it, so a
+ * mail failure is logged, not shown. Saves the user (with the new token) either way.
+ */
+async function sendVerificationEmail(user) {
+  if (!isMailConfigured() || !frontendUrl()) {
+    await user.save();
+    return false;
+  }
+  const token = crypto.randomBytes(32).toString('hex');
+  user.verifyEmailToken = hashToken(token);
+  user.verifyEmailExpires = Date.now() + VERIFY_TOKEN_TTL_MS;
+  await user.save();
+  try {
+    await sendMail({
+      to: user.email,
+      subject: 'Confirm your NutriFlow email',
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: sans-serif; color: #0A0A0A;">
+          <h1 style="font-size: 24px;">Confirm your email, ${escapeHtml(user.username)}</h1>
+          <p>One tap confirms this is your address, so you can always get back into your account.</p>
+          <p>
+            <a href="${frontendUrl()}/verify-email/${token}"
+               style="display: inline-block; background-color: #0A0A0A; color: #FFFFFF; padding: 10px 20px;
+                      text-decoration: none; border-radius: 6px; margin: 16px 0;">
+              Confirm my email
+            </a>
+          </p>
+          <p style="color: #525252;">This link expires in 3 days. If you didn't make a NutriFlow account, you can ignore this email.</p>
+        </div>
+      `,
+    });
+    return true;
+  } catch (error) {
+    console.error('Verification email error:', error.message);
+    return false;
+  }
+}
+
+/** Signed up from a friend's link: whose it was, so they can see their friends joined. */
+async function inviterFrom(value) {
+  const invite = typeof value === 'string' ? value.trim().toUpperCase() : '';
+  if (!/^[A-Z2-9]{6,10}$/.test(invite)) return undefined;
+  const inviter = await User.findOne({ inviteCode: invite }).select('_id').lean();
+  return inviter?._id;
+}
+
+/** A free username from a Google name: "Alex", else "Alex2", "Alex3"... */
+export async function freeUsername(name, isTaken = async (candidate) => Boolean(await User.exists({ username: candidate }))) {
+  const base = String(name || '').replace(/[^\p{L}\p{N} ._-]/gu, '').trim().slice(0, 24) || 'NutriFlow';
+  for (let n = 1; n < 50; n += 1) {
+    const candidate = n === 1 ? base : `${base}${n}`;
+    if (!(await isTaken(candidate))) return candidate;
+  }
+  return `${base}${crypto.randomInt(1000, 9999)}`;
 }
 
 export const register = async (req, res) => {
@@ -93,16 +147,11 @@ export const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const newUser = new User({ username, email, password: hashedPassword });
-    // Signed up from a friend's link: remember whose, so they can see their friends joined.
-    const invite = typeof req.body.invite === 'string' ? req.body.invite.trim().toUpperCase() : '';
-    if (/^[A-Z2-9]{6,10}$/.test(invite)) {
-      const inviter = await User.findOne({ inviteCode: invite }).select('_id').lean();
-      if (inviter) newUser.referredBy = inviter._id;
-    }
+    newUser.referredBy = await inviterFrom(req.body.invite);
 
-    await newUser.save();
+    await sendVerificationEmail(newUser);
 
-    const token = signAuthToken(newUser._id);
+    const token = startSession(req, res, newUser);
 
     return res.status(201).json({ result: buildUserPayload(newUser), token });
   } catch (error) {
@@ -133,12 +182,16 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    if (!user.password) {
+      return res.status(401).json({ message: 'This account signs in with Google. Use Continue with Google.' });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    const token = signAuthToken(user._id);
+    const token = startSession(req, res, user);
 
     return res.status(200).json({
       user: buildUserPayload(user),
@@ -152,7 +205,126 @@ export const login = async (req, res) => {
 
 // @desc    The signed-in account, so a client can pick up changes made elsewhere
 // @route   GET /api/auth/me
-export const getMe = async (req, res) => res.json({ user: buildUserPayload(req.user) });
+export const getMe = async (req, res) => {
+  // Read again with the password field, so hasPassword is right.
+  const user = await User.findById(req.user._id);
+  return res.json({ user: buildUserPayload(user || req.user) });
+};
+
+/**
+ * POST /api/auth/google { credential }: signs in with a Google ID token. A known Google account
+ * signs in; an email that already has an account is linked to Google (only when Google has
+ * verified the email); otherwise a new account is made, with no password.
+ */
+export const googleSignIn = async (req, res) => {
+  let profile;
+  try {
+    profile = await verifyGoogleIdToken(req.body?.credential);
+  } catch (error) {
+    const notSetUp = error.message === 'Google sign-in is not configured';
+    if (!notSetUp) console.warn('Google sign-in refused:', error.message);
+    return res.status(notSetUp ? 503 : 401).json({
+      message: notSetUp ? 'Google sign-in is not set up on this server.' : 'Google sign-in didn’t go through. Try again.',
+    });
+  }
+
+  try {
+    let user = await User.findOne({ googleId: profile.sub });
+    let created = false;
+    if (!user) {
+      if (!profile.emailVerified) {
+        return res.status(401).json({ message: 'Google hasn’t confirmed this email yet, so it can’t be used to sign in.' });
+      }
+      user = await User.findOne({ email: profile.email });
+      if (user) {
+        user.googleId = profile.sub;
+        user.emailVerified = true;
+        await user.save();
+      } else {
+        user = new User({
+          username: await freeUsername(profile.name || profile.email.split('@')[0]),
+          email: profile.email,
+          googleId: profile.sub,
+          emailVerified: true,
+          referredBy: await inviterFrom(req.body?.invite),
+        });
+        await user.save();
+        created = true;
+      }
+    }
+
+    const token = startSession(req, res, user);
+    return res.status(created ? 201 : 200).json({ user: buildUserPayload(user), token, created });
+  } catch (error) {
+    console.error('Google sign-in error:', error);
+    return res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
+/** POST /api/auth/logout: ends the session cookie. Bearer-token clients just forget their token. */
+export const logout = (req, res) => {
+  clearSessionCookie(req, res);
+  return res.json({ message: 'Signed out' });
+};
+
+/**
+ * POST /api/auth/me/sessions/revoke: signs out every other device and browser. This one stays
+ * signed in with the new token in the answer.
+ */
+export const signOutEverywhere = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
+    await user.save();
+    const token = startSession(req, res, user);
+    return res.json({ message: 'Signed out everywhere else', token });
+  } catch (error) {
+    console.error('Sign out everywhere error:', error);
+    return res.status(500).json({ message: 'Unable to sign out other devices right now' });
+  }
+};
+
+/** POST /api/auth/verify-email/:token: confirms the account's email from the emailed link. */
+export const verifyEmail = async (req, res) => {
+  try {
+    const user = await User.findOne({
+      verifyEmailToken: hashToken(String(req.params.token || '')),
+      verifyEmailExpires: { $gt: Date.now() },
+    });
+    if (!user) {
+      return res.status(400).json({ message: 'This link has expired or was already used. Send a new one from Settings.' });
+    }
+    user.emailVerified = true;
+    user.verifyEmailToken = undefined;
+    user.verifyEmailExpires = undefined;
+    await user.save();
+    return res.json({ message: 'Email confirmed', email: user.email });
+  } catch (error) {
+    console.error('Verify email error:', error);
+    return res.status(500).json({ message: 'Unable to confirm your email right now' });
+  }
+};
+
+/** POST /api/auth/me/verify-email: sends the confirmation link again. */
+export const resendVerification = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (user.emailVerified) {
+      return res.json({ message: 'Your email is already confirmed.' });
+    }
+    if (!isMailConfigured() || !frontendUrl()) {
+      return res.status(503).json({ message: 'Email isn’t set up on this server yet.' });
+    }
+    const sent = await sendVerificationEmail(user);
+    if (!sent) {
+      return res.status(502).json({ message: 'The email didn’t send. Try again in a minute.' });
+    }
+    return res.json({ message: `We sent a link to ${user.email}.` });
+  } catch (error) {
+    console.error('Resend verification error:', error);
+    return res.status(500).json({ message: 'Unable to send the email right now' });
+  }
+};
 
 export const updateProfile = async (req, res) => {
   try {
@@ -190,6 +362,7 @@ export const updateProfile = async (req, res) => {
       return res.status(400).json({ message: 'Email is already in use' });
     }
 
+    const emailChanged = user.email !== nextEmail;
     user.username = nextUsername;
     user.email = nextEmail;
     user.preferences = {
@@ -197,7 +370,13 @@ export const updateProfile = async (req, res) => {
       ...(typeof notificationsEnabled === 'boolean' ? { notificationsEnabled } : {}),
     };
 
-    await user.save();
+    // A new address has to be confirmed again.
+    if (emailChanged) {
+      user.emailVerified = false;
+      await sendVerificationEmail(user);
+    } else {
+      await user.save();
+    }
 
     return res.status(200).json({
       message: 'Profile updated successfully',
@@ -218,12 +397,8 @@ export const changePassword = async (req, res) => {
 
     const currentPassword = String(req.body.currentPassword || '');
     const newPassword = String(req.body.newPassword || '');
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: 'Current password and new password are required' });
-    }
-
-    if (String(newPassword).length < 6) {
-      return res.status(400).json({ message: 'New password must be 6 or more characters' });
+    if (newPassword.length < PASSWORD_MIN) {
+      return res.status(400).json({ message: `New p${PASSWORD_RULE.slice(1)}` });
     }
 
     const user = await User.findById(req.user._id);
@@ -231,15 +406,18 @@ export const changePassword = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) {
+    // A Google account sets its first password without one; any other needs the current one.
+    if (user.password && !(await bcrypt.compare(currentPassword, user.password))) {
       return res.status(400).json({ message: 'Current password is incorrect' });
     }
 
     user.password = await bcrypt.hash(newPassword, 12);
+    // Every other session ends; this one carries on with the new token.
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
 
-    return res.status(200).json({ message: 'Password updated successfully' });
+    const token = startSession(req, res, user);
+    return res.status(200).json({ message: 'Password updated. Other devices were signed out.', token });
   } catch (error) {
     console.error('Change password error:', error);
     return res.status(500).json({ message: 'Unable to update password right now' });
@@ -283,7 +461,7 @@ export const updateGoals = async (req, res) => {
 };
 
 const RESET_TOKEN_TTL_MS = 60 * 60 * 1000;
-const hashResetToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+const hashResetToken = hashToken;
 
 /**
  * POST /api/auth/forgot-password: emails a one-hour reset link. The answer is the
@@ -304,8 +482,7 @@ export const forgotPassword = async (req, res) => {
       });
     }
 
-    const frontendUrl = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
-    if (!frontendUrl) {
+    if (!frontendUrl()) {
       return res.status(503).json({
         message: 'Password reset email is not configured. Set FRONTEND_URL in the server environment.',
       });
@@ -326,7 +503,7 @@ export const forgotPassword = async (req, res) => {
             <h1 style="font-size: 24px;">Reset your NutriFlow password</h1>
             <p>You asked to reset the password for your NutriFlow account.</p>
             <p>
-              <a href="${frontendUrl}/reset-password/${resetToken}"
+              <a href="${frontendUrl()}/reset-password/${resetToken}"
                  style="display: inline-block; background-color: #0A0A0A; color: #FFFFFF; padding: 10px 20px;
                         text-decoration: none; border-radius: 6px; margin: 16px 0;">
                 Choose a new password
@@ -364,6 +541,9 @@ export const resetPassword = async (req, res) => {
     user.password = await bcrypt.hash(String(req.body.password || ''), 12);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
+    // The link came to this inbox, so the email is confirmed; every session ends.
+    user.emailVerified = true;
+    user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
 
     return res.json({ message: 'Password successfully reset' });
@@ -603,13 +783,18 @@ export const deleteAccount = async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const isMatch = await bcrypt.compare(String(req.body.password || ''), user.password);
+    // Without a password (a Google account), typing the account's email confirms instead.
+    const typed = String(req.body.password || '');
+    const isMatch = user.password
+      ? await bcrypt.compare(typed, user.password)
+      : typed.trim().toLowerCase() === user.email;
     if (!isMatch) {
-      return res.status(400).json({ message: 'Password is incorrect' });
+      return res.status(400).json({ message: user.password ? 'Password is incorrect' : 'Type your account’s email to confirm' });
     }
 
     await Promise.all(Object.values(OWNED_RECORDS).map((Model) => Model.deleteMany({ user: user._id })));
     await user.deleteOne();
+    clearSessionCookie(req, res);
 
     return res.json({ message: 'Your account and all of its data were deleted' });
   } catch (error) {

@@ -20,10 +20,16 @@ import {
   getInvites,
   getCoachNotes,
   deleteCoachNote,
+  googleSignIn,
+  logout,
+  signOutEverywhere,
+  verifyEmail,
+  resendVerification,
 } from '../controllers/authController.js';
 import { ABOUT_DIETS, ABOUT_GOALS } from '../models/User.js';
 import { protect } from '../middleware/authMiddleware.js';
 import { forgotPasswordLimiter, logInLimiter, photoLimiter, signUpLimiter } from '../middleware/rateLimits.js';
+import { PASSWORD_MIN, PASSWORD_RULE } from '../utils/session.js';
 
 const router = express.Router();
 
@@ -33,10 +39,15 @@ router.post(
   [
     check('username', 'Username is required').trim().not().isEmpty(),
     check('email', 'Please include a valid email').trim().isEmail().normalizeEmail(),
-    check('password', 'Password must be 6 or more characters').isLength({ min: 6 }),
+    check('password', PASSWORD_RULE).isLength({ min: PASSWORD_MIN }),
   ],
   register
 );
+
+// A Google ID token from either client; the same limit as logging in.
+router.post('/google', logInLimiter, googleSignIn);
+router.post('/logout', logout);
+router.post('/verify-email/:token', verifyEmail);
 
 router.post(
   '/login',
@@ -62,11 +73,13 @@ router.put(
   '/me/password',
   protect,
   [
-    check('currentPassword', 'Current password is required').exists(),
-    check('newPassword', 'New password must be 6 or more characters').isLength({ min: 6 }),
+    // Google accounts set a first password without a current one; the controller checks the rest.
+    check('newPassword', `New p${PASSWORD_RULE.slice(1)}`).isLength({ min: PASSWORD_MIN }),
   ],
   changePassword
 );
+router.post('/me/sessions/revoke', protect, signOutEverywhere);
+router.post('/me/verify-email', protect, forgotPasswordLimiter, resendVerification);
 
 router.get('/me', protect, getMe);
 router.put(
@@ -127,7 +140,7 @@ router.post(
 );
 
 // PUT is what the frontend sends; POST is kept for links from older emails and clients.
-const resetPasswordChain = [check('password', 'Password must be 6 or more characters').isLength({ min: 6 }), resetPassword];
+const resetPasswordChain = [check('password', PASSWORD_RULE).isLength({ min: PASSWORD_MIN }), resetPassword];
 router.post('/reset-password/:token', resetPasswordChain);
 router.put('/reset-password/:token', resetPasswordChain);
 

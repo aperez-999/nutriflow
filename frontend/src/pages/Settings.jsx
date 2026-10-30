@@ -21,7 +21,7 @@ import {
 } from '@chakra-ui/react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { changePassword, updateGoals, updateProfile } from '../services/api';
+import { changePassword, resendVerification, signOutEverywhere, updateGoals, updateProfile } from '../services/api';
 import { handleApiError } from '../utils/apiErrorHandler';
 import PasswordInput from '../components/Auth/PasswordInput';
 import PageBand from '../components/Global/PageBand';
@@ -111,6 +111,10 @@ function Settings() {
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingGoals, setIsSavingGoals] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isSendingLink, setIsSendingLink] = useState(false);
+  const [isSigningOutOthers, setIsSigningOutOthers] = useState(false);
+  // Accounts made with Google start without a password (older payloads don't say: assume one).
+  const hasPassword = account.hasPassword ?? true;
 
   useEffect(() => {
     setProfileForm({
@@ -181,11 +185,36 @@ function Settings() {
         newPassword: passwordForm.newPassword,
       });
       setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      if (!hasPassword) updateUser({ ...user, user: { ...account, hasPassword: true } });
       toast({ title: response.message || 'Password updated', status: 'success', duration: 2500, isClosable: true });
     } catch (error) {
       handleApiError(error, 'changing password', toast);
     } finally {
       setIsSavingPassword(false);
+    }
+  };
+
+  const handleResendLink = async () => {
+    setIsSendingLink(true);
+    try {
+      const response = await resendVerification();
+      toast({ title: response.message, status: 'success', duration: 4000, isClosable: true });
+    } catch (error) {
+      toast({ title: error?.message || 'The email didn’t send. Try again in a minute.', status: 'error', duration: 4000, isClosable: true });
+    } finally {
+      setIsSendingLink(false);
+    }
+  };
+
+  const handleSignOutOthers = async () => {
+    setIsSigningOutOthers(true);
+    try {
+      await signOutEverywhere();
+      toast({ title: 'Signed out of every other device', status: 'success', duration: 3000, isClosable: true });
+    } catch (error) {
+      handleApiError(error, 'signing out other devices', toast);
+    } finally {
+      setIsSigningOutOthers(false);
     }
   };
 
@@ -244,7 +273,7 @@ function Settings() {
           </Flex>
         </SettingsSection>
 
-        <SettingsSection title="Profile" description="How you appear in the app.">
+        <SettingsSection id="account" title="Profile" description="How you appear in the app.">
           <VStack spacing={4} align="stretch">
             <ProfilePhoto account={account} toast={toast} onSaved={(saved) => updateUser({ ...user, user: saved })} />
             <FormControl>
@@ -254,6 +283,16 @@ function Settings() {
             <FormControl>
               <FormLabel>Email</FormLabel>
               <Input type="email" value={profileForm.email} autoComplete="email" onChange={(e) => handleProfileChange('email', e.target.value)} />
+              {account.emailVerified ? (
+                <FormHelperText color="fg.muted">Confirmed.</FormHelperText>
+              ) : (
+                <FormHelperText color="fg.muted">
+                  Not confirmed yet. Confirming it means you can always reset your password.{' '}
+                  <Button variant="link" size="sm" color="fg" textDecoration="underline" isLoading={isSendingLink} onClick={handleResendLink}>
+                    Send the link
+                  </Button>
+                </FormHelperText>
+              )}
             </FormControl>
             <Flex justify="space-between" align="center" gap={4}>
               <Box>
@@ -273,16 +312,23 @@ function Settings() {
           </VStack>
         </SettingsSection>
 
-        <SettingsSection title="Password" description="Use at least 6 characters.">
+        <SettingsSection
+          title="Password"
+          description={hasPassword
+            ? 'Changing it signs out every other device.'
+            : 'You sign in with Google. Add a password to log in with your email too.'}
+        >
           <VStack spacing={4} align="stretch" as="form" onSubmit={handleSavePassword}>
-            <FormControl isRequired>
-              <FormLabel>Current password</FormLabel>
-              <PasswordInput autoComplete="current-password" value={passwordForm.currentPassword} onChange={(e) => handlePasswordChange('currentPassword', e.target.value)} />
-            </FormControl>
+            {hasPassword && (
+              <FormControl isRequired>
+                <FormLabel>Current password</FormLabel>
+                <PasswordInput autoComplete="current-password" value={passwordForm.currentPassword} onChange={(e) => handlePasswordChange('currentPassword', e.target.value)} />
+              </FormControl>
+            )}
             <FormControl isRequired>
               <FormLabel>New password</FormLabel>
-              <PasswordInput autoComplete="new-password" minLength={6} value={passwordForm.newPassword} onChange={(e) => handlePasswordChange('newPassword', e.target.value)} />
-              <FormHelperText color="fg.muted">At least 6 characters.</FormHelperText>
+              <PasswordInput autoComplete="new-password" minLength={8} value={passwordForm.newPassword} onChange={(e) => handlePasswordChange('newPassword', e.target.value)} />
+              <FormHelperText color="fg.muted">At least 8 characters.</FormHelperText>
             </FormControl>
             <FormControl isRequired isInvalid={passwordMismatch}>
               <FormLabel>Confirm new password</FormLabel>
@@ -290,7 +336,9 @@ function Settings() {
               <FormErrorMessage>The passwords don’t match.</FormErrorMessage>
             </FormControl>
             <Box>
-              <Button type="submit" variant="outline" isLoading={isSavingPassword} isDisabled={passwordMismatch}>Update password</Button>
+              <Button type="submit" variant="outline" isLoading={isSavingPassword} isDisabled={passwordMismatch}>
+                {hasPassword ? 'Update password' : 'Add password'}
+              </Button>
             </Box>
           </VStack>
         </SettingsSection>
@@ -298,6 +346,7 @@ function Settings() {
         <SettingsSection id="data" title="Your data" description="It is yours: take a copy, or delete it all.">
           <YourData
             toast={toast}
+            hasPassword={hasPassword}
             onDeleted={() => {
               forgetAccountOnDevice(account._id);
               logout();
@@ -307,8 +356,11 @@ function Settings() {
           />
         </SettingsSection>
 
-        <SettingsSection title="Session" description="Log out of NutriFlow on this device.">
-          <Button variant="outline" onClick={() => { logout(); navigate('/login'); }}>Log out</Button>
+        <SettingsSection title="Sessions" description="Log out here, or everywhere else you’re signed in.">
+          <Flex gap={3} wrap="wrap">
+            <Button variant="outline" onClick={() => { logout(); navigate('/login'); }}>Log out</Button>
+            <Button variant="ghost" isLoading={isSigningOutOthers} onClick={handleSignOutOthers}>Sign out other devices</Button>
+          </Flex>
         </SettingsSection>
       </Container>
     </Box>

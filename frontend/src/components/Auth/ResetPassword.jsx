@@ -5,6 +5,7 @@ import {
   Button,
   FormControl,
   FormErrorMessage,
+  FormHelperText,
   FormLabel,
   VStack,
   useToast,
@@ -38,7 +39,7 @@ function ResetPassword() {
       toast({ title: 'Password updated. Log in with your new password.', status: 'success', duration: 4000, isClosable: true });
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.message || 'This link may have expired. Request a new one and try again.');
+      setError(err?.message || 'This link may have expired. Request a new one and try again.');
     } finally {
       setIsLoading(false);
     }
@@ -55,7 +56,8 @@ function ResetPassword() {
           )}
           <FormControl isRequired>
             <FormLabel>New password</FormLabel>
-            <PasswordInput autoComplete="new-password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <PasswordInput autoComplete="new-password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} />
+            <FormHelperText color="fg.muted">At least 8 characters. Every device is signed out after.</FormHelperText>
           </FormControl>
           <FormControl isRequired isInvalid={mismatch}>
             <FormLabel>Confirm new password</FormLabel>

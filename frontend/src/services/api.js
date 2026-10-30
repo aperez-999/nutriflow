@@ -19,26 +19,13 @@ const base = inferBaseUrl().replace(/\/?api\/?$/, '');
 axios.defaults.baseURL = base;
 axios.defaults.timeout = 60000;
 
+// The session lives in an httpOnly cookie the server sets at log in, which page scripts can't
+// read. The header marks requests as the website's own; the server refuses cookie-signed
+// writes without it, so another site can't make them.
 axios.defaults.withCredentials = true;
+axios.defaults.headers.common['X-Requested-With'] = 'NutriFlow';
 
-// Get token function
-const getToken = () => {
-    return localStorage.getItem('token');
-};
-
-// Add default headers for all requests
-axios.interceptors.request.use(
-    (config) => {
-        const token = getToken();
-        if (token && !config.headers?.Authorization) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
+const isSignedIn = () => Boolean(localStorage.getItem('user'));
 
 const MAX_CHAT_HISTORY_MESSAGES = 100;
 const MAX_CHAT_MESSAGE_LENGTH = 4000;
@@ -115,9 +102,6 @@ export const deleteWorkout = async (id) => {
 export const login = async (credentials) => {
     try {
         const response = await axios.post('/api/auth/login', credentials);
-        if (response.data.token) {
-            localStorage.setItem('token', response.data.token);
-        }
         return response.data;
     } catch (error) {
         throw error.response?.data || { message: 'Login failed' };
@@ -132,15 +116,51 @@ export const register = async ({ username, email, password, invite }) => {
             password,
             ...(invite && { invite }),
         });
-
-        if (response.data.token) {
-            localStorage.setItem('token', response.data.token);
-        }
-
         return response.data;
     } catch (error) {
         throw error.response?.data || { message: 'Registration failed' };
     }
+};
+
+/** Signs in, or up, with a Google ID token from the Sign in with Google button. */
+export const googleSignIn = async ({ credential, invite }) => {
+    try {
+        const response = await axios.post('/api/auth/google', { credential, ...(invite && { invite }) });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Google sign-in didn’t go through. Try again.' };
+    }
+};
+
+/** Ends the session cookie on the server. Signing out locally doesn't wait for it. */
+export const logout = () => axios.post('/api/auth/logout').catch(() => {});
+
+export const verifyEmail = async (token) => {
+  try {
+    const response = await axios.post(`/api/auth/verify-email/${token}`);
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'This link didn’t work. Send a new one from Settings.' };
+  }
+};
+
+export const resendVerification = async () => {
+  try {
+    const response = await axios.post('/api/auth/me/verify-email');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'The email didn’t send. Try again in a minute.' };
+  }
+};
+
+/** Signs out every other browser and phone; this one stays signed in. */
+export const signOutEverywhere = async () => {
+  try {
+    const response = await axios.post('/api/auth/me/sessions/revoke');
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || { message: 'Unable to sign out other devices right now' };
+  }
 };
 
 export const updateProfile = async (profileData) => {
@@ -197,11 +217,9 @@ axios.interceptors.response.use(
     (error) => {
         const status = error.response?.status;
         const url = error.config?.url || '';
-        const token = getToken();
-        // 401 only ever means the session is gone (expired or invalid token). Login attempts
-        // handle their own 401. Send the user to log in, then back to where they were.
-        if (status === 401 && token && !url.includes('/api/auth/login')) {
-            localStorage.removeItem('token');
+        // 401 only ever means the session is gone (expired, or ended by a password change).
+        // Sign-in attempts handle their own 401. Send the user to log in, then back.
+        if (status === 401 && isSignedIn() && !/\/api\/auth\/(login|google)/.test(url)) {
             localStorage.removeItem('user');
             const from = `${window.location.pathname}${window.location.search}`;
             window.location.href = `/login?expired=1&from=${encodeURIComponent(from)}`;

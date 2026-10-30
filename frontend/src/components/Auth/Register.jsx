@@ -16,10 +16,11 @@ import { AuthContext } from '../../context/AuthContext';
 import { register } from '../../services/api';
 import AuthLayout from './AuthLayout';
 import { RegisterPanel } from './AuthPanels';
+import GoogleButton from './GoogleButton';
 import PasswordInput from './PasswordInput';
 import { LEVEL_LABEL } from '../Dashboard/components/verdict';
 
-const MIN_PASSWORD_LENGTH = 6;
+const MIN_PASSWORD_LENGTH = 8;
 
 function Register() {
   const [formData, setFormData] = useState({ username: '', email: '', password: '', confirmPassword: '' });
@@ -73,6 +74,7 @@ function Register() {
       description={triedDemo ? 'Takes a minute. Tomorrow morning, your first real verdict.' : 'Takes a minute. Your first check-in comes right after.'}
       footer={<>Already have an account? <Link as={RouterLink} to="/login" color="fg" fontWeight="600" textDecoration="underline">Log in</Link></>}
     >
+      <GoogleButton invite={invite} />
       <form onSubmit={handleSubmit}>
         <VStack spacing={4} align="stretch">
           {formError && (

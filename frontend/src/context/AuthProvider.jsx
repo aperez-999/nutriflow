@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AuthContext } from './AuthContext';
 import { rememberUser } from '../components/Auth/rememberedUser';
-import { getMe } from '../services/api';
+import { getMe, logout as endServerSession } from '../services/api';
 
 // How often coming back to the tab re-reads the account, at most.
 const REFRESH_EVERY_MS = 60 * 1000;
@@ -27,6 +27,8 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Sessions used to be kept in localStorage; the cookie holds them now.
+    localStorage.removeItem('token');
     try {
       // Get user data from localStorage
       const storedUser = localStorage.getItem('user');
@@ -58,14 +60,14 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('user');
-    localStorage.removeItem('token');
     setUser(null);
+    endServerSession();
   };
 
   // The account saved at login goes stale when the app changes it (a new photo, goals, a
   // name), so it is re-read from the server on load and when the tab comes back into view.
   const refresh = useCallback(async () => {
-    if (!localStorage.getItem('token')) return;
+    if (!localStorage.getItem('user')) return;
     try {
       const { user: account } = await getMe();
       setUser((current) => {

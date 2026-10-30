@@ -9,6 +9,7 @@ const Login = lazy(() => import('../components/Auth/Login'));
 const Register = lazy(() => import('../components/Auth/Register'));
 const ForgotPassword = lazy(() => import('../components/Auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('../components/Auth/ResetPassword'));
+const VerifyEmail = lazy(() => import('../components/Auth/VerifyEmail'));
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const FitnessHub = lazy(() => import('../pages/FitnessHub'));
 const Settings = lazy(() => import('../pages/Settings'));
@@ -67,6 +68,7 @@ function AppRoutes() {
         />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
+        <Route path="/verify-email/:token" element={<VerifyEmail />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/contact" element={<Contact />} />

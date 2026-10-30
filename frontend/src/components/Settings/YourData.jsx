@@ -3,6 +3,7 @@ import {
   Button,
   FormControl,
   FormLabel,
+  Input,
   Modal,
   ModalBody,
   ModalCloseButton,
@@ -29,7 +30,7 @@ const downloadJson = (data, filename) => {
 };
 
 /** Settings → Your data: download everything, or delete the account for good. */
-export default function YourData({ toast, onDeleted }) {
+export default function YourData({ toast, onDeleted, hasPassword = true }) {
   const confirm = useDisclosure();
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -95,14 +96,26 @@ export default function YourData({ toast, onDeleted }) {
               you want a copy.
             </Text>
             <FormControl mt={5} isRequired isInvalid={Boolean(error)}>
-              <FormLabel>Your password</FormLabel>
-              <PasswordInput
-                name="password"
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => { setPassword(e.target.value); setError(''); }}
-                autoFocus
-              />
+              {/* A Google account has no password: typing its email confirms instead. */}
+              <FormLabel>{hasPassword ? 'Your password' : 'Your account’s email'}</FormLabel>
+              {hasPassword ? (
+                <PasswordInput
+                  name="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                  autoFocus
+                />
+              ) : (
+                <Input
+                  type="email"
+                  name="email"
+                  autoComplete="off"
+                  value={password}
+                  onChange={(e) => { setPassword(e.target.value); setError(''); }}
+                  autoFocus
+                />
+              )}
               {error && <Text fontSize="sm" color="danger.fg" mt={2} role="alert">{error}</Text>}
             </FormControl>
           </ModalBody>

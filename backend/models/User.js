@@ -7,7 +7,12 @@ export const ABOUT_DIETS = ['Vegetarian', 'Vegan', 'Pescatarian', 'Halal', 'Kosh
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  // Accounts made with Google have no password until they set one.
+  password: { type: String, required() { return !this.googleId; } },
+  googleId: { type: String, unique: true, sparse: true },
+  emailVerified: { type: Boolean, default: false },
+  // Bumped when the password changes or every session is signed out; older tokens stop working.
+  tokenVersion: { type: Number, default: 0 },
   preferences: {
     notificationsEnabled: { type: Boolean, default: true },
   },
@@ -52,7 +57,9 @@ const userSchema = new mongoose.Schema({
     note: { type: String, trim: true, maxlength: 300 },
   },
   resetPasswordToken: String,
-  resetPasswordExpires: Date
+  resetPasswordExpires: Date,
+  verifyEmailToken: String,
+  verifyEmailExpires: Date,
 });
 
 const User = mongoose.model('User', userSchema);
