@@ -10,9 +10,10 @@ import jwt from 'jsonwebtoken';
 const CERTS_URL = 'https://www.googleapis.com/oauth2/v3/certs';
 const ISSUERS = ['accounts.google.com', 'https://accounts.google.com'];
 
+// Quotes and spaces pasted into a hosting dashboard's value are ignored.
 export const googleClientIds = () => String(process.env.GOOGLE_CLIENT_IDS || '')
   .split(',')
-  .map((id) => id.trim())
+  .map((id) => id.trim().replace(/^["']|["']$/g, '').trim())
   .filter(Boolean);
 
 let cached = { keys: new Map(), expires: 0 };

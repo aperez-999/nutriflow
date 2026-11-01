@@ -53,6 +53,14 @@ describe('Google sign-in tokens', () => {
     await assert.rejects(verifyGoogleIdToken(token, { audience, keyFor }));
   });
 
+  it('read client IDs pasted with quotes or spaces', async () => {
+    const { googleClientIds } = await import('../utils/googleAuth.js');
+    const saved = process.env.GOOGLE_CLIENT_IDS;
+    process.env.GOOGLE_CLIENT_IDS = '"a.apps.googleusercontent.com, b.apps.googleusercontent.com"';
+    assert.deepEqual(googleClientIds(), ['a.apps.googleusercontent.com', 'b.apps.googleusercontent.com']);
+    process.env.GOOGLE_CLIENT_IDS = saved;
+  });
+
   it('say so when the server has no client IDs', async () => {
     await assert.rejects(verifyGoogleIdToken(sign({}), { audience: [], keyFor }), /not configured/);
   });

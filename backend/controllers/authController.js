@@ -222,9 +222,16 @@ export const googleSignIn = async (req, res) => {
     profile = await verifyGoogleIdToken(req.body?.credential);
   } catch (error) {
     const notSetUp = error.message === 'Google sign-in is not configured';
+    // A token for a client ID the server doesn't list: GOOGLE_CLIENT_IDS doesn't match the
+    // site's VITE_GOOGLE_CLIENT_ID. Said plainly, since retrying can't fix it.
+    const otherClient = /audience/i.test(error.message);
     if (!notSetUp) console.warn('Google sign-in refused:', error.message);
-    return res.status(notSetUp ? 503 : 401).json({
-      message: notSetUp ? 'Google sign-in is not set up on this server.' : 'Google sign-in didn’t go through. Try again.',
+    return res.status(notSetUp || otherClient ? 503 : 401).json({
+      message: notSetUp
+        ? 'Google sign-in is not set up on this server.'
+        : otherClient
+          ? 'Google sign-in is set up for a different client ID on this server. Check GOOGLE_CLIENT_IDS.'
+          : 'Google sign-in didn’t go through. Try again.',
     });
   }
 
