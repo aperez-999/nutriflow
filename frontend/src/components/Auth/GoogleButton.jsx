@@ -76,7 +76,9 @@ function GoogleButton({ invite, to = '/dashboard' }) {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <Flex ref={container} justify="center" minH="44px" />
+      {/* Google's button is a light page in a frame. Without a matching color scheme, a dark
+          page paints the frame an opaque white box. */}
+      <Flex ref={container} justify="center" minH="44px" sx={{ colorScheme: 'light' }} />
       <Flex align="center" gap={3} mt={5} mb={1}>
         <Divider />
         <Text fontSize="sm" color="fg.muted" flexShrink={0}>or with email</Text>
