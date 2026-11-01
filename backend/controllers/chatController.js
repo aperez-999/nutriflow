@@ -1,5 +1,6 @@
 import ChatMessage from '../models/ChatMessage.js';
 import Conversation from '../models/Conversation.js';
+import { keepNewest } from '../utils/keepNewest.js';
 
 const MAX_HISTORY_MESSAGES = 100;
 const MAX_MESSAGE_LENGTH = 4000;
@@ -162,6 +163,8 @@ export const saveConversation = async (req, res) => {
       { title: title.trim().slice(0, 120), updatedAt: Number.isNaN(at) ? new Date() : new Date(at), messages: clean },
       { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
     ).lean();
+    // Only the newest are listed, so older ones would only take up space.
+    await keepNewest(Conversation, req.user._id, 'updatedAt', MAX_CONVERSATIONS);
     res.json(toClientConversation(conversation));
   } catch (err) {
     console.error('Save conversation error:', err);

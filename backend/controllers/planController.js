@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import Plan from '../models/Plan.js';
+import { keepNewest } from '../utils/keepNewest.js';
 
 const MAX_PLANS = 60;
 const MAX_ITEMS = 30;
@@ -56,6 +57,8 @@ export const savePlan = asyncHandler(async (req, res) => {
     },
     { new: true, upsert: true, runValidators: true, setDefaultsOnInsert: true }
   ).lean();
+  // Only the newest are listed, so older ones would only take up space.
+  await keepNewest(Plan, req.user._id, 'generatedAt', MAX_PLANS);
 
   res.json(toClientPlan(plan));
 });

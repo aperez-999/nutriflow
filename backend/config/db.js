@@ -6,7 +6,9 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
-const CONNECT_OPTS = { serverSelectionTimeoutMS: 10000 };
+// Each serverless instance keeps its own pool. A small one keeps many instances under the free
+// database's connection limit (500), where the default of 100 each would not.
+const CONNECT_OPTS = { serverSelectionTimeoutMS: 10000, maxPoolSize: 5 };
 
 let connPromise = null;
 
