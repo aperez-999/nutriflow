@@ -132,6 +132,16 @@ export const googleSignIn = async ({ credential, invite }) => {
     }
 };
 
+/** Makes the account a Google sign-in asked for, with the chosen name. */
+export const googleRegister = async ({ signUpToken, username, invite }) => {
+    try {
+        const response = await axios.post('/api/auth/google/register', { signUpToken, username, ...(invite && { invite }) });
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || { message: 'Registration failed' };
+    }
+};
+
 /** Ends the session cookie on the server. Signing out locally doesn't wait for it. */
 export const logout = () => axios.post('/api/auth/logout').catch(() => {});
 

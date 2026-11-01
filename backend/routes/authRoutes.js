@@ -21,6 +21,7 @@ import {
   getCoachNotes,
   deleteCoachNote,
   googleSignIn,
+  googleRegister,
   logout,
   signOutEverywhere,
   verifyEmail,
@@ -46,6 +47,12 @@ router.post(
 
 // A Google ID token from either client; the same limit as logging in.
 router.post('/google', logInLimiter, googleSignIn);
+router.post(
+  '/google/register',
+  signUpLimiter,
+  [check('username', 'Username is required').trim().not().isEmpty().isLength({ max: 40 }).withMessage('Keep the name under 40 characters')],
+  googleRegister
+);
 router.post('/logout', logout);
 router.post('/verify-email/:token', verifyEmail);
 

@@ -7,6 +7,7 @@ import { AuthContext } from '../context/AuthContext';
 const Home = lazy(() => import('../pages/Home'));
 const Login = lazy(() => import('../components/Auth/Login'));
 const Register = lazy(() => import('../components/Auth/Register'));
+const GoogleSignUp = lazy(() => import('../components/Auth/GoogleSignUp'));
 const ForgotPassword = lazy(() => import('../components/Auth/ForgotPassword'));
 const ResetPassword = lazy(() => import('../components/Auth/ResetPassword'));
 const VerifyEmail = lazy(() => import('../components/Auth/VerifyEmail'));
@@ -58,6 +59,7 @@ function AppRoutes() {
         <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/register/google" element={<GoogleSignUp />} />
         <Route
           path="/dashboard"
           element={

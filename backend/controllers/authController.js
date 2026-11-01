@@ -11,6 +11,7 @@ import CoachNote from '../models/CoachNote.js';
 import WeighIn from '../models/WeighIn.js';
 import bcrypt from 'bcryptjs';
 import { validationResult } from 'express-validator';
+import jwt from 'jsonwebtoken';
 import { escapeHtml, isMailConfigured, sendMail } from '../utils/mailer.js';
 import { PASSWORD_MIN, PASSWORD_RULE, clearSessionCookie, startSession } from '../utils/session.js';
 import { verifyGoogleIdToken } from '../utils/googleAuth.js';
@@ -104,6 +105,31 @@ async function sendVerificationEmail(user) {
   }
 }
 
+/**
+ * A short security notice ("your password was changed"), so someone who didn't do it finds out.
+ * Best effort, and only for accounts that keep account emails on.
+ */
+async function sendAccountNotice(user, subject, sentence) {
+  if (!isMailConfigured() || user.preferences?.notificationsEnabled === false) return;
+  try {
+    await sendMail({
+      to: user.email,
+      subject,
+      html: `
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: sans-serif; color: #0A0A0A;">
+          <h1 style="font-size: 24px;">${escapeHtml(subject)}</h1>
+          <p>Hi ${escapeHtml(user.username)}, ${escapeHtml(sentence)}</p>
+          <p style="color: #525252;">If this was you, there's nothing to do. If it wasn't, reset your password now${
+            frontendUrl() ? ` at <a href="${frontendUrl()}/forgot-password">${frontendUrl()}/forgot-password</a>` : ''
+          }; that signs out everyone else.</p>
+        </div>
+      `,
+    });
+  } catch (error) {
+    console.error('Account notice error:', error.message);
+  }
+}
+
 /** Signed up from a friend's link: whose it was, so they can see their friends joined. */
 async function inviterFrom(value) {
   const invite = typeof value === 'string' ? value.trim().toUpperCase() : '';
@@ -112,7 +138,7 @@ async function inviterFrom(value) {
   return inviter?._id;
 }
 
-/** A free username from a Google name: "Alex", else "Alex2", "Alex3"... */
+/** A free name to suggest from a Google name: "Alex", else "Alex2", "Alex3"... */
 export async function freeUsername(name, isTaken = async (candidate) => Boolean(await User.exists({ username: candidate }))) {
   const base = String(name || '').replace(/[^\p{L}\p{N} ._-]/gu, '').trim().slice(0, 24) || 'NutriFlow';
   for (let n = 1; n < 50; n += 1) {
@@ -216,54 +242,117 @@ export const getMe = async (req, res) => {
  * signs in; an email that already has an account is linked to Google (only when Google has
  * verified the email); otherwise a new account is made, with no password.
  */
-export const googleSignIn = async (req, res) => {
-  let profile;
+const GOOGLE_SIGNUP_PURPOSE = 'google-signup';
+
+/** Checks a Google ID token, or answers why it can't be used. */
+async function googleProfile(req, res) {
   try {
-    profile = await verifyGoogleIdToken(req.body?.credential);
+    return await verifyGoogleIdToken(req.body?.credential);
   } catch (error) {
     const notSetUp = error.message === 'Google sign-in is not configured';
     // A token for a client ID the server doesn't list: GOOGLE_CLIENT_IDS doesn't match the
     // site's VITE_GOOGLE_CLIENT_ID. Said plainly, since retrying can't fix it.
     const otherClient = /audience/i.test(error.message);
     if (!notSetUp) console.warn('Google sign-in refused:', error.message);
-    return res.status(notSetUp || otherClient ? 503 : 401).json({
+    res.status(notSetUp || otherClient ? 503 : 401).json({
       message: notSetUp
         ? 'Google sign-in is not set up on this server.'
         : otherClient
           ? 'Google sign-in is set up for a different client ID on this server. Check GOOGLE_CLIENT_IDS.'
           : 'Google sign-in didn’t go through. Try again.',
     });
+    return null;
   }
+}
+
+/**
+ * POST /api/auth/google { credential }: signs in with a Google ID token. A known Google account
+ * signs in, and an account with the same email is linked to Google (only when Google has
+ * verified the email). A Google account NutriFlow doesn't know isn't made here: the answer is
+ * { needsSignUp, signUp: { token, email, name } }, and the person finishes signing up with
+ * POST /api/auth/google/register, choosing their name first.
+ */
+export const googleSignIn = async (req, res) => {
+  const profile = await googleProfile(req, res);
+  if (!profile) return undefined;
 
   try {
     let user = await User.findOne({ googleId: profile.sub });
-    let created = false;
     if (!user) {
       if (!profile.emailVerified) {
         return res.status(401).json({ message: 'Google hasn’t confirmed this email yet, so it can’t be used to sign in.' });
       }
       user = await User.findOne({ email: profile.email });
-      if (user) {
-        user.googleId = profile.sub;
-        user.emailVerified = true;
-        await user.save();
-      } else {
-        user = new User({
-          username: await freeUsername(profile.name || profile.email.split('@')[0]),
-          email: profile.email,
-          googleId: profile.sub,
-          emailVerified: true,
-          referredBy: await inviterFrom(req.body?.invite),
-        });
-        await user.save();
-        created = true;
+      if (!user) {
+        const token = jwt.sign(
+          { purpose: GOOGLE_SIGNUP_PURPOSE, sub: profile.sub, email: profile.email },
+          process.env.JWT_SECRET,
+          { expiresIn: '15m' },
+        );
+        // A free name to start from: their Google first name, numbered if it's taken.
+        const name = await freeUsername(profile.name || profile.email.split('@')[0]);
+        return res.json({ needsSignUp: true, signUp: { token, email: profile.email, name } });
       }
+      user.googleId = profile.sub;
+      user.emailVerified = true;
+      await user.save();
+      await sendAccountNotice(user, 'Google sign-in was added to your NutriFlow account',
+        'Google sign-in was just linked to your account, so it can now be opened with Google.');
     }
 
     const token = startSession(req, res, user);
-    return res.status(created ? 201 : 200).json({ user: buildUserPayload(user), token, created });
+    return res.json({ user: buildUserPayload(user), token });
   } catch (error) {
     console.error('Google sign-in error:', error);
+    return res.status(500).json({ message: 'Something went wrong' });
+  }
+};
+
+/**
+ * POST /api/auth/google/register { signUpToken, username, invite? }: makes the account a Google
+ * sign-in asked for, with the name the person chose. The token (15 minutes) carries the Google
+ * account, so Google isn't asked twice.
+ */
+export const googleRegister = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ message: errors.array()[0]?.msg || 'Invalid sign-up input' });
+  }
+
+  let google;
+  try {
+    google = jwt.verify(String(req.body.signUpToken || ''), process.env.JWT_SECRET);
+    if (google.purpose !== GOOGLE_SIGNUP_PURPOSE) throw new Error('wrong purpose');
+  } catch {
+    return res.status(401).json({ message: 'That took too long. Continue with Google again.' });
+  }
+
+  try {
+    const username = String(req.body.username || '').trim();
+    const existing = await User.findOne({ $or: [{ googleId: google.sub }, { email: google.email }, { username }] });
+    if (existing) {
+      if (existing.username === username && existing.email !== google.email && existing.googleId !== google.sub) {
+        return res.status(400).json({ message: NAME_TAKEN });
+      }
+      return res.status(400).json({ message: 'User already exists' });
+    }
+
+    const user = new User({
+      username,
+      email: google.email,
+      googleId: google.sub,
+      emailVerified: true,
+      referredBy: await inviterFrom(req.body.invite),
+    });
+    await user.save();
+
+    const token = startSession(req, res, user);
+    return res.status(201).json({ result: buildUserPayload(user), token });
+  } catch (error) {
+    if (error?.code === 11000) {
+      return res.status(400).json({ message: error.keyPattern?.username ? NAME_TAKEN : 'User already exists' });
+    }
+    console.error('Google register error:', error);
     return res.status(500).json({ message: 'Something went wrong' });
   }
 };
@@ -423,6 +512,9 @@ export const changePassword = async (req, res) => {
     user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
 
+    await sendAccountNotice(user, 'Your NutriFlow password was changed',
+      'the password on your account was just changed, and every other device was signed out.');
+
     const token = startSession(req, res, user);
     return res.status(200).json({ message: 'Password updated. Other devices were signed out.', token });
   } catch (error) {
@@ -552,6 +644,8 @@ export const resetPassword = async (req, res) => {
     user.emailVerified = true;
     user.tokenVersion = (user.tokenVersion || 0) + 1;
     await user.save();
+    await sendAccountNotice(user, 'Your NutriFlow password was reset',
+      'the password on your account was just reset from an emailed link, and every device was signed out.');
 
     return res.json({ message: 'Password successfully reset' });
   } catch (error) {
