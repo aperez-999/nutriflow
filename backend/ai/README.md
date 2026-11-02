@@ -33,10 +33,12 @@ back the API contract the chat relies on:
 - **`config/aiProvider.js`**: the only place that talks to Groq or Ollama. With a local
   `OLLAMA_URL` (and not on Vercel) it tries Ollama first, then Groq; otherwise Groq.
   `AI_PROVIDER` forces one. If Groq has retired `GROQ_MODEL`, it retries with
-  `DEFAULT_GROQ_MODEL` (`openai/gpt-oss-120b`) and logs a warning.
+  `DEFAULT_GROQ_MODEL` (`openai/gpt-oss-120b`) and logs a warning. Each model has a daily
+  request budget; when the main one runs out, answers come from the lighter
+  `openai/gpt-oss-20b`.
 - **`prompts/coachPrompt.js`**: the coach persona, the length rules (one-line answer, at most
   three bullets) and the summary of the user's recent log.
-- **`tools/get_user_stats.js`**: loads the signed-in user's recent workouts, meals and check-in.
+- **`tools/`**: load the signed-in user's recent workouts, meals, check-ins and coach notes.
   The user id always comes from the verified token (`identifyUser`), never from the client.
 - **`agents/`**: one focused agent per intent (registered in `agents/index.js`), plus
   `VerifierAgent`, which sanity-checks plan values without calling a model.

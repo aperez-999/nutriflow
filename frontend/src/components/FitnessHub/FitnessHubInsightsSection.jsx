@@ -1,7 +1,7 @@
 import AIInsightsSection from './AIInsightsSection';
 
 /**
- * Fitness Hub — AI Insights block (wrapper for consistent section naming).
+ * The Coach page's insights block, under its own section heading.
  */
 export default function FitnessHubInsightsSection({ insights = [], onAsk }) {
   return <AIInsightsSection insights={insights} onAsk={onAsk} />;

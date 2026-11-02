@@ -34,8 +34,13 @@ export function forgetRememberedUser() {
   }
 }
 
-/** Where a login should return to: only in-app paths, never another origin. */
-export const safeReturnPath = (from) => (typeof from === 'string' && /^\/(?!\/)/.test(from) ? from : null);
+/**
+ * Where a login should return to: only in-app paths, never another origin. One leading slash,
+ * and no backslash or control character, which browsers can read as "//" ("/\\evil.example").
+ */
+export const safeReturnPath = (from) => (
+  typeof from === 'string' && /^\/(?!\/)/.test(from) && ![...from].some((c) => c === '\\' || c < ' ') ? from : null
+);
 
 /**
  * After an account is deleted: removes everything this browser kept for it (cached plans

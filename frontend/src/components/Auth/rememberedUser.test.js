@@ -28,6 +28,8 @@ describe('remembered user', () => {
   it('only returns to in-app paths', () => {
     expect(safeReturnPath('/library?tab=1')).toBe('/library?tab=1');
     expect(safeReturnPath('//evil.example')).toBeNull();
+    expect(safeReturnPath('/\\evil.example')).toBeNull();
+    expect(safeReturnPath('/\tdashboard')).toBeNull();
     expect(safeReturnPath('https://evil.example')).toBeNull();
     expect(safeReturnPath(undefined)).toBeNull();
   });

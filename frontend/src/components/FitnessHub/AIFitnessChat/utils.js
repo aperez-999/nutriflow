@@ -278,7 +278,7 @@ export const resolveAssistantActionPrompt = (text) => ACTION_PROMPT_MAP[text] ||
 export const isGenericBackendFallback = (content) =>
   typeof content === 'string' && content.trim().includes(GENERIC_BACKEND_FALLBACK_MESSAGE.slice(0, 36));
 
-const pickTailoredOpening = (message, context) => {
+const pickOpening = (message, context) => {
   const normalized = (message || '').trim().toLowerCase();
   const userName = context?.userName || 'there';
   const workoutCount = Array.isArray(context?.recentWorkouts) ? context.recentWorkouts.length : 0;
@@ -308,7 +308,7 @@ const pickTailoredOpening = (message, context) => {
 };
 
 export const buildConversationalFallbackResponse = (message, context = {}) => {
-  const opening = pickTailoredOpening(message, context);
+  const opening = pickOpening(message, context);
   const normalized = (message || '').trim().toLowerCase();
 
   let followUp = 'Tell me your main goal and how many days you want to train each week, and I’ll shape the next step.';

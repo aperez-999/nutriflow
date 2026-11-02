@@ -1,67 +1,45 @@
-import {
-  Box,
-  Container,
-  Heading,
-  Text,
-  VStack,
-} from '@chakra-ui/react';
-import PageBand from '../Global/PageBand';
+import LegalPage from './LegalPage';
+
+const SECTIONS = [
+  {
+    title: 'Using NutriFlow',
+    body: 'NutriFlow is free for personal, non-commercial use. By creating an account or using the site, you agree to these terms. If you don’t agree, please don’t use it.',
+  },
+  {
+    title: 'Not medical advice',
+    body: 'NutriFlow’s verdicts, targets, plans and coach answers are general guidance worked out from what you log. They are not medical, nutritional or training advice for your situation, and the AI coach can be wrong. Talk to a doctor or a qualified professional before changing your diet or training, especially if you have a health condition, an injury or are pregnant. Stop any exercise that causes pain or dizziness.',
+  },
+  {
+    title: 'Your account',
+    body: 'Keep your sign-in details to yourself; you are responsible for what happens under your account. If you think someone else has used it, reset your password, which signs out every other device.',
+  },
+  {
+    title: 'Fair use',
+    body: 'Don’t try to break, overload or get around the limits of the service, access other people’s data, or use it to send spam. Daily limits on the AI coach keep it free for everyone. Accounts that misuse the service may be removed.',
+  },
+  {
+    title: 'Your content',
+    body: 'What you log and write stays yours. NutriFlow only uses it to run the service for you, as the privacy policy describes, and you can download or delete it at any time.',
+  },
+  {
+    title: 'Changes and availability',
+    body: 'NutriFlow is provided as is, without warranties. Features may change, and the service may be paused or stopped. To the extent the law allows, NutriFlow isn’t liable for losses that come from using it.',
+  },
+  {
+    title: 'Governing law',
+    body: 'These terms are governed by the laws of the United States. If they change, the new version will be posted here with a new date.',
+  },
+];
 
 function Terms() {
   return (
-    <Box>
-      <PageBand maxW="4xl" title="Terms of Service" description="The rules for using NutriFlow." />
-      <Container maxW="4xl" px={{ base: 4, md: 6 }} py={{ base: 8, md: 10 }}>
-        <VStack spacing={8} align="start">
-          
-          <VStack spacing={6} align="start" width="100%">
-            <Box>
-              <Heading size="lg" mb={4}>1. Terms</Heading>
-              <Text>
-                By accessing NutriFlow, you agree to be bound by these terms of service.
-                If you disagree with any part of the terms, you may not access the service.
-              </Text>
-            </Box>
-
-            <Box>
-              <Heading size="lg" mb={4}>2. Use License</Heading>
-              <Text>
-                Permission is granted to temporarily access NutriFlow for personal,
-                non-commercial use. This is the grant of a license, not a transfer of title.
-              </Text>
-            </Box>
-
-            <Box>
-              <Heading size="lg" mb={4}>3. User Account</Heading>
-              <Text>
-                You are responsible for maintaining the confidentiality of your account
-                and password. You agree to accept responsibility for all activities that
-                occur under your account.
-              </Text>
-            </Box>
-
-            <Box>
-              <Heading size="lg" mb={4}>4. Service Modifications</Heading>
-              <Text>
-                NutriFlow reserves the right to modify or discontinue, temporarily or
-                permanently, the service with or without notice. We shall not be liable
-                to you or any third party for any modification, suspension, or discontinuance
-                of the service.
-              </Text>
-            </Box>
-
-            <Box>
-              <Heading size="lg" mb={4}>5. Governing Law</Heading>
-              <Text>
-                These terms shall be governed by and construed in accordance with the
-                laws of the United States, without regard to its conflict of law provisions.
-              </Text>
-            </Box>
-          </VStack>
-        </VStack>
-      </Container>
-    </Box>
+    <LegalPage
+      title="Terms of Service"
+      description="The rules for using NutriFlow, in plain language."
+      updated="November 2, 2026"
+      sections={SECTIONS}
+    />
   );
 }
 
-export default Terms; 
+export default Terms;

@@ -81,7 +81,3 @@ Shared values live in `components/Motion/tokens.js` (one ease-out curve, 150/250
 - Motion follows the Motion section above. Respect reduced motion.
 - Numbers line up: tabular figures, right-aligned in tables, units in muted text.
 - Empty states say what to do next in one sentence.
-
-## Review against the generic default
-
-The default for "AI fitness app" is a teal or purple gradient hero, glass cards with icons, stock photos of athletes, uppercase eyebrows and a hover lift on every card. This system replaces each of those: a white page with a real product artifact (the daily label) as the hero, ink buttons, borders instead of shadows, and color appearing only where your data does.

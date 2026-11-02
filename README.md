@@ -1,197 +1,131 @@
 # NutriFlow
 
-**Not another calorie counter.** NutriFlow treats every day as three flows, **Fuel** (what you
-eat), **Train** (how you move) and **Recover** (how you feel), and every morning turns them into
-one verdict: *Push day*, *Steady day* or *Recovery day*.
+**Know what today needs.** NutriFlow reads what you ate, how you trained and how you slept, and
+every morning gives you one call for the day: **Push day**, **Steady day** or **Recovery day**.
+Then it tells you what to eat and how hard to train around it.
 
-- [DESIGN.md](DESIGN.md): the design system (tokens, type, motion, rules) every screen follows
-- [docs/ROADMAP.md](docs/ROADMAP.md): what has shipped and what is next
-- [backend/ai/README.md](backend/ai/README.md): how the AI coach answers
+**Live:** [nutriflowdev.vercel.app](https://nutriflowdev.vercel.app)
 
-## Why it is different
+## Why NutriFlow
 
-Most nutrition apps are ledgers: count every calorie, keep the streak, feel bad when you miss.
-NutriFlow is built around rhythm instead.
+Most nutrition apps are ledgers. They count every calorie, keep a streak, and leave it to you to
+work out what the numbers mean. Training apps don't know what you ate, and sleep apps don't know
+you trained. NutriFlow puts the three together.
 
-- **One verdict, not a spreadsheet.** Meals, training and a 20-second morning check-in become a
-  readiness score and a plain call for the day. No wearable needed.
-- **Fuel for training, not dieting.** Intake is read against the training ahead, and no food is
-  labeled good or bad.
-- **Consistency that forgives.** A streak survives one missed day, and the 12-week rhythm map
-  shows patterns rather than failures.
-- **A coach that knows your day.** The AI reads your own log, answers in a few lines, and suggests
-  what to ask next. Readiness and progress answers come from computed numbers, not guesses.
-- **Color means data.** Orange is training, green is fuel, blue is recovery; everything else stays
-  monochrome, so the screen reads at a glance.
+- **One call for the day, not a spreadsheet.** Your logs and a 20-second morning check-in become
+  a readiness score from 0 to 100 and a plain verdict. No watch, ring or subscription needed.
+- **Targets that follow the day.** On a push day your carb target goes up; on a recovery day it
+  comes down. Protein stays where it is.
+- **Food is fuel, not a grade.** Meals are compared with the training ahead. No food is labeled
+  good or bad.
+- **It learns what you actually burn.** Weigh in a few mornings a week and the weekly check-in
+  works out your real daily burn from your weight trend and what you ate, then suggests a
+  calorie target for your goal.
+- **Consistency that forgives.** A streak survives one missed day, and a 12-week rhythm map shows
+  patterns instead of failures.
+- **A coach that has read your log.** Ask it anything about training, food or recovery. It
+  answers in a few lines from your own data, and readiness and progress answers come from the
+  computed numbers, not guesses.
 
-## What's in the app
+## What's in it
 
-| Page | What it does |
+| | |
 | --- | --- |
-| **Landing** (`/`) | A live demo: set sleep, energy, soreness, training and eating, and the real readiness formula gives the verdict |
-| **Today** (`/dashboard`) | The daily verdict and readiness score, a 20-second check-in, meal and workout logging (USDA food and API Ninjas exercise search), goals, a 12-week rhythm map and a weekly calorie chart |
-| **Coach** (`/fitness-hub`) | AI chat that reads your own log, with short answers, up to four follow-ups per reply and several conversations that follow you across devices; plus today's read and insights from your log |
-| **Library** (`/library`) | Plans the coach built, saved to your account (log a session or meal in one tap, with a muscle map of the week), and a 36-exercise library with muscle maps and form cues |
-| **Profile** and **Settings** | Your week (readiness for each of the last 7 days, the best day, totals vs the week before, shareable), your stats and most-logged foods and workouts; goals, appearance (light, dark, device), profile details, and your data (download it, or delete the account) |
+| **Today** | The verdict and readiness score, the morning check-in, meal and workout logging, goals, weigh-ins, the rhythm map and a weekly calorie chart |
+| **Logging** | Search the USDA food database for meals and API Ninjas for exercises, or type the numbers in. Meals carry calories, protein, carbs, fat and fiber, against your own targets |
+| **Coach** | Chat that reads your log, with follow-up suggestions after each answer. It can build a week of training or meals, and conversations follow you across devices |
+| **Library** | Plans the coach built, saved to your account and logged in one tap, plus a 36-exercise library with muscle maps and form cues |
+| **Profile** | Your week at a glance: readiness for each day, the best day, totals against the week before, and what you log most |
+| **Settings** | Goals, appearance, profile photo, password, email confirmation, signing out other devices, and your data: download all of it or delete the account |
 
-Sign-in pages adapt to the visit: returning users are greeted by name and sent back to where they
-were going, and new users see what their first day looks like.
+The landing page has a working demo: set last night's sleep, energy and soreness, and the real
+readiness formula gives the verdict.
 
-## Tech stack
+## Privacy and security
 
-- **Frontend:** React 18, Vite, Chakra UI (custom theme in `frontend/src/theme`), Framer Motion, React Router, Recharts, Axios
-- **Backend:** Node.js 18+, Express, MongoDB with Mongoose, JWT auth, Nodemailer (Gmail)
-- **AI:** Groq (`openai/gpt-oss-120b` by default) or a local Ollama model
-- **External APIs:** USDA FoodData Central, API Ninjas exercises
-- **Hosting:** one Vercel project: the frontend build plus a serverless function (`api/index.js`) that runs the Express app (see Deployment)
+- No ads, no analytics, no tracking scripts. Data is used only to run the app for you
+  ([privacy policy](https://nutriflowdev.vercel.app/privacy)).
+- Sign in with email and password or with Google. Passwords are hashed with bcrypt and need at
+  least 8 characters.
+- The website's session lives in an httpOnly, same-site cookie that scripts can't read, and
+  every write needs the site's own request header. Changing or resetting a password signs out
+  every other device.
+- New accounts confirm their email. Password changes, resets and newly linked Google sign-ins
+  send a short security email.
+- Sign-in, sign-up, password reset, the coach and photo uploads are rate limited, and the coach
+  has a daily allowance so it stays free to run.
 
-## Project structure
+## Built with
 
-```
-nutriflow/
-├── api/index.js            # Vercel serverless entry: runs backend/app.js
-├── shared/                 # Pure modules used by both sides (readinessScore.js)
-├── backend/
-│   ├── app.js              # Express app: middleware and route wiring only
-│   ├── server.js           # Local development server
-│   ├── routes/             # URL → middleware → controller
-│   ├── controllers/        # Request handling and logic
-│   ├── models/             # Mongoose models
-│   ├── middleware/         # Auth (protect, identifyUser), rate limits, error handler
-│   ├── ai/                 # AI orchestration: agents, prompts, provider, follow-ups
-│   ├── data/               # Exercise catalog the Library is seeded from
-│   ├── utils/              # Mailer, AI fallback text
-│   └── tests/              # node:test suites
-└── frontend/
-    ├── public/             # Icons, manifest, Open Graph image
-    └── src/
-        ├── pages/          # One file per route
-        ├── components/     # Grouped by area: Auth, Dashboard, FitnessHub (Coach), Library,
-        │                   # Landing, Profile, Global (navbar, bands), Motion, Diet/Workout search
-        ├── context/        # Auth state (AuthContext + AuthProvider)
-        ├── routes/         # Lazy routes and the protected-route guard
-        ├── services/api.js # Every API call
-        ├── theme/          # Chakra theme and appearance preference
-        └── utils/          # Date and workout helpers
-```
+- **Frontend:** React 18, Vite, Chakra UI with a custom theme, Framer Motion, React Router, Recharts
+- **Backend:** Node.js 20+, Express, MongoDB with Mongoose, JWT sessions, Nodemailer (Gmail)
+- **AI:** Groq (`openai/gpt-oss-120b`, falling back to `openai/gpt-oss-20b`), or a local Ollama model in development
+- **Data:** USDA FoodData Central, Open Food Facts, API Ninjas exercises
+- **Hosting:** one Vercel project: the static frontend and a serverless function that runs the Express app
 
-## Getting started
+The readiness formula lives in `shared/readinessScore.js` and is used by both the server and the
+browser, so the score is worked out the same way everywhere.
 
-**Requirements:** Node.js 18 or newer, a MongoDB database (Atlas works), and API keys for USDA,
-API Ninjas and Groq (or [Ollama](https://ollama.com/) running locally).
+## Run it locally
+
+You need Node.js 20 or newer, a MongoDB database (a free Atlas cluster works), and API keys for
+USDA, API Ninjas and Groq (or [Ollama](https://ollama.com/) running locally).
 
 ```bash
-# 1. Install (frontend and backend each have their own dependencies)
 npm --prefix frontend install
 npm --prefix backend install
 
-# 2. Configure
-cp backend/.env.example backend/.env                  # then fill in the values
-cp frontend/.env.local.example frontend/.env.local    # VITE_API_URL=http://localhost:3000
+cp backend/.env.example backend/.env                 # then fill in the values
+cp frontend/.env.local.example frontend/.env.local
 
-# 3. Run (two terminals)
 npm --prefix backend run dev     # API on http://localhost:3000
-npm --prefix frontend run dev    # app on http://localhost:5173
+npm --prefix frontend run dev    # site on http://localhost:5173
 ```
 
-Every variable is explained in [`backend/.env.example`](backend/.env.example). Never commit `.env`.
+Every setting is explained in [`backend/.env.example`](backend/.env.example). Google sign-in and
+email are optional: without `GOOGLE_CLIENT_IDS` the Google button is hidden, and without the
+email settings the account emails are skipped.
 
-## Scripts
+## Checks
 
-From the repository root:
+`npm run check` from the repository root runs the linter, the backend tests (`node:test`), the
+frontend tests (Vitest) and a production build. GitHub Actions runs it on every push and pull
+request.
 
-| Command | What it does |
-| --- | --- |
-| `npm run check` | Lint, backend tests, frontend tests and a production build. Run before every commit; GitHub Actions runs it on every push and pull request (`.github/workflows/check.yml`). |
-| `npm test` | Backend (`node:test`) and frontend (Vitest) tests |
-| `npm run lint` | ESLint on the frontend |
-| `npm run build` | Production build of the frontend |
+## Deploying to Vercel
 
-Inside `frontend/`: `npm run dev`, `npm run build`, `npm run preview`, `npm test`, `npm run lint`.
-Inside `backend/`: `npm run dev` (nodemon), `npm start`, `npm test`.
+The repository root is the Vercel project. `vercel.json` builds the frontend into
+`frontend/dist` and sends every `/api/*` request to `api/index.js`, which runs the Express app.
 
-## API
+1. Leave **Root Directory** empty and the framework preset on Other.
+2. Add the variables from `backend/.env.example`, with `NODE_ENV=production` and `FRONTEND_URL`
+   set to the site's address. Add `VITE_GOOGLE_CLIENT_ID` to show the Google button.
+3. Deploy, then open `/api/health`. It should answer `{"ok":true,"provider":"groq",...}`.
 
-All routes are under `/api`. Routes marked 🔒 need `Authorization: Bearer <token>`.
+## Repository layout
 
-**Auth**
-- `POST /auth/register`, `POST /auth/login`
-- `GET /auth/me` 🔒: the signed-in account (so other devices pick up changes)
-- `PUT /auth/me` 🔒 (name and email), `PUT /auth/me/password` 🔒
-- `PUT /auth/me/goals` 🔒: `dailyCalories`, `dailyProtein`, `weeklyWorkouts`, and optionally
-  `dailyCarbs` and `dailyFats` (grams; `null` clears them), `fuelFollowsVerdict` (whether the
-  day's verdict moves the carb target), and `pushCarbBoost` / `recoveryCarbCut` (by how many
-  percent; 20 and 15 by default). Fields left out keep their values.
-- `GET /auth/me/export` 🔒: everything stored for the account, as one JSON file
-- `DELETE /auth/me` 🔒 `{ password }`: deletes the account and every record it owns
-- `POST /auth/forgot-password` (rate limited; same answer whether or not the email exists)
-- `PUT /auth/reset-password/:token` (also accepts `POST`)
+```
+api/index.js          Vercel entry: runs backend/app.js
+shared/               Code both sides use (the readiness formula)
+backend/
+  app.js              Middleware and route wiring
+  routes/             URLs, validation and limits
+  controllers/        Request handling
+  models/             Mongoose models
+  middleware/         Sessions, rate limits, errors
+  ai/                 The coach: agents, prompts, the model provider
+  utils/              Email, sessions, Google sign-in, energy balance, caches
+  tests/              node:test suites
+frontend/src/
+  pages/              One file per route
+  components/         Grouped by area: Auth, Dashboard, FitnessHub (the coach), Library, Profile...
+  services/api.js     Every API call
+  theme/              The Chakra theme
+```
 
-**Logs**
-- `GET | POST /diets` 🔒, `PUT | DELETE /diets/:id` 🔒
-- `GET | POST /workouts` 🔒, `PUT | DELETE /workouts/:id` 🔒
-- `GET /checkins?limit=30` 🔒 (newest first), `PUT /checkins/:dayKey` 🔒 (create or update a `YYYY-MM-DD` check-in)
+## More
 
-**Search and library**
-- `GET /food/search?query=apple` (USDA), `GET /exercise/search?query=squat` (API Ninjas)
-- `GET /food/barcode/:code`: a packaged food by its barcode (8 to 14 digits), from Open Food Facts
-  or else USDA branded foods: `{ food: { name, brand, source, unit, per100, serving } }`, with
-  nutrition per 100 g or ml and per serving when the label has one; 404 when neither knows it
-- `GET /exercises` 🔒: the exercise library with muscle maps, cues and filter values. Optional
-  filters: `muscleGroup`, `equipment`, `difficulty`, `q`. Seeded from `backend/data/exerciseCatalog.js`
-  on first request and kept in sync by slug.
-
-**Saved plans** (kept on the account, so they follow you across devices)
-- `GET /plans` 🔒: `{ plans, mealPlans }`, newest first
-- `PUT /plans/:id` 🔒: create or replace a plan: `{ kind: 'training' | 'meal', title, calories?, generatedAt, items }`
-- `DELETE /plans/:id` 🔒
-
-**Coach**
-- `POST /ai/chat` (rate limited, 20 a minute): `{ message, context?, history? }` →
-  `{ content, suggestions, source }`. Uses the signed-in user's data when a token is sent.
-  `POST /chat` is the older address and still works.
-- `GET /chat/conversations` 🔒, `PUT | DELETE /chat/conversations/:id` 🔒: coach conversations, kept on the account so they follow you across devices
-- `GET | POST | DELETE /chat/history` 🔒: the single saved conversation used by older clients
-
-**Other**
-- `POST /contact`: the contact form (emailed to `EMAIL_USERNAME`)
-- `GET /health`: which AI provider and model are active
-
-## Deployment (Vercel)
-
-One Vercel project serves both halves from the repository root:
-
-- **Frontend:** `npm --prefix frontend run build` → static files in `frontend/dist`.
-- **Backend:** `api/index.js` is a serverless function that runs the Express app
-  (`backend/app.js`) for every `/api/*` request.
-
-`vercel.json` holds the build and install commands and two rewrites, applied only when no
-static file matches: `/api/*` → the function (the original URL is kept, so Express routes
-match), anything else → `index.html` (so deep links like `/library` work on reload).
-
-**Vercel project settings to check**
-
-- *Root Directory*: empty (the repository root). With `frontend` the API cannot deploy.
-- *Framework Preset*: Other (or Vite); `vercel.json` overrides the build, install and output settings.
-- *Node.js version*: 18 or newer (the backend uses the built-in `fetch`).
-- *Environment variables*: everything in `backend/.env.example`, with `NODE_ENV=production`,
-  `FRONTEND_URL` set to the production URL and `GROQ_MODEL=openai/gpt-oss-120b`.
-  `VITE_API_URL` is not needed: in production the app calls the API on its own origin.
-
-After deploying, `GET /api/health` should answer `{"ok":true,"provider":"groq",...}`.
-
-## Conventions
-
-- **API contract:** the coach always answers `{ content, suggestions, source }`; chat text is
-  formatted for reading, never raw JSON.
-- **Backend layers:** routes wire URLs to middleware and controllers; controllers hold the logic;
-  everything AI lives in `backend/ai/`. Secrets come from environment variables only.
-- **Frontend:** follow [DESIGN.md](DESIGN.md) and the semantic tokens in `frontend/src/theme`.
-  Color only means data; panels use 1px borders; no gradients, glows or hover lift.
-- **Before committing:** `npm run check`.
-
-## Shared code
-
-`shared/` holds pure modules used by both the backend AI agents and the frontend, so the
-readiness score is computed one way everywhere. The frontend imports them through the `@shared`
-Vite alias. Keep them free of Node and browser APIs.
+- [DESIGN.md](DESIGN.md): the design system every screen follows
+- [docs/API.md](docs/API.md): every API route
+- [backend/ai/README.md](backend/ai/README.md): how the coach answers
+- [docs/ROADMAP.md](docs/ROADMAP.md): what's done and what's next

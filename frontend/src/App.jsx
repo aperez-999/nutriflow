@@ -11,30 +11,30 @@ import MobileTabBar, { TAB_BAR_HEIGHT } from './components/Global/MobileTabBar'
 import { AuthContext } from './context/AuthContext'
 
 const DEFAULT_META = {
-  title: 'NutriFlow | AI Fitness, Nutrition & Readiness Tracking',
-  description: 'Track workouts, meals, readiness, and progress with an AI coach in one polished dashboard.',
+  title: 'NutriFlow: know what today needs',
+  description: 'Meals, training and a 20-second check-in become one call for the day: push, hold steady or recover.',
 };
 
 const ROUTE_META = [
   {
     match: (pathname) => pathname === '/',
-    title: 'NutriFlow | AI Fitness, Nutrition & Readiness Tracking',
-    description: 'NutriFlow brings workout tracking, meal logging, readiness insights, and AI coaching into one clean fitness workspace.',
+    title: 'NutriFlow: know what today needs',
+    description: 'Log meals and workouts, check in each morning, and get one call for the day: push, hold steady or recover.',
   },
   {
     match: (pathname) => pathname === '/login',
-    title: 'Login | NutriFlow',
-    description: 'Log in to NutriFlow to continue tracking workouts, nutrition, and readiness in one workspace.',
+    title: 'Log in | NutriFlow',
+    description: 'Log in to see today’s verdict.',
   },
   {
     match: (pathname) => pathname === '/register',
-    title: 'Sign Up | NutriFlow',
-    description: 'Create a NutriFlow account to start tracking meals, workouts, readiness, and AI-guided progress.',
+    title: 'Create an account | NutriFlow',
+    description: 'Create a free NutriFlow account. Your first check-in comes right after.',
   },
   {
     match: (pathname) => pathname === '/dashboard',
-    title: 'Dashboard | NutriFlow',
-    description: 'Review your nutrition, workouts, readiness, and recent activity from the NutriFlow dashboard.',
+    title: 'Today | NutriFlow',
+    description: 'Today’s verdict, readiness, meals and training.',
   },
   {
     match: (pathname) => pathname === '/fitness-hub',
@@ -54,7 +54,7 @@ const ROUTE_META = [
   {
     match: (pathname) => pathname === '/settings',
     title: 'Settings | NutriFlow',
-    description: 'Manage your NutriFlow profile, preferences, and account settings.',
+    description: 'Goals, profile, password, appearance and your data.',
   },
 ];
 

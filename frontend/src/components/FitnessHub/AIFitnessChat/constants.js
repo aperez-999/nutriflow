@@ -48,7 +48,7 @@ export const CLEAR_MESSAGE = {
 export const TYPING_INDICATOR_TEXT = 'Coach is thinking';
 
 export const GENERIC_BACKEND_FALLBACK_MESSAGE =
-  "I'm here to help with your fitness journey! What would you like to focus on today?";
+  "Ask about today’s training, food or recovery, and I’ll answer from your log.";
 
 /** Starting points shown on an empty conversation, each tied to the flow it works on. */
 export const PROMPT_CARDS = [

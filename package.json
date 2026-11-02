@@ -2,6 +2,9 @@
   "name": "nutriflow",
   "private": true,
   "version": "1.0.0",
+  "engines": {
+    "node": ">=20"
+  },
   "description": "NutriFlow: React frontend, Express API and the Vercel entry point that serves it.",
   "type": "module",
   "scripts": {
