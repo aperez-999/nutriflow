@@ -1,5 +1,5 @@
 /**
- * The weekly check-in: what a person actually burns, worked out from what they ate and how
+ * The weekly check-in: what someone actually burns, worked out from what they ate and how
  * their weight moved, and the daily calories that would get them where they're going.
  *
  * It is forgiving of imperfect logging: only days with a full day of food count toward the
@@ -44,7 +44,7 @@ function fitLine(points) {
  * @param {Object} params
  * @param {Array<{ dayKey: string, kg: number }>} params.weighIns
  * @param {Array<{ date: Date|string, calories: number }>} params.diets
- * @param {string} params.today - "2026-10-29", on the person's calendar.
+ * @param {string} params.today - "2026-10-29", on the user's calendar.
  * @param {string} params.timeZone
  * @param {string} [params.goal] - About you's goal.
  * @param {number} [params.currentTarget] - Today's everyday calorie target.

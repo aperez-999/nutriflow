@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-// What the person is training for and how they eat, so the coach's answers and plans fit them.
+// What the user is training for and how they eat, so the coach's answers and plans fit them.
 export const ABOUT_GOALS = ['Lose fat', 'Build muscle', 'Get stronger', 'Train for an event', 'Feel better'];
 export const ABOUT_DIETS = ['Vegetarian', 'Vegan', 'Pescatarian', 'Halal', 'Kosher', 'Gluten-free', 'Dairy-free', 'No nuts'];
 
@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema({
   // A friend's link signs people up with this code; referredBy is whose link it was.
   inviteCode: { type: String, unique: true, sparse: true },
   referredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  // The meals of a day, in order; the four usual ones unless the person renamed or added some.
+  // The meals of a day, in order; the four usual ones unless the user renamed or added some.
   meals: { type: [{ type: String, trim: true, maxlength: 30 }], default: undefined },
   about: {
     goal: { type: String, enum: ABOUT_GOALS },

@@ -108,7 +108,7 @@ function isMeasured(value) {
 
 /**
  * How far a measured heart signal moves the body score. `hrvChange` is today's heart rate
- * variability against the person's own 30-day average, in percent; `restingHrChange` is
+ * variability against the user's own 30-day average, in percent; `restingHrChange` is
  * today's resting heart rate against its average, in beats per minute. Both are optional:
  * a check-in typed by hand has neither.
  */

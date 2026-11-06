@@ -6,7 +6,7 @@ import { MEMORY_RULES } from '../utils/coachMemory.js';
  * Defines the AI persona and behavior for general fitness and nutrition conversation.
  * Used by the AI orchestration layer when the intent is "coach".
  *
- * Before each answer the coach gets a brief on the person (ai/tools/get_coach_context.js):
+ * Before each answer the coach gets a brief on the user (ai/tools/get_coach_context.js):
  * who they are, their day against today's targets, the last seven days, and what it saved
  * from earlier chats (ai/utils/coachMemory.js).
  */

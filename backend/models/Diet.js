@@ -13,7 +13,7 @@ const dietSchema = new mongoose.Schema({
     mealType: {
         type: String,
         required: true,
-        // One of the account's meals (User.meals): the usual four, or names the person chose.
+        // One of the account's meals (User.meals): the usual four, or names the user chose.
         trim: true,
         maxlength: 30
     },

@@ -251,7 +251,7 @@ async function googleProfile(req, res) {
   } catch (error) {
     const notSetUp = error.message === 'Google sign-in is not configured';
     // A token for a client ID the server doesn't list: GOOGLE_CLIENT_IDS doesn't match the
-    // site's VITE_GOOGLE_CLIENT_ID. Said plainly, since retrying can't fix it.
+    // site's VITE_GOOGLE_CLIENT_ID. The message names the setting, since retrying won't help.
     const otherClient = /audience/i.test(error.message);
     if (!notSetUp) console.warn('Google sign-in refused:', error.message);
     res.status(notSetUp || otherClient ? 503 : 401).json({
@@ -269,7 +269,7 @@ async function googleProfile(req, res) {
  * POST /api/auth/google { credential }: signs in with a Google ID token. A known Google account
  * signs in, and an account with the same email is linked to Google (only when Google has
  * verified the email). A Google account NutriFlow doesn't know isn't made here: the answer is
- * { needsSignUp, signUp: { token, email, name } }, and the person finishes signing up with
+ * { needsSignUp, signUp: { token, email, name } }, and the user finishes signing up with
  * POST /api/auth/google/register, choosing their name first.
  */
 export const googleSignIn = async (req, res) => {
@@ -310,7 +310,7 @@ export const googleSignIn = async (req, res) => {
 
 /**
  * POST /api/auth/google/register { signUpToken, username, invite? }: makes the account a Google
- * sign-in asked for, with the name the person chose. The token (15 minutes) carries the Google
+ * sign-in asked for, with the name the user chose. The token (15 minutes) carries the Google
  * account, so Google isn't asked twice.
  */
 export const googleRegister = async (req, res) => {
@@ -654,7 +654,7 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-/** PUT /api/auth/me/about: what the person is training for, how they eat, and anything else the coach should know. */
+/** PUT /api/auth/me/about: what the user is training for, how they eat, and anything else the coach should know. */
 /**
  * PUT /api/auth/me/meals { meals: ["Breakfast", "Lunch", ...] }: the day's meals, in order, 1 to
  * 6 of them. A meal renamed in place takes its logged entries with it.
@@ -807,7 +807,7 @@ function newInviteCode() {
   return Array.from(bytes, (byte) => INVITE_ALPHABET[byte % INVITE_ALPHABET.length]).join('');
 }
 
-/** GET /api/auth/me/invites: the person's invite code (made the first time) and how many joined with it. */
+/** GET /api/auth/me/invites: the user's invite code (made the first time) and how many joined with it. */
 export const getInvites = async (req, res) => {
   try {
     let code = req.user.inviteCode;
@@ -826,13 +826,13 @@ export const getInvites = async (req, res) => {
   }
 };
 
-/** GET /api/auth/me/notes: what the coach has saved about the person, newest first. */
+/** GET /api/auth/me/notes: what the coach has saved about the user, newest first. */
 export const getCoachNotes = async (req, res) => {
   const notes = await CoachNote.find({ user: req.user._id }).sort({ createdAt: -1 }).select('text createdAt').lean();
   return res.json(notes);
 };
 
-/** DELETE /api/auth/me/notes/:id: the person removes something the coach saved. */
+/** DELETE /api/auth/me/notes/:id: the user removes something the coach saved. */
 export const deleteCoachNote = async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) {
     return res.status(404).json({ message: 'That note is already gone' });

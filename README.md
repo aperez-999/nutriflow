@@ -1,45 +1,44 @@
 # NutriFlow
 
-**Know what today needs.** NutriFlow reads what you ate, how you trained and how you slept, and
-every morning gives you one call for the day: **Push day**, **Steady day** or **Recovery day**.
-Then it tells you what to eat and how hard to train around it.
+NutriFlow is a fitness and nutrition tracker that looks at your meals, workouts and sleep
+together and gives you a call for the day each morning: push, hold steady, or recover. Your
+carb target and the coach's advice adjust to match.
 
-**Live:** [nutriflowdev.vercel.app](https://nutriflowdev.vercel.app)
+Live at [nutriflowdev.vercel.app](https://nutriflowdev.vercel.app).
 
-## Why NutriFlow
+## The idea
 
-Most nutrition apps are ledgers. They count every calorie, keep a streak, and leave it to you to
-work out what the numbers mean. Training apps don't know what you ate, and sleep apps don't know
-you trained. NutriFlow puts the three together.
+Food usually goes in one app, workouts in another and sleep in a third, and none of them answers
+the question you have in the morning: should I train hard today, and what should I eat for it?
+NutriFlow keeps all three in one place and answers that.
 
-- **One call for the day, not a spreadsheet.** Your logs and a 20-second morning check-in become
-  a readiness score from 0 to 100 and a plain verdict. No watch, ring or subscription needed.
-- **Targets that follow the day.** On a push day your carb target goes up; on a recovery day it
-  comes down. Protein stays where it is.
-- **Food is fuel, not a grade.** Meals are compared with the training ahead. No food is labeled
-  good or bad.
-- **It learns what you actually burn.** Weigh in a few mornings a week and the weekly check-in
-  works out your real daily burn from your weight trend and what you ate, then suggests a
-  calorie target for your goal.
-- **Consistency that forgives.** A streak survives one missed day, and a 12-week rhythm map shows
-  patterns instead of failures.
-- **A coach that has read your log.** Ask it anything about training, food or recovery. It
-  answers in a few lines from your own data, and readiness and progress answers come from the
-  computed numbers, not guesses.
+How it works:
 
-## What's in it
+- Each morning you answer four quick questions (sleep, energy, soreness, water). Together with
+  your recent meals and training, that gives a readiness score from 0 to 100 and a verdict:
+  Push day, Steady day or Recovery day. You don't need a watch or a ring.
+- On a push day the carb target goes up, and on a recovery day it goes down. Protein stays the
+  same either way.
+- If you weigh in a few times a week, the weekly check-in works out what you really burn from
+  your weight trend and what you ate, and suggests a calorie target for your goal.
+- Missing a day doesn't break your streak. Missing two does.
+- The coach is an AI chat that can see your log, so you can ask "should I do legs after five
+  hours of sleep?" and get an answer based on your week. Readiness and progress questions are
+  answered from the computed numbers.
+
+## Features
 
 | | |
 | --- | --- |
-| **Today** | The verdict and readiness score, the morning check-in, meal and workout logging, goals, weigh-ins, the rhythm map and a weekly calorie chart |
-| **Logging** | Search the USDA food database for meals and API Ninjas for exercises, or type the numbers in. Meals carry calories, protein, carbs, fat and fiber, against your own targets |
-| **Coach** | Chat that reads your log, with follow-up suggestions after each answer. It can build a week of training or meals, and conversations follow you across devices |
-| **Library** | Plans the coach built, saved to your account and logged in one tap, plus a 36-exercise library with muscle maps and form cues |
-| **Profile** | Your week at a glance: readiness for each day, the best day, totals against the week before, and what you log most |
-| **Settings** | Goals, appearance, profile photo, password, email confirmation, signing out other devices, and your data: download all of it or delete the account |
+| **Today** | The verdict and readiness score, the morning check-in, meal and workout logging, goals, weigh-ins, a 12-week rhythm map and a weekly calorie chart |
+| **Logging** | Food search from the USDA database and exercise search from API Ninjas, or enter the numbers yourself. Meals track calories, protein, carbs, fat and fiber against your targets |
+| **Coach** | Chat about training, food or recovery. It suggests follow-up questions, can plan a week of workouts or meals, and keeps your conversations across devices |
+| **Library** | Plans from the coach, saved to your account and logged with a tap, plus 36 exercises with muscle maps and form cues |
+| **Profile** | Your week: readiness by day, your best day, totals compared with the week before, and what you log most |
+| **Settings** | Goals, light or dark mode, profile photo, password, email confirmation, signing out other devices, and downloading or deleting your data |
 
-The landing page has a working demo: set last night's sleep, energy and soreness, and the real
-readiness formula gives the verdict.
+The landing page has a demo you can try without an account: set your sleep, energy and
+soreness, and it runs the same readiness formula the app uses.
 
 ## Privacy and security
 

@@ -62,7 +62,7 @@ export function RegisterPanel({ demo }) {
   );
 }
 
-/** Locked out: calm, and a reminder that nothing is lost. */
+/** Password pages: a reminder that the account's data is safe. */
 export function PasswordPanel() {
   return (
     <>

@@ -25,7 +25,7 @@ function loadScript() {
 /**
  * "Continue with Google", Google's own button, above the email form. Signs in an existing
  * account (or links one with the same Google-verified email); a new one is finished on
- * /register/google, where the person chooses their name.
+ * /register/google, where the user chooses their name.
  */
 function GoogleButton({ invite, to = '/dashboard' }) {
   const container = useRef(null);
@@ -39,7 +39,7 @@ function GoogleButton({ invite, to = '/dashboard' }) {
     setError('');
     try {
       const response = await googleSignIn({ credential, invite });
-      // No account for this Google account yet: finish signing up first, never straight in.
+      // No account for this Google account yet: they finish signing up first.
       if (response.needsSignUp) {
         navigate('/register/google', { state: { signUp: response.signUp, invite } });
         return;

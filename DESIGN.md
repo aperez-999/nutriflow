@@ -2,7 +2,7 @@
 
 ## Concept: the training log meets the nutrition label
 
-NutriFlow is used in two moments: a quick check-in before training and a log at the end of the day. The interface takes its cues from the two honest documents of that world, the paper training log and the Nutrition Facts label: black ink on white, heavy rules that separate sections, condensed bold numbers, and no decoration. Color is reserved for the user's own data.
+NutriFlow is used in two moments: a quick check-in before training and a log at the end of the day. The look is borrowed from two things people already know from that world, a paper training log and the Nutrition Facts label: black ink on white, heavy rules that separate sections, condensed bold numbers, and no decoration. Color is reserved for the user's own data.
 
 ## Tokens (theme: `frontend/src/theme/index.js`)
 
@@ -31,7 +31,7 @@ Tabular figures are only applied to display figures; in Schibsted they widen com
 
 **Shape:** 6px radius on controls, 10px on panels. Panels are separated by 1px borders, not shadows. Only modals and menus float, so only they get a shadow.
 
-**Light and dark are consistent.** Nothing forces a mode: every surface follows the user's choice. Color comes from the three flows instead of from black bands:
+**Light and dark mode match.** Every surface follows the user's choice, and color comes from the three flows:
 
 - Tinted tiles and sections (`<flow>.subtle`) for each flow: the dashboard's Readiness, Fuel and Training tiles, the landing page's Fuel, Train and Recover sections, completed onboarding steps.
 - Solid flow-color blocks for brand moments (`train.500` with ink text, `recover.500` with white text): the sign-in panel, the Coach header and the landing page's closing band. A solid color looks the same in both modes, so it never reads as "the wrong mode".
@@ -39,17 +39,17 @@ Tabular figures are only applied to display figures; in Schibsted they widen com
 
 **The daily verdict** is the product's headline: the dashboard opens with "Push day.", "Steady day." or "Recovery day." from the readiness level, with the next step underneath.
 
-**Quick actions live in panels.** Check-in and logging open in a `QuickPanel` (bottom sheet on phones, side panel on desktop), so the dashboard stays a calm overview. New users get a four-step `GettingStarted` guide that ticks itself off and can be hidden.
+**Quick actions live in panels.** Check-in and logging open in a `QuickPanel` (bottom sheet on phones, side panel on desktop), so the dashboard itself stays uncluttered. New users get a four-step `GettingStarted` guide that ticks itself off and can be hidden.
 
 **Navigation:** Today (the daily verdict and logging), Coach (the conversation only), Library (saved plans and exercises) and Me (profile, with Settings inside). The phone tab bar has exactly these four.
 
-**Muscle maps.** Exercises are shown with `AnatomyFigure`, a flat front and back body map: main muscles in `train.solid`, helpers in a lighter train step, everything else in `border`. It is a diagram, not an illustration: no shading or outlines, and the same figure at thumbnail and detail size.
+**Muscle maps.** Exercises are shown with `AnatomyFigure`, a flat front and back body map: main muscles in `train.solid`, helpers in a lighter train step, everything else in `border`. It's drawn as a flat diagram with no shading or outlines, and the same figure is used at thumbnail and detail size.
 
 **Page bands carry live figures.** Coach and Library open with two or three numbers counting up under the title (`PageBandFigures`), the same way the dashboard opens with the verdict.
 
-**Plans are a shelf, not a dropdown.** The Library's Plans tab switches between Training and Meals, shows saved plans as tiles with one progress segment per session or meal, and lays the chosen plan out as a grid you log from. A training plan also shows "What this plan trains", a muscle map built by matching its exercises to the library.
+**Plans.** The Library's Plans tab switches between Training and Meals, shows saved plans as tiles with one progress segment per session or meal, and lays the chosen plan out as a grid you log from. A training plan also shows "What this plan trains", a muscle map built by matching its exercises to the library.
 
-**Landing page.** The hero is a working demo: visitors set last night's sleep, energy, soreness, yesterday's training and how they've been eating, and the real readiness formula (`shared/readinessScore.js`) turns it into the verdict, the score and three live flow bars. Product pictures further down (`*Specimen`) mirror the real components (plan view, chat, check-in, nutrition label); when a component changes, its specimen changes with it.
+**Landing page.** The hero is a working demo: visitors set last night's sleep, energy, soreness, yesterday's training and how they've been eating, and the app's readiness formula (`shared/readinessScore.js`) turns it into the verdict, the score and three live flow bars. Product pictures further down (`*Specimen`) mirror the real components (plan view, chat, check-in, nutrition label); when a component changes, its specimen changes with it.
 
 **Auth screens speak to the visit.** Log in greets the last account used on this device by name, fills its email and returns to the page the visitor was heading to; "Not you?" forgets it. Sign up shows the first day and carries over the landing demo result. Password pages say the data is safe.
 

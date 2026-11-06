@@ -26,5 +26,5 @@
 
 ## Known limits
 
-- Readiness weights are heuristics, not clinically validated, so the copy stays advisory.
+- The readiness weights are a heuristic and haven't been clinically validated, so the wording stays advisory.
 - The free MongoDB tier has no backups. Download your data from Settings now and then.

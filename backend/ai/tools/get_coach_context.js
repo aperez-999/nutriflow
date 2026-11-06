@@ -1,6 +1,6 @@
 /**
  * get_coach_context: everything the coach should know about one person before answering,
- * read from their account each time (so it is always current, and the person can see and
+ * read from their account each time (so it is always current, and the user can see and
  * change every part of it): who they are and what they're after, their day so far against
  * today's targets, the last seven days, and what the coach has saved from earlier chats.
  */
@@ -28,7 +28,7 @@ export function safeTimeZone(timeZone) {
   }
 }
 
-/** "2026-10-28": the calendar day a moment falls on where the person is. */
+/** "2026-10-28": the calendar day a moment falls on where the user is. */
 export function dayKeyIn(date, timeZone) {
   return new Intl.DateTimeFormat('en-CA', { timeZone, year: 'numeric', month: '2-digit', day: '2-digit' })
     .format(new Date(date));

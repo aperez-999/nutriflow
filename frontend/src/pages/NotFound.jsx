@@ -4,7 +4,7 @@ import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import FlowBand from '../components/Global/FlowBand';
 
-/** Any address the app does not know: say so plainly and offer the way back. */
+/** The 404 page: says the address wasn't found and links back. */
 function NotFound() {
   const { user } = useContext(AuthContext);
   const { pathname } = useLocation();

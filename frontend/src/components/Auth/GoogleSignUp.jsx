@@ -20,7 +20,7 @@ import { RegisterPanel } from './AuthPanels';
 
 /**
  * After Continue with Google for an email NutriFlow doesn't know: a new account is made only
- * here, once the person has seen it and chosen their name. It's linked to Google, so there's
+ * here, once the user has seen it and chosen their name. It's linked to Google, so there's
  * no password to pick.
  */
 function GoogleSignUp() {

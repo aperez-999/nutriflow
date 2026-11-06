@@ -1,7 +1,7 @@
 /**
  * The coach's memory: when someone tells the coach something lasting about themselves, the
  * reply ends with a [[REMEMBER: ...]] line. It is taken out of the reply before anyone sees
- * it and saved as a note, which the coach reads on every later answer and the person can
+ * it and saved as a note, which the coach reads on every later answer and the user can
  * see and delete.
  */
 
@@ -16,7 +16,7 @@ const TAG = /\n?\s*\[\[\s*REMEMBER\s*:\s*([^\]]*)\]\]\s*/gi;
 const MAX_NOTES = 30;
 const MAX_LENGTH = 160;
 
-/** Splits a reply into what the person sees and the note to save (the first one, if any). */
+/** Splits a reply into what the user sees and the note to save (the first one, if any). */
 export function takeRememberedNote(content) {
   if (typeof content !== 'string') return { content, note: null };
   let note = null;
@@ -34,7 +34,7 @@ const COMMON = new Set(['about', 'after', 'also', 'always', 'before', 'does', 'f
 const words = (text) => normalize(text).split(' ').filter((word) => word.length >= 4 && !COMMON.has(word));
 
 /**
- * The note as it should be kept, or null when it doesn't come from what the person just
+ * The note as it should be kept, or null when it doesn't come from what the user just
  * said. A model sometimes "remembers" things nobody told it (the brief it was given, or a
  * guess), so a note has to share a real word with the message: "I'm lactose intolerant"
  * can become "Lactose intolerant", but "Should I do legs tomorrow?" can't become anything.

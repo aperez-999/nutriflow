@@ -315,7 +315,7 @@ export const deleteAvatar = async () => {
     }
 };
 
-/** What the person is training for and how they eat, for the coach. */
+/** What the user is training for and how they eat, for the coach. */
 export const updateAbout = async (about) => {
   try {
     const response = await axios.put('/api/auth/me/about', about);

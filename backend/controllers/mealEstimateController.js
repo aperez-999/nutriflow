@@ -2,8 +2,8 @@ import { generateChatCompletion } from '../ai/config/aiProvider.js';
 
 /**
  * "Describe a meal": a sentence like "chipotle bowl, chicken, rice, beans, guac" becomes an
- * estimate per item that the person checks and adjusts before logging. It is always shown as
- * an estimate; the clients never log it without the person seeing it.
+ * estimate per item that the user checks and adjusts before logging. It is always shown as
+ * an estimate; the clients never log it without the user seeing it.
  */
 
 const MAX_ITEMS = 12;

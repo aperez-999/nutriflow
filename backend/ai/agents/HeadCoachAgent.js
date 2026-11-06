@@ -68,7 +68,7 @@ function canParsePlanArray(content) {
 }
 
 /**
- * Runs the HeadCoachAgent: reads the person's account (when signed in), calls the LLM,
+ * Runs the HeadCoachAgent: reads the user's account (when signed in), calls the LLM,
  * and saves anything lasting it was told.
  * @param {Object} params
  * @param {string} params.message - User message.

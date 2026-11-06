@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-// One weight a day per person, in kilograms (the apps show pounds when asked). From the person,
+// One weight a day per user, in kilograms (the apps show pounds when asked). From the user,
 // or from Apple Health.
 const weighInSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
