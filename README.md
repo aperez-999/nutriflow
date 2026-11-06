@@ -6,6 +6,10 @@ carb target and the coach's advice adjust to match.
 
 Live at [nutriflowdev.vercel.app](https://nutriflowdev.vercel.app).
 
+![The landing page demo: lowering sleep and energy and raising soreness turns a push day into a steady day, then a recovery day, and back again](docs/images/demo.gif)
+
+<sub>The demo on the landing page runs the same readiness formula as the app. Try it without an account.</sub>
+
 ## The idea
 
 Food usually goes in one app, workouts in another and sleep in a third, and none of them answers
@@ -37,8 +41,14 @@ How it works:
 | **Profile** | Your week: readiness by day, your best day, totals compared with the week before, and what you log most |
 | **Settings** | Goals, light or dark mode, profile photo, password, email confirmation, signing out other devices, and downloading or deleting your data |
 
-The landing page has a demo you can try without an account: set your sleep, energy and
-soreness, and it runs the same readiness formula the app uses.
+![Today: the verdict, readiness score, fuel and training for the day, today's plan, the rhythm map and the weekly check-in](docs/images/today.png)
+
+<p>
+  <img src="docs/images/coach.png" width="49%" alt="The coach answering whether to train legs after six hours of sleep, using the day's readiness and protein left">
+  <img src="docs/images/week.png" width="49%" alt="Your week on the profile page: readiness for each of the last seven days and totals against the week before">
+</p>
+
+<sub>Screenshots use a demo account with four weeks of sample data.</sub>
 
 ## Privacy and security
 
